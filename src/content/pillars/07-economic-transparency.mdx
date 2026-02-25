@@ -1,0 +1,25 @@
+---
+title: "Economic Transparency"
+description: "You must have the freedom to choose which model to use. The tool's business model cannot be to profit off token usage."
+order: 7
+---
+
+# Economic Transparency & Model Independence
+
+The AI tooling market is currently flooded with "Wrappers"—companies that build a thin UI layer over OpenAI's API, hardcode a system prompt, and charge an exorbitant markup for the underlying tokens.
+
+This model is fundamentally misaligned with the needs of a scaling engineering team.
+
+## The Wrapper Tax
+
+Paying $20 to $50 per month, per seat, for a tool that makes $0.50 worth of LLM API calls is burning engineering budget. It limits adoption because Engineering Managers cannot justify the cost for the entire organization, leading to fragmented tooling where only some developers have access to the AI reviewer.
+
+## The 2026 Economic Standard
+
+A mature AI code reviewer platform must operate with absolute economic transparency:
+
+1. **Zero Markup:** The platform's revenue should come from the value of its workflow integration, context management, and features—not from reselling LLM tokens. You should pay the AI provider (OpenAI, Anthropic, Google) at their base cost.
+2. **Bring Your Own Key (BYOK):** Enterprise teams must be able to plug in their own API keys or route traffic through their own secure proxies (e.g., Azure OpenAI) to satisfy InfoSec requirements.
+3. **Model Independence:** You must have the freedom to route different tasks to different models. You might want to use Claude 3.5 Sonnet for deep architectural analysis, but route simple documentation checks to a faster, cheaper model like Llama 3 or GPT-4o-mini. The tool cannot lock you into a single provider.
+
+Demand transparency. If a vendor won't tell you exactly how many tokens they are consuming and what they are charging for them, they are a wrapper.

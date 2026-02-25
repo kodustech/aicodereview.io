@@ -1,0 +1,29 @@
+---
+title: "Rule-Centric & Default Quiet"
+description: "AIs that impose their own opinions on code style generate alert fatigue and are quickly ignored. Code Review in the PR must be Default Quiet."
+order: 2
+---
+
+# Rule-Centric & Default Quiet: The end of AI nitpicking
+
+If an AI comments on indentation, variable naming conventions, or missing semicolons, it should be uninstalled immediately. That is a linter's job, not an intelligence's job.
+
+First-generation AI code reviewers suffer from a critical flaw: **they are too eager to please.** Because they want to prove they are working, they leave dozens of trivial comments on every Pull Request. This generates immediate alert fatigue. Engineers learn to click "Resolve All" without reading, defeating the entire purpose of the review.
+
+## The "Default Quiet" Philosophy
+
+A production-grade AI must adhere to the **Default Quiet** philosophy. Unless it detects a critical issue (e.g., a security vulnerability or a severe logic flaw), the AI should not comment on a Pull Request.
+
+**Every stylistic or architectural opinion must be backed by an explicit team rule.**
+
+The AI must enforce the company's standard, not the standard it (or its foundational model) thinks is best.
+
+## Managing Rules as Code
+
+To achieve this, the AI must be **Rule-Centric**. 
+
+1. **Centralized Standards:** Rules should be defined in plain text (e.g., a `.kodyrules` file or `CONTRIBUTING.md`) and version-controlled alongside the code.
+2. **Contextual Enforcement:** The AI must read these rules and use them as the absolute source of truth for its review context.
+3. **No Unprompted Opinions:** If the team hasn't explicitly forbidden a pattern (and it isn't an objective bug), the AI must remain silent.
+
+A quiet PR is a good PR. Let the AI focus on the deep architectural flaws that linters cannot catch.

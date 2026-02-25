@@ -1,0 +1,25 @@
+---
+title: "Sandbox Validation"
+description: "Ability to test the suggested code in Sandbox or Preview Environments. The AI must be able to perform Chaos Testing."
+order: 6
+---
+
+# Dynamic Testing & Sandbox Validation
+
+Static analysis has hard limits. An AI can read a piece of code and logically deduce that it *should* work, but until that code is executed, it remains a hypothesis.
+
+A critical failure mode of AI-generated code suggestions is that they often compile perfectly but break the interface, violate an API contract, or fail under specific runtime conditions.
+
+## Beyond Static Analysis
+
+The 2026 baseline demands that AI reviewers move beyond static text analysis and enter the realm of **Dynamic Validation**.
+
+Before an AI confidently suggests a complex refactor or approves a high-risk Pull Request, it must be able to prove that its assumptions hold up at runtime.
+
+## The Execution Standard
+
+1. **Preview Environments:** The AI must be capable of interacting with ephemeral preview environments (e.g., Vercel Previews, temporary Docker containers).
+2. **Automated Test Generation:** If the AI suggests a fix, it must also generate the unit test that proves the fix works. A suggestion without a verifying test is incomplete.
+3. **Chaos Testing:** For critical infrastructure changes, the AI should be able to simulate edge cases—network latency, malformed JSON payloads, null pointers—against the sandbox environment to ensure the new code handles failures gracefully.
+
+Don't trust an AI that only reads code. Trust an AI that can run it.

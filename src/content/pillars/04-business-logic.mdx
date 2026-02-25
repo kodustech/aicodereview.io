@@ -1,0 +1,32 @@
+---
+title: "Business Logic Validation"
+description: "Validating if the code compiles is the easy part. The AI needs to know if the code meets the business requirements."
+order: 4
+---
+
+# Business Logic Validation: Beyond Syntax
+
+Validating if code compiles is a solved problem. We have compilers, type checkers, and linters for that. 
+
+The real challenge in software engineering is ensuring that the code actually solves the business problem it was intended to solve. A syntactically perfect function is worse than useless if it implements the wrong feature.
+
+## The Vacuum of the Diff
+
+Most AI reviewers operate in a vacuum. They look at the code and say: *"This loop is O(N^2), you should use a Hash Map to make it O(N)."*
+
+That's a nice observation, but what if the array never has more than 10 items, and the real issue is that the function doesn't handle the edge case described in the Jira ticket? The AI completely missed the point because it lacked **Business Context**.
+
+## The Model Context Protocol (MCP)
+
+To achieve the 2026 standard, an AI code reviewer must integrate deeply with the tools where business decisions are made (Jira, Linear, Notion, Confluence, GitHub Issues).
+
+This is achieved via standards like the **Model Context Protocol (MCP)**.
+
+Before the AI approves a Pull Request or suggests a change, it must:
+1. Identify the ticket or issue associated with the branch/PR.
+2. Read the acceptance criteria and product requirements from that ticket.
+3. Validate the code against the *intent* of the developer.
+
+*"Does this implementation actually fulfill the acceptance criteria described in ticket ENG-104?"*
+
+If the AI cannot answer that question, it is not a reviewer; it is just an automated syntax checker.

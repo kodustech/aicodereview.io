@@ -1,0 +1,31 @@
+---
+title: "Dual-Workflow: Local vs. PR"
+description: "Fixing architecture in the PR is too late and too expensive. Treating the IDE and the PR as the exact same environment is a design flaw."
+order: 3
+---
+
+# Dual-Workflow: The split between Feedback and Control
+
+Treating the IDE (Local) and the Pull Request (Remote) as the exact same environment is a fundamental design flaw in modern AI tooling.
+
+They serve entirely different purposes in the software development lifecycle. A production-grade AI code reviewer must adapt its behavior depending on *where* the review is happening.
+
+## Local (The Fast Loop)
+
+The local environment (your IDE, terminal, or pre-commit hooks) is about **continuous feedback and exploration**.
+
+Here, the developer has a low cognitive load. They are actively shaping the code. If an AI suggests a different architectural approach or a clever refactor, the developer can easily hit `Tab` to accept it or ignore it without consequence.
+
+- **AI Behavior:** Verbose, opinionated, exploratory.
+- **Goal:** Help the developer write better code *before* it leaves their machine.
+
+## PR (The Guardrails)
+
+The Pull Request environment is about **quality control, security, and business alignment**. 
+
+By the time code reaches a PR, the developer considers the work "done". Fixing core architectural mistakes here is expensive, frustrating, and creates friction between teammates. The PR is not the place for brainstorming; it is the place for verification.
+
+- **AI Behavior:** Restricted, surgical, Default Quiet. Absolutely zero nitpicks.
+- **Goal:** Ensure the code meets the team's explicit rules, contains no critical bugs, and fulfills the business intent.
+
+An AI tool that doesn't respect the boundary between the Fast Loop and the Guardrails will eventually be disabled by frustrated engineers.

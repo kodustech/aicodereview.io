@@ -1,0 +1,43 @@
+---
+import { getCollection, render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import PillarGraphic from '../../components/PillarGraphic.astro';
+
+export async function getStaticPaths() {
+  const pillars = await getCollection('pillars');
+  return pillars.map((pillar: any) => ({
+    params: { slug: pillar.id },
+    props: { pillar },
+  }));
+}
+
+const { pillar } = Astro.props;
+const { Content } = await render(pillar);
+---
+
+<Layout title={`${pillar.data.title} | aicodereview.io`} description={pillar.data.description}>
+  <div class="mb-12">
+    <a href="/#standards" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-8">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Standards
+    </a>
+    
+    <div class="w-full max-w-none mb-12">
+      <PillarGraphic order={pillar.data.order} />
+    </div>
+  </div>
+
+  <article class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-h1:text-4xl md:prose-h1:text-5xl prose-h1:tracking-tight prose-h1:text-balance prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 hover:prose-a:decoration-stone-500 prose-p:text-pretty prose-p:leading-relaxed">
+    <Content />
+  </article>
+
+  <div class="mt-32 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+    <div class="text-center md:text-left">
+      <p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluate your AI Code Review Readiness</p>
+      <p class="text-sm text-stone-500 dark:text-zinc-400">See how your current setup scores against the 2026 baseline.</p>
+    </div>
+    <a href="/assessment" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
+      Take the Assessment [↗]
+    </a>
+  </div>
+</Layout>

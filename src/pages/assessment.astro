@@ -1,0 +1,338 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const title = "Assessment | aicodereview.io";
+const description = "Evaluate your current AI Code Review setup against the 2026 engineering baseline.";
+
+const questions = [
+  {
+    id: 1,
+    title: "Does your AI analyze the entire codebase (including cross-repo dependencies) instead of just the git diff?",
+    options: [
+      { text: "Yes, full context.", value: 10, description: "It reads our whole tree." },
+      { text: "No, diff-only.", value: 0, description: "It hallucinates frequently." }
+    ]
+  },
+  {
+    id: 2,
+    title: "Is your AI 'Default Quiet', enforcing explicit team rules rather than its own opinions?",
+    options: [
+      { text: "Yes, rule-centric.", value: 10, description: "Only speaks when rules are broken." },
+      { text: "No, it nitpicks.", value: 0, description: "Complains about indentation." }
+    ]
+  },
+  {
+    id: 3,
+    title: "Does your tooling separate exploratory Local feedback (IDE) from surgical PR guardrails?",
+    options: [
+      { text: "Yes, distinct workflows.", value: 10, description: "Different behavior per environment." },
+      { text: "No, same everywhere.", value: 0, description: "PRs are too noisy." }
+    ]
+  },
+  {
+    id: 4,
+    title: "Can your AI connect to Jira/Linear (via MCP) to validate if the code actually solves the business problem?",
+    options: [
+      { text: "Yes, business context.", value: 10, description: "Understands the intent." },
+      { text: "No, syntax only.", value: 0, description: "Validates code in a vacuum." }
+    ]
+  },
+  {
+    id: 5,
+    title: "Does the AI learn from rejected suggestions to prevent regressions automatically?",
+    options: [
+      { text: "Yes, continuous learning.", value: 10, description: "It remembers our choices." },
+      { text: "No static memory.", value: 0, description: "We repeat ourselves constantly." }
+    ]
+  },
+  {
+    id: 6,
+    title: "Can it run dynamic sandbox validation (or generate unit tests) to prove its suggestions work?",
+    options: [
+      { text: "Yes, dynamic validation.", value: 10, description: "It proves its logic." },
+      { text: "No, static analysis only.", value: 0, description: "It breaks things at runtime." }
+    ]
+  },
+  {
+    id: 7,
+    title: "Are you paying exorbitant markups for LLM tokens instead of bringing your own key (BYOK)?",
+    options: [
+      { text: "No, zero markup / BYOK.", value: 10, description: "We pay cost price." },
+      { text: "Yes, wrapper tax.", value: 0, description: "We pay a premium per seat." }
+    ]
+  },
+  {
+    id: 8,
+    title: "Does the AI generate 1-click commit fixes instead of just leaving explanatory comments?",
+    options: [
+      { text: "Yes, 1-click remediation.", value: 10, description: "It writes the actual fix." },
+      { text: "No, just comments.", value: 0, description: "Creates administrative chores." }
+    ]
+  },
+  {
+    id: 9,
+    title: "Does the tool provide an Engineering Cockpit to prove its ROI on DORA metrics?",
+    options: [
+      { text: "Yes, full observability.", value: 10, description: "Tracks Cycle Time & escapes." },
+      { text: "No, black box.", value: 0, description: "We just guess it's working." }
+    ]
+  }
+];
+---
+
+<Layout title={title} description={description}>
+  <!-- Top Navigation & Progress -->
+  <div class="max-w-4xl mx-auto mb-12 relative z-10">
+    <div class="flex items-center justify-between mb-8">
+      <a href="/" class="text-xs font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Exit
+      </a>
+      <div class="text-xs font-mono tracking-widest text-stone-400 dark:text-zinc-600 uppercase">
+        <span id="progress-text">01 / 09</span>
+      </div>
+    </div>
+    
+    <div class="w-full h-1 bg-stone-200 dark:bg-zinc-800 overflow-hidden">
+      <div id="progress-bar" class="h-full bg-stone-900 dark:bg-zinc-100 w-[11%] transition-all duration-500 ease-out"></div>
+    </div>
+  </div>
+
+  <!-- Wizard Container -->
+  <div class="max-w-4xl mx-auto min-h-[50vh] flex flex-col justify-center relative">
+    
+    <!-- Questions Wrapper -->
+    <div id="questions-container" class="grid w-full">
+      {questions.map((q, index) => (
+        <div 
+          id={`question-${index}`} 
+          class={`question-slide col-start-1 row-start-1 w-full transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${index === 0 ? 'opacity-100 translate-y-0 z-10' : 'opacity-0 translate-y-8 pointer-events-none -z-10'}`}
+        >
+          <div class="mb-12">
+            <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight text-balance text-stone-900 dark:text-zinc-50 leading-tight">
+              {q.title}
+            </h2>
+          </div>
+          
+          <div class="grid md:grid-cols-2 gap-4 md:gap-6">
+            {q.options.map((opt, optIdx) => (
+              <button 
+                type="button"
+                data-value={opt.value}
+                class="answer-btn group text-left p-6 md:p-8 border-2 border-stone-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 hover:border-stone-900 dark:hover:border-zinc-100 hover:bg-stone-50 dark:hover:bg-zinc-900 transition-all duration-200 outline-none focus-visible:ring-4 focus-visible:ring-stone-200 dark:focus-visible:ring-zinc-800"
+              >
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-xs font-mono font-bold text-stone-400 dark:text-zinc-600 group-hover:text-stone-900 dark:group-hover:text-zinc-100 transition-colors uppercase tracking-widest">Option {String.fromCharCode(65 + optIdx)}</span>
+                  <div class="w-6 h-6 rounded-full border-2 border-stone-200 dark:border-zinc-800 group-hover:border-stone-900 dark:group-hover:border-zinc-100 flex items-center justify-center transition-colors">
+                    <div class="w-2.5 h-2.5 rounded-full bg-stone-900 dark:bg-zinc-100 opacity-0 group-active:opacity-100 transition-opacity"></div>
+                  </div>
+                </div>
+                <h3 class="text-xl md:text-2xl font-bold text-stone-900 dark:text-zinc-100 mb-2">{opt.text}</h3>
+                <p class="text-sm text-stone-500 dark:text-zinc-400">{opt.description}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- Calculating State -->
+    <div id="calculating-state" class="absolute inset-0 w-full flex flex-col items-center justify-center opacity-0 pointer-events-none transition-opacity duration-500 z-20">
+      <div class="w-16 h-16 border-4 border-stone-200 dark:border-zinc-800 border-t-stone-900 dark:border-t-zinc-100 rounded-full animate-spin mb-8"></div>
+      <h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">Analyzing infrastructure...</h2>
+      <p class="text-stone-500 dark:text-zinc-400 font-mono text-sm tracking-widest uppercase animate-pulse">Running telemetry check</p>
+    </div>
+
+    <!-- Results State -->
+    <div id="results-state" class="absolute inset-0 w-full opacity-0 pointer-events-none transition-all duration-700 ease-out translate-y-8 z-30 flex flex-col">
+      <div class="flex-1">
+        <h3 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-4">Diagnostic Result</h3>
+        
+        <div class="flex items-baseline gap-4 mb-8">
+          <span id="final-score" class="text-8xl md:text-[9rem] font-black leading-none tracking-tighter text-stone-900 dark:text-zinc-100">0</span>
+          <span class="text-3xl text-stone-400 dark:text-zinc-600 font-mono pb-4">/ 90</span>
+        </div>
+        
+        <div id="result-message" class="prose dark:prose-invert prose-stone max-w-2xl text-xl leading-relaxed mb-12">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <div class="bg-stone-900 dark:bg-zinc-100 p-8 md:p-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-t-4 border-stone-900 dark:border-zinc-100">
+        <div class="text-stone-100 dark:text-zinc-900">
+          <p class="font-bold text-2xl mb-3">Upgrade to the 2026 Standard</p>
+          <p class="text-stone-400 dark:text-zinc-600 text-lg max-w-md">Kodus implements all 9 pillars out of the box. Open source engine, BYOK, and zero markup.</p>
+        </div>
+        <a href="https://kodus.io" target="_blank" rel="noopener noreferrer" class="bg-white dark:bg-zinc-900 text-stone-900 dark:text-zinc-100 font-bold px-8 py-5 uppercase tracking-widest text-sm hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors border border-transparent whitespace-nowrap w-full md:w-auto text-center shadow-xl hover:shadow-2xl hover:-translate-y-1 transform duration-200">
+          Deploy Kodus [↗]
+        </a>
+      </div>
+      
+      <div class="mt-8 text-center md:text-left">
+        <button id="restart-btn" class="text-xs font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          Retake Assessment
+        </button>
+      </div>
+    </div>
+
+  </div>
+</Layout>
+
+<script>
+  let currentStep = 0;
+  const totalSteps = 9;
+  let score = 0;
+
+  const questionsContainer = document.getElementById('questions-container');
+  const calculatingState = document.getElementById('calculating-state');
+  const resultsState = document.getElementById('results-state');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const finalScore = document.getElementById('final-score');
+  const resultMessage = document.getElementById('result-message');
+  const restartBtn = document.getElementById('restart-btn');
+
+  // Handle Answer Clicks
+  const answerBtns = document.querySelectorAll('.answer-btn');
+  answerBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const target = e.currentTarget as HTMLButtonElement;
+      const value = parseInt(target.getAttribute('data-value') || '0', 10);
+      
+      // Add visual feedback to clicked button
+      target.classList.add('bg-stone-100', 'dark:bg-zinc-800', 'scale-[0.98]');
+      
+      setTimeout(() => {
+        target.classList.remove('bg-stone-100', 'dark:bg-zinc-800', 'scale-[0.98]');
+        score += value;
+        nextStep();
+      }, 250);
+    });
+  });
+
+  function nextStep() {
+    const currentSlide = document.getElementById(`question-${currentStep}`);
+    if (currentSlide) {
+      currentSlide.classList.remove('opacity-100', 'translate-y-0', 'z-10');
+      currentSlide.classList.add('opacity-0', '-translate-y-8', 'pointer-events-none', '-z-10');
+    }
+
+    currentStep++;
+
+    if (currentStep < totalSteps) {
+      // Update Progress
+      if(progressBar) progressBar.style.width = `${((currentStep + 1) / totalSteps) * 100}%`;
+      if(progressText) progressText.innerText = `0${currentStep + 1} / 09`;
+
+      const nextSlide = document.getElementById(`question-${currentStep}`);
+      if (nextSlide) {
+        // Slight delay for smooth staggering
+        setTimeout(() => {
+          nextSlide.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none', '-z-10');
+          nextSlide.classList.add('opacity-100', 'translate-y-0', 'z-10');
+        }, 100);
+      }
+    } else {
+      // Finish
+      if(progressBar) progressBar.style.width = `100%`;
+      if(progressText) progressText.innerText = `COMPLETE`;
+      showResults();
+    }
+  }
+
+  function showResults() {
+    if(questionsContainer) questionsContainer.style.display = 'none';
+    
+    // Show Calculating State
+    if(calculatingState) {
+      calculatingState.classList.remove('opacity-0', 'pointer-events-none');
+      calculatingState.classList.add('opacity-100');
+    }
+
+    // Process Result Message
+    let message = '';
+    let scoreColorClass = '';
+
+    if (score === 90) {
+      message = `<p class="font-medium text-stone-900 dark:text-zinc-100 mb-4">Exceptional Infrastructure.</p><p>Your engineering team is operating at the absolute cutting edge. You have eliminated wrapper taxes and implemented true multi-dimensional context.</p>`;
+      scoreColorClass = 'text-stone-900 dark:text-zinc-100'; // Pure high contrast
+    } else if (score >= 50) {
+      message = `<p class="font-medium text-stone-900 dark:text-zinc-100 mb-4">Functional, but leaking engineering value.</p><p>You have moved beyond basic chat wrappers, but your team is still dealing with PR noise, alert fatigue, or lack of business context (MCP). It's time to close the gap.</p>`;
+      scoreColorClass = 'text-stone-500 dark:text-zinc-400'; // Warning/Mid
+    } else {
+      message = `<p class="font-bold text-red-600 dark:text-red-400 mb-4">Critical Architecture Warning.</p><p>You are paying for a first-generation "AI Wrapper" that acts as a glorified syntax highlighter. It is generating hallucinations, alert fatigue, and administrative chores for your engineers.</p><p>You need to migrate to a context-aware, rule-centric platform immediately to stop burning budget.</p>`;
+      scoreColorClass = 'text-red-600 dark:text-red-500'; // Critical
+    }
+
+    if (finalScore) {
+      finalScore.textContent = score.toString();
+      finalScore.className = `text-8xl md:text-[9rem] font-black leading-none tracking-tighter ${scoreColorClass}`;
+    }
+    if (resultMessage) resultMessage.innerHTML = message;
+
+    // Transition to final result
+    setTimeout(() => {
+      if(calculatingState) {
+        calculatingState.classList.remove('opacity-100');
+        calculatingState.classList.add('opacity-0', 'pointer-events-none');
+      }
+      
+      setTimeout(() => {
+        if(resultsState) {
+          resultsState.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-8');
+          resultsState.classList.add('opacity-100', 'translate-y-0');
+        }
+      }, 300);
+    }, 1800); // 1.8s of "Calculating..."
+  }
+
+  // Keyboard Navigation Support (Option A / B)
+  document.addEventListener('keydown', (e) => {
+    if (currentStep >= totalSteps || calculatingState?.classList.contains('opacity-100')) return;
+    
+    const key = e.key.toLowerCase();
+    const currentSlide = document.getElementById(`question-${currentStep}`);
+    if (!currentSlide) return;
+
+    const btns = currentSlide.querySelectorAll('.answer-btn');
+    if (key === 'a' || key === '1') {
+      (btns[0] as HTMLButtonElement)?.click();
+    } else if (key === 'b' || key === '2') {
+      (btns[1] as HTMLButtonElement)?.click();
+    }
+  });
+
+  // Restart Flow
+  restartBtn?.addEventListener('click', () => {
+    score = 0;
+    currentStep = 0;
+    
+    if(resultsState) {
+      resultsState.classList.add('opacity-0', 'pointer-events-none', 'translate-y-8');
+      resultsState.classList.remove('opacity-100', 'translate-y-0');
+    }
+    
+    if(questionsContainer) questionsContainer.style.display = 'block';
+    
+    setTimeout(() => {
+      // Reset progress
+      if(progressBar) progressBar.style.width = `11%`;
+      if(progressText) progressText.innerText = `01 / 09`;
+      
+      // Reset slides
+      for (let i = 0; i < totalSteps; i++) {
+        const slide = document.getElementById(`question-${i}`);
+        if (slide) {
+          if (i === 0) {
+            slide.classList.remove('opacity-0', '-translate-y-8', 'translate-y-8', 'pointer-events-none', '-z-10');
+            slide.classList.add('opacity-100', 'translate-y-0', 'z-10');
+          } else {
+            slide.classList.remove('opacity-100', 'translate-y-0', '-translate-y-8', 'z-10');
+            slide.classList.add('opacity-0', 'translate-y-8', 'pointer-events-none', '-z-10');
+          }
+        }
+      }
+    }, 400);
+  });
+</script>

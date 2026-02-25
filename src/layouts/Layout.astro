@@ -1,0 +1,93 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = "The engineering standard for evaluating and implementing AI Code Review that actually ships faster, safer code." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		
+		<!-- Open Graph & Twitter -->
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content="https://aicodereview.io" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		
+		<!-- Schema.org JSON-LD -->
+		<script type="application/ld+json" set:html={JSON.stringify({
+			"@context": "https://schema.org",
+			"@type": "WebSite",
+			"name": "AI Code Review Standards",
+			"url": "https://aicodereview.io",
+			"description": "The engineering baseline for evaluating and implementing AI Code Review that actually ships faster, safer code.",
+			"publisher": {
+				"@type": "Organization",
+				"name": "Kodus",
+				"url": "https://kodus.io",
+				"logo": "https://kodus.io/wp-content/themes/kodus-child/assets/img/kodus_dark.webp"
+			}
+		})} />
+		
+		<!-- Fonts: Space Grotesk & JetBrains Mono -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	</head>
+	<body class="min-h-dvh flex flex-col">
+		<header class="border-b border-stone-200 dark:border-zinc-800 bg-stone-50/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+			<div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+				<a href="/" class="font-mono text-sm tracking-tight font-bold text-stone-900 dark:text-zinc-100 uppercase">
+					[ aicodereview.io ]
+				</a>
+				<nav class="flex items-center gap-5 md:gap-6">
+					<a href="/#standards" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Standards</a>
+					<a href="/assessment" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Assessment</a>
+					<div class="h-4 w-px bg-stone-300 dark:bg-zinc-700 hidden sm:block"></div>
+					<a href="https://kodus.io" target="_blank" rel="noopener noreferrer" class="flex items-center opacity-60 hover:opacity-100 transition-opacity" aria-label="Built by Kodus">
+						<img src="/assets/kodus_logo.webp" alt="Kodus" class="h-4 dark:invert-0 invert" />
+					</a>
+				</nav>
+			</div>
+		</header>
+		
+		<main class="flex-1 w-full max-w-4xl mx-auto px-6 py-16 md:py-24">
+			<slot />
+		</main>
+
+		<footer class="border-t border-stone-200 dark:border-zinc-800 py-12 mt-auto bg-stone-100 dark:bg-zinc-900">
+			<div class="max-w-4xl mx-auto px-6">
+				<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+					<div>
+						<p class="text-sm text-stone-500 dark:text-zinc-400 font-mono flex items-center gap-2">
+							Maintained by the engineering team at 
+							<a href="https://kodus.io" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition-opacity">
+								<img src="/assets/kodus_logo.webp" alt="Kodus" class="h-4 dark:invert-0 invert opacity-90" />
+							</a>
+						</p>
+						<p class="text-xs text-stone-400 dark:text-zinc-500 mt-2 text-pretty">
+							We built Kodus because we couldn't find an AI reviewer that met these baseline standards. We open-sourced the engine and stripped away the markup.
+						</p>
+					</div>
+					<div class="flex gap-4">
+						<a href="https://github.com/kodustech" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">GitHub</a>
+						<a href="https://kodus.io" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Product</a>
+					</div>
+				</div>
+			</div>
+		</footer>
+	</body>
+</html>

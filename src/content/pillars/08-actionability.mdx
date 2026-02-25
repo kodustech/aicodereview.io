@@ -1,0 +1,27 @@
+---
+title: "Actionability"
+description: "If an AI points out a problem, it has the obligation to generate the exact code to fix it. Do not explain the problem, show me the commit."
+order: 8
+---
+
+# Actionability: Zero-Friction Remediation
+
+There is a fundamental difference between an auditor and an engineer. An auditor points out what is wrong; an engineer fixes it.
+
+First-generation AI code reviewers act as auditors. They leave brilliant, five-paragraph comments explaining why a function is inefficient or why a database query might cause a bottleneck. 
+
+The developer reads the comment, sighs, switches back to their IDE, rewrites the function, runs the tests, and pushes a new commit. The AI didn't save time; it created an administrative chore.
+
+## The Rule of the Commit
+
+A production-grade AI reviewer must adhere to a strict standard of **Actionability**:
+
+> **If the AI cannot generate the exact code (`git diff`) required to fix the issue it found, it should not leave a comment.**
+
+## The 2026 Standard for Remediation
+
+1. **One-Click Commits:** Every suggestion must be a valid, syntactically correct code block that the developer can accept directly from the Pull Request interface with a single click.
+2. **Context-Aware Fixes:** The suggested fix must respect the surrounding code. If the AI suggests replacing a standard loop with a utility function, it must ensure that utility function is actually imported at the top of the file.
+3. **Automated Tech Debt Tracking:** If an AI suggestion is valid but the developer chooses to ignore it to merge the PR faster (e.g., a non-critical refactor), the AI must automatically convert that ignored suggestion into a trackable issue (Jira/Linear) in the technical debt backlog.
+
+We don't need more AI assistants explaining programming concepts in our Pull Requests. We need AI teammates that write the code to fix the problems they find.

@@ -1,0 +1,38 @@
+---
+title: "Multi-dimensional Context"
+description: "AI that reads only the git diff is useless for architecture and generates hallucinations. Context must be multi-repo and hierarchical."
+order: 1
+---
+
+# Multi-dimensional Context: The end of hallucinations
+
+Reviewing a Pull Request by exclusively reading the `git diff` is an amateur approach. It is the equivalent of reviewing a chapter of a book without knowing the plot or the characters.
+
+Most first-generation AI code reviewers fail spectacularly because they lack *Multi-dimensional Context*. They operate in a vacuum.
+
+## The Cost of Diff-only Analysis
+
+When an AI is constrained to the changed lines (`diff`), the following anti-patterns emerge:
+
+- **Hallucinated Functions:** The AI suggests calling a helper function from a standard library that your repository doesn't even use.
+- **Dependency Breaks:** The AI suggests an "optimization" that accidentally introduces a circular dependency because it cannot see the import tree.
+- **Style Inconsistencies:** The AI enforces generic Python/TypeScript styles instead of reading your `CONTRIBUTING.md` or existing files to understand the team's established conventions.
+
+## The 2026 Standard for Context
+
+A production-grade AI code reviewer must operate across three distinct dimensions of context:
+
+### 1. The Repository Dimension
+The tool must index the entire repository. When a developer modifies an interface in `src/types/user.ts`, the AI must instantly know all the services and controllers that implement or consume that interface across the codebase.
+
+### 2. The Multi-repo / Enterprise Dimension
+In modern microservices architectures or large enterprise monorepos, context rarely lives in a single folder. The AI must be able to resolve cross-repository dependencies. If an API contract changes in the `backend-core` repository, the AI reviewing the `frontend-web` repository must be aware of that new contract.
+
+### 3. The Business Logic Dimension (via MCP)
+Code exists to solve business problems. Validating syntax is the easy part. The AI must connect to your issue tracker (Jira, Linear) or documentation wiki (Notion, Confluence) via the **Model Context Protocol (MCP)**. 
+
+Before the AI approves a Pull Request, it must validate the code against the original ticket: *"Does this implementation actually fulfill the acceptance criteria described in ticket ENG-104?"*
+
+---
+
+**Bottom line:** If your AI code reviewer doesn't understand your entire repository and the business logic behind the change, you are paying for an expensive syntax highlighter. Demand context.

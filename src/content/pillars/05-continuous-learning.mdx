@@ -1,0 +1,25 @@
+---
+title: "Continuous Learning"
+description: "Having to correct the bot for the exact same mistake three times in a row destroys team trust in the tool."
+order: 5
+---
+
+# Continuous Learning & Regression Prevention
+
+The fastest way to destroy an engineering team's trust in an AI tool is to force them to correct the same mistake twice. 
+
+If a senior engineer tells a junior engineer, *"We don't use the `moment.js` library here, we use `date-fns`,"* the junior engineer learns. If an AI suggests using `moment.js` on Monday, gets rejected, and suggests it again on Wednesday, it becomes an annoyance.
+
+## The Static Prompt Problem
+
+Most AI reviewers rely on static system prompts. They don't have a mechanism to learn from the specific dynamics, preferences, and historical decisions of your engineering team.
+
+## The Standard: Dynamic Memory
+
+A mature AI code reviewer must treat the Pull Request history as its primary training data for your specific repository.
+
+1. **Rejection Analysis:** When a developer rejects an AI suggestion, the tool must analyze *why* it was rejected and update its internal context (or propose a new team rule) to never make that suggestion again.
+2. **Approval Analysis:** When a developer approves a suggestion, the tool reinforces that pattern.
+3. **Regression Prevention:** The AI should index past post-mortem reports and resolved high-severity bugs. If a developer introduces code that looks structurally similar to a bug that caused an outage six months ago, the AI must flag it instantly.
+
+The AI should grow smarter alongside your team, effectively becoming a repository of institutional memory.
