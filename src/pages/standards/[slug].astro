@@ -15,7 +15,15 @@ const { pillar } = Astro.props;
 const { Content } = await render(pillar);
 ---
 
-<Layout title={`${pillar.data.title} | aicodereview.io`} description={pillar.data.description}>
+<Layout
+  title={`${pillar.data.title} — AI Code Review Standard | aicodereview.io`}
+  description={pillar.data.description}
+  breadcrumbs={[
+    { name: 'Home', url: 'https://aicodereview.io/' },
+    { name: 'Standards', url: 'https://aicodereview.io/#standards' },
+    { name: pillar.data.title, url: `https://aicodereview.io/standards/${pillar.id}/` }
+  ]}
+>
   <div class="mb-12">
     <a href="/#standards" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-8">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>

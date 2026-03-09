@@ -6,221 +6,697 @@ interface Props {
 const { order } = Astro.props;
 ---
 
-<div class="w-full aspect-video md:aspect-[4/3] bg-stone-100 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 flex items-center justify-center overflow-hidden text-stone-900 dark:text-zinc-100 relative">
-	<!-- Background Grid -->
-	<div class="absolute inset-0 opacity-10 dark:opacity-[0.05]" style="background-image: radial-gradient(currentColor 1px, transparent 1px); background-size: 16px 16px;"></div>
+<div class="pillar-graphic bg-stone-100 dark:bg-zinc-900 border border-stone-200 dark:border-zinc-800 text-stone-900 dark:text-zinc-100" data-pillar={order}>
+	<div class="pillar-bg dark:!opacity-[0.04]"></div>
 
 	{order === 1 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Multi-dimensional Context: Nodes connecting to center -->
-			<circle cx="100" cy="100" r="12">
-				<animate attributeName="r" values="12;16;12" dur="3s" repeatCount="indefinite" />
-			</circle>
-			<g opacity="0.6">
-				<circle cx="40" cy="60" r="4" />
-				<circle cx="160" cy="40" r="4" />
-				<circle cx="170" cy="150" r="4" />
-				<circle cx="50" cy="160" r="4" />
-				
-				<path d="M 40 60 L 100 100">
-					<animate attributeName="stroke-dasharray" values="0,100;100,0" dur="2s" repeatCount="indefinite" />
-				</path>
-				<path d="M 160 40 L 100 100" stroke-dasharray="4 4">
-					<animate attributeName="stroke-dashoffset" values="0;8" dur="1s" repeatCount="indefinite" />
-				</path>
-				<path d="M 170 150 L 100 100">
-					<animate attributeName="stroke-dasharray" values="0,100;100,0" dur="2.5s" repeatCount="indefinite" />
-				</path>
-				<path d="M 50 160 L 100 100" stroke-dasharray="4 4">
-					<animate attributeName="stroke-dashoffset" values="8;0" dur="1.5s" repeatCount="indefinite" />
-				</path>
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Multi-dimensional Context: hover connects floating sources to center */}
+			{/* Source: Repo */}
+			<g class="p1-source p1-s1">
+				<rect x="22" y="35" width="32" height="40" rx="2" />
+				<line x1="28" y1="47" x2="48" y2="47" stroke-width="0.8" opacity="0.5" />
+				<line x1="28" y1="53" x2="44" y2="53" stroke-width="0.8" opacity="0.5" />
+				<line x1="28" y1="59" x2="40" y2="59" stroke-width="0.8" opacity="0.5" />
 			</g>
-			<!-- Orbital ring -->
-			<circle cx="100" cy="100" r="60" stroke-dasharray="2 6" opacity="0.3">
-				<animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="20s" repeatCount="indefinite" />
-			</circle>
+			{/* Source: Deps */}
+			<g class="p1-source p1-s2">
+				<rect x="148" y="28" width="32" height="40" rx="2" />
+				<circle cx="164" cy="42" r="5" stroke-width="0.8" />
+				<line x1="152" y1="56" x2="176" y2="56" stroke-width="0.8" opacity="0.5" />
+			</g>
+			{/* Source: Business */}
+			<g class="p1-source p1-s3">
+				<rect x="18" y="130" width="36" height="32" rx="2" />
+				<path d="M 26 141 L 30 145 L 46 140" stroke-width="0.8" opacity="0.5" />
+				<line x1="26" y1="151" x2="46" y2="151" stroke-width="0.8" opacity="0.5" />
+			</g>
+			{/* Connection lines (hidden, draw on hover) */}
+			<path class="p1-line p1-l1" d="M 54 55 L 90 94" stroke-dasharray="60" stroke-dashoffset="60" />
+			<path class="p1-line p1-l2" d="M 148 48 L 112 94" stroke-dasharray="60" stroke-dashoffset="60" />
+			<path class="p1-line p1-l3" d="M 54 146 L 90 108" stroke-dasharray="60" stroke-dashoffset="60" />
+			{/* Central node */}
+			<circle class="p1-center" cx="100" cy="100" r="12" stroke-width="2" />
+			<circle class="p1-center-dot" cx="100" cy="100" r="4" fill="currentColor" />
+			{/* Output line */}
+			<path class="p1-line p1-l4" d="M 112 108 L 150 146" stroke-dasharray="60" stroke-dashoffset="60" stroke-width="2" />
+			<path class="p1-check" d="M 152 150 L 158 156 L 172 142" stroke-width="2" />
 		</svg>
 	)}
 
 	{order === 2 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" class="relative z-10">
-			<!-- Rule-Centric: Rigid filter/sieve -->
-			<g opacity="0.3">
-				<path d="M 20 40 L 180 40 M 20 80 L 180 80 M 20 120 L 180 120 M 20 160 L 180 160" />
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Rule-Centric & Default Quiet: hover silences noise comments */}
+			{/* Noise comment 1 */}
+			<g class="p2-comment p2-noise p2-n1">
+				<rect x="40" y="32" width="80" height="22" rx="11" />
+				<text x="56" y="46" font-size="7" fill="currentColor" stroke="none" font-family="monospace">nit: indent</text>
 			</g>
-			<rect x="70" y="30" width="60" height="140" fill="currentColor" fill-opacity="0.1">
-				<animate attributeName="y" values="30;35;30" dur="4s" repeatCount="indefinite" />
-			</rect>
-			<path d="M 70 30 L 130 30 M 70 170 L 130 170" stroke-width="2" />
-			<!-- Good signals passing through -->
-			<circle cx="100" cy="20" r="3" fill="currentColor">
-				<animate attributeName="cy" values="20;180" dur="2s" repeatCount="indefinite" />
-				<animate attributeName="opacity" values="1;1;0" dur="2s" repeatCount="indefinite" />
-			</circle>
-			<circle cx="85" cy="50" r="3" fill="currentColor">
-				<animate attributeName="cy" values="50;180" dur="2.5s" repeatCount="indefinite" />
-				<animate attributeName="opacity" values="1;1;0" dur="2.5s" repeatCount="indefinite" />
-			</circle>
-			<!-- Bad signals blocked -->
-			<line x1="50" y1="20" x2="50" y2="40" stroke="currentColor">
-				<animate attributeName="y2" values="40;40;20" dur="3s" repeatCount="indefinite" />
-			</line>
-			<line x1="150" y1="20" x2="150" y2="40" stroke="currentColor">
-				<animate attributeName="y2" values="40;40;20" dur="2.2s" repeatCount="indefinite" />
-			</line>
+			{/* Noise comment 2 */}
+			<g class="p2-comment p2-noise p2-n2">
+				<rect x="50" y="64" width="90" height="22" rx="11" />
+				<text x="62" y="78" font-size="7" fill="currentColor" stroke="none" font-family="monospace">add semicolon</text>
+			</g>
+			{/* Noise comment 3 */}
+			<g class="p2-comment p2-noise p2-n3">
+				<rect x="30" y="96" width="100" height="22" rx="11" />
+				<text x="42" y="110" font-size="7" fill="currentColor" stroke="none" font-family="monospace">rename to camel</text>
+			</g>
+			{/* Noise comment 4 */}
+			<g class="p2-comment p2-noise p2-n4">
+				<rect x="55" y="128" width="76" height="22" rx="11" />
+				<text x="66" y="142" font-size="7" fill="currentColor" stroke="none" font-family="monospace">missing type</text>
+			</g>
+			{/* Critical comment (stays) */}
+			<g class="p2-comment p2-critical">
+				<rect x="35" y="160" width="130" height="24" rx="4" stroke-width="2" />
+				<text x="48" y="176" font-size="8" fill="currentColor" stroke="none" font-family="monospace" font-weight="bold">⚠ SQL Injection</text>
+			</g>
 		</svg>
 	)}
 
 	{order === 3 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" class="relative z-10">
-			<!-- Dual-Workflow: Two intersecting loops -->
-			<!-- Fast Loop (Local) -->
-			<path d="M 60 100 C 60 60, 100 60, 100 100 C 100 140, 60 140, 60 100 Z" stroke-dasharray="4 4" opacity="0.6">
-				<animateTransform attributeName="transform" type="rotate" from="0 80 100" to="-360 80 100" dur="8s" repeatCount="indefinite" />
-			</path>
-			<!-- Slow/Guarded Loop (PR) -->
-			<path d="M 140 100 C 140 40, 80 40, 80 100 C 80 160, 140 160, 140 100 Z" stroke-width="2">
-				<animateTransform attributeName="transform" type="rotate" from="0 110 100" to="360 110 100" dur="15s" repeatCount="indefinite" />
-			</path>
-			<!-- Sync point -->
-			<rect x="95" y="95" width="10" height="10" fill="currentColor" fill-opacity="0.2">
-				<animate attributeName="transform" type="scale" values="1;1.2;1" from="100 100" to="100 100" dur="2s" repeatCount="indefinite" />
-			</rect>
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Dual-Workflow: mouse X switches between IDE (left) and PR (right) */}
+			{/* IDE panel */}
+			<g class="p3-panel p3-ide">
+				<rect x="8" y="40" width="84" height="120" rx="4" />
+				<line x1="8" y1="54" x2="92" y2="54" stroke-width="0.5" />
+				<circle cx="16" cy="47" r="2" fill="currentColor" fill-opacity="0.3" />
+				<circle cx="22" cy="47" r="2" fill="currentColor" fill-opacity="0.3" />
+				<circle cx="28" cy="47" r="2" fill="currentColor" fill-opacity="0.3" />
+				{/* Code lines */}
+				<line x1="14" y1="64" x2="60" y2="64" stroke-width="0.8" opacity="0.3" />
+				<line x1="14" y1="74" x2="75" y2="74" stroke-width="0.8" opacity="0.3" />
+				<line x1="20" y1="84" x2="65" y2="84" stroke-width="0.8" opacity="0.3" />
+				<line x1="20" y1="94" x2="55" y2="94" stroke-width="0.8" opacity="0.3" />
+				<line x1="14" y1="104" x2="70" y2="104" stroke-width="0.8" opacity="0.3" />
+				<line x1="14" y1="114" x2="60" y2="114" stroke-width="0.8" opacity="0.3" />
+				<line x1="20" y1="124" x2="50" y2="124" stroke-width="0.8" opacity="0.3" />
+				<line x1="14" y1="134" x2="65" y2="134" stroke-width="0.8" opacity="0.3" />
+				<line x1="14" y1="144" x2="72" y2="144" stroke-width="0.8" opacity="0.3" />
+			</g>
+			{/* IDE annotations (many, verbose) */}
+			<g class="p3-annotations">
+				<rect class="p3-ann" x="62" y="60" width="26" height="8" rx="2" fill="currentColor" fill-opacity="0.08" />
+				<rect class="p3-ann" x="58" y="80" width="28" height="8" rx="2" fill="currentColor" fill-opacity="0.08" />
+				<rect class="p3-ann" x="56" y="90" width="30" height="8" rx="2" fill="currentColor" fill-opacity="0.08" />
+				<rect class="p3-ann" x="64" y="110" width="22" height="8" rx="2" fill="currentColor" fill-opacity="0.08" />
+				<rect class="p3-ann" x="54" y="120" width="32" height="8" rx="2" fill="currentColor" fill-opacity="0.08" />
+				<rect class="p3-ann" x="60" y="140" width="26" height="8" rx="2" fill="currentColor" fill-opacity="0.08" />
+			</g>
+			{/* Label */}
+			<text class="p3-label p3-label-ide" x="50" y="172" font-size="7" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle">LOCAL</text>
+			{/* PR panel */}
+			<g class="p3-panel p3-pr">
+				<rect x="108" y="40" width="84" height="120" rx="4" />
+				<line x1="108" y1="54" x2="192" y2="54" stroke-width="0.5" />
+				<circle cx="116" cy="47" r="2" fill="currentColor" fill-opacity="0.3" />
+				<path d="M 120 45 L 128 45" stroke-width="0.8" opacity="0.3" />
+				{/* Diff lines */}
+				<line x1="114" y1="64" x2="175" y2="64" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="74" x2="180" y2="74" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="84" x2="160" y2="84" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="94" x2="175" y2="94" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="104" x2="168" y2="104" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="114" x2="180" y2="114" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="124" x2="155" y2="124" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="134" x2="170" y2="134" stroke-width="0.8" opacity="0.3" />
+				<line x1="114" y1="144" x2="175" y2="144" stroke-width="0.8" opacity="0.3" />
+			</g>
+			{/* PR single comment (surgical) */}
+			<g class="p3-surgical">
+				<rect x="162" y="100" width="30" height="10" rx="3" stroke-width="2" />
+				<text x="168" y="108" font-size="5" fill="currentColor" stroke="none" font-family="monospace">critical</text>
+			</g>
+			{/* Label */}
+			<text class="p3-label p3-label-pr" x="150" y="172" font-size="7" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle">PR</text>
 		</svg>
 	)}
 
 	{order === 4 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Business Logic: Ticket merges with Code -->
-			<g opacity="0.4">
-				<!-- Ticket Shape -->
-				<rect x="40" y="60" width="40" height="50" />
-				<line x1="50" y1="75" x2="70" y2="75" />
-				<line x1="50" y1="85" x2="60" y2="85" />
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Business Logic: hover checks off acceptance criteria */}
+			{/* Ticket card */}
+			<g class="p4-ticket" opacity="0.7">
+				<rect x="30" y="40" width="60" height="120" rx="3" />
+				<line x1="30" y1="58" x2="90" y2="58" stroke-width="0.5" />
+				<text x="38" y="53" font-size="6" fill="currentColor" stroke="none" font-family="monospace" opacity="0.5">ENG-104</text>
 			</g>
-			<!-- Code Brackets -->
-			<path d="M 150 70 L 130 90 L 150 110" />
-			<path d="M 170 70 L 190 90 L 170 110" />
-			
-			<!-- Connection/Validation Line -->
-			<path d="M 80 85 L 120 85" stroke-dasharray="2 4">
-				<animate attributeName="stroke-dashoffset" values="6;0" dur="1s" repeatCount="indefinite" />
-			</path>
-			<!-- Checkmark inside brackets appearing -->
-			<path d="M 145 90 L 155 100 L 175 75" opacity="0">
-				<animate attributeName="opacity" values="0;1;1;0" dur="4s" repeatCount="indefinite" />
-			</path>
+			{/* Checkbox items */}
+			<g class="p4-checks">
+				<g class="p4-check p4-c1">
+					<rect x="38" y="66" width="8" height="8" rx="1" stroke-width="1" />
+					<path class="p4-mark" d="M 40 70 L 42 72 L 46 68" stroke-width="1.5" />
+					<line x1="50" y1="71" x2="80" y2="71" stroke-width="0.8" opacity="0.3" />
+				</g>
+				<g class="p4-check p4-c2">
+					<rect x="38" y="86" width="8" height="8" rx="1" stroke-width="1" />
+					<path class="p4-mark" d="M 40 90 L 42 92 L 46 88" stroke-width="1.5" />
+					<line x1="50" y1="91" x2="76" y2="91" stroke-width="0.8" opacity="0.3" />
+				</g>
+				<g class="p4-check p4-c3">
+					<rect x="38" y="106" width="8" height="8" rx="1" stroke-width="1" />
+					<path class="p4-mark" d="M 40 110 L 42 112 L 46 108" stroke-width="1.5" />
+					<line x1="50" y1="111" x2="72" y2="111" stroke-width="0.8" opacity="0.3" />
+				</g>
+				<g class="p4-check p4-c4">
+					<rect x="38" y="126" width="8" height="8" rx="1" stroke-width="1" />
+					<text class="p4-warn" x="50" y="133" font-size="6" fill="currentColor" stroke="none" font-family="monospace">⚠ gap</text>
+					<line x1="50" y1="131" x2="82" y2="131" stroke-width="0.8" opacity="0.3" />
+				</g>
+			</g>
+			{/* Connection line */}
+			<path class="p4-bridge" d="M 90 100 L 110 100" stroke-dasharray="30" stroke-dashoffset="30" stroke-width="1.5" />
+			{/* Code file */}
+			<g class="p4-code" opacity="0.5">
+				<rect x="110" y="50" width="60" height="100" rx="3" />
+				<line x1="110" y1="64" x2="170" y2="64" stroke-width="0.5" />
+				<text x="118" y="60" font-size="5" fill="currentColor" stroke="none" font-family="monospace" opacity="0.5">api.ts</text>
+				<line x1="116" y1="74" x2="158" y2="74" stroke-width="0.8" opacity="0.2" />
+				<line x1="116" y1="82" x2="162" y2="82" stroke-width="0.8" opacity="0.2" />
+				<line x1="122" y1="90" x2="155" y2="90" stroke-width="0.8" opacity="0.2" />
+				<line x1="122" y1="98" x2="160" y2="98" stroke-width="0.8" opacity="0.2" />
+				<line x1="122" y1="106" x2="148" y2="106" stroke-width="0.8" opacity="0.2" />
+				<line x1="116" y1="114" x2="162" y2="114" stroke-width="0.8" opacity="0.2" />
+				<line x1="116" y1="122" x2="150" y2="122" stroke-width="0.8" opacity="0.2" />
+				<line x1="116" y1="130" x2="158" y2="130" stroke-width="0.8" opacity="0.2" />
+				<line x1="116" y1="138" x2="155" y2="138" stroke-width="0.8" opacity="0.2" />
+			</g>
+			{/* Highlight on code */}
+			<rect class="p4-highlight" x="114" y="86" width="52" height="24" fill="currentColor" rx="2" />
 		</svg>
 	)}
 
 	{order === 5 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Continuous Learning: Feedback Loop / Infinity -->
-			<path d="M 50 100 C 50 50, 150 50, 150 100 C 150 150, 50 150, 50 100" opacity="0.3" />
-			<path d="M 50 100 C 50 50, 150 50, 150 100 C 150 150, 50 150, 50 100" stroke-dasharray="314" stroke-dashoffset="314">
-				<animate attributeName="stroke-dashoffset" values="314;0" dur="3s" repeatCount="indefinite" />
-			</path>
-			<!-- Arrow heads on the loop -->
-			<path d="M 140 100 L 150 110 L 160 100" />
-			<path d="M 40 100 L 50 90 L 60 100" />
-			<!-- Brain/Memory node in center -->
-			<circle cx="100" cy="100" r="15" fill="currentColor" fill-opacity="0.1">
-				<animate attributeName="r" values="15;18;15" dur="1.5s" repeatCount="indefinite" />
-			</circle>
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Continuous Learning: hover grows neural network connections */}
+			{/* Nodes */}
+			<circle class="p5-node p5-n1" cx="60" cy="60" r="6" />
+			<circle class="p5-node p5-n2" cx="140" cy="50" r="6" />
+			<circle class="p5-node p5-n3" cx="100" cy="100" r="8" stroke-width="2" />
+			<circle class="p5-node p5-n4" cx="55" cy="140" r="6" />
+			<circle class="p5-node p5-n5" cx="150" cy="130" r="6" />
+			<circle class="p5-node p5-n6" cx="100" cy="160" r="5" />
+			{/* Connections (draw on hover) */}
+			<line class="p5-conn p5-c1" x1="66" y1="62" x2="92" y2="96" stroke-dasharray="40" stroke-dashoffset="40" />
+			<line class="p5-conn p5-c2" x1="134" y1="53" x2="108" y2="96" stroke-dasharray="40" stroke-dashoffset="40" />
+			<line class="p5-conn p5-c3" x1="60" y1="134" x2="94" y2="106" stroke-dasharray="40" stroke-dashoffset="40" />
+			<line class="p5-conn p5-c4" x1="144" y1="128" x2="108" y2="106" stroke-dasharray="40" stroke-dashoffset="40" />
+			<line class="p5-conn p5-c5" x1="100" y1="155" x2="100" y2="108" stroke-dasharray="50" stroke-dashoffset="50" />
+			<line class="p5-conn p5-c6" x1="65" y1="64" x2="134" y2="50" stroke-dasharray="80" stroke-dashoffset="80" opacity="0.3" />
+			<line class="p5-conn p5-c7" x1="60" y1="136" x2="146" y2="130" stroke-dasharray="90" stroke-dashoffset="90" opacity="0.3" />
+			{/* Center node inner */}
+			<circle class="p5-center-fill" cx="100" cy="100" r="4" fill="currentColor" />
+			{/* Feedback loop arrow (bottom) */}
+			<path class="p5-loop" d="M 145 140 C 155 170, 45 170, 55 140" stroke-dasharray="120" stroke-dashoffset="120" opacity="0.3" />
+			<path class="p5-loop-arrow" d="M 52 145 L 55 140 L 60 145" opacity="0" />
 		</svg>
 	)}
 
 	{order === 6 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Sandbox Validation: Container holding a chaotic element -->
-			<rect x="50" y="50" width="100" height="100" rx="4" stroke-width="2" />
-			<path d="M 40 40 L 60 60 M 160 40 L 140 60 M 40 160 L 60 140 M 160 160 L 140 140" opacity="0.3" />
-			<!-- Chaos inside -->
-			<path d="M 80 80 L 120 120 M 120 80 L 80 120" stroke-width="1.5">
-				<animateTransform attributeName="transform" type="translate" values="0 0; 5 -5; -5 5; 0 0" dur="0.2s" repeatCount="indefinite" />
-			</path>
-			<!-- Validation Scan Line -->
-			<line x1="50" y1="50" x2="150" y2="50" stroke="currentColor" stroke-dasharray="2 2" opacity="0.5">
-				<animate attributeName="y1" values="50;150;50" dur="4s" repeatCount="indefinite" />
-				<animate attributeName="y2" values="50;150;50" dur="4s" repeatCount="indefinite" />
-			</line>
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Sandbox Validation: hover runs tests */}
+			{/* Terminal window */}
+			<rect x="30" y="30" width="140" height="140" rx="5" stroke-width="1.5" />
+			<line x1="30" y1="48" x2="170" y2="48" stroke-width="0.5" />
+			<circle cx="42" cy="39" r="3" fill="currentColor" fill-opacity="0.15" />
+			<circle cx="52" cy="39" r="3" fill="currentColor" fill-opacity="0.15" />
+			<circle cx="62" cy="39" r="3" fill="currentColor" fill-opacity="0.15" />
+			{/* Prompt (always visible) */}
+			<text x="38" y="66" font-size="7" fill="currentColor" stroke="none" font-family="monospace" opacity="0.4" class="p6-prompt">$ run tests</text>
+			{/* Test results (reveal on hover) */}
+			<g class="p6-results">
+				<text class="p6-line p6-l1" x="38" y="84" font-size="6.5" fill="currentColor" stroke="none" font-family="monospace">✓ auth.test</text>
+				<text class="p6-line p6-l2" x="38" y="98" font-size="6.5" fill="currentColor" stroke="none" font-family="monospace">✓ checkout.test</text>
+				<text class="p6-line p6-l3" x="38" y="112" font-size="6.5" fill="currentColor" stroke="none" font-family="monospace">✓ payment.test</text>
+			</g>
+			{/* Progress bar */}
+			<rect x="38" y="126" width="124" height="6" rx="3" stroke-width="0.5" opacity="0.2" />
+			<rect class="p6-progress" x="38" y="126" width="0" height="6" rx="3" fill="currentColor" fill-opacity="0.2" stroke="none" />
+			{/* Final result */}
+			<text class="p6-result" x="38" y="148" font-size="7" fill="currentColor" stroke="none" font-family="monospace" font-weight="bold">3 passed</text>
+			{/* Checkmark */}
+			<path class="p6-check" d="M 82 152 L 92 162 L 118 140" stroke-width="2.5" />
 		</svg>
 	)}
 
 	{order === 7 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Economic Transparency: Layered blocks / Clear costs -->
-			<g opacity="0.4">
-				<path d="M 40 140 L 160 140" />
-				<path d="M 40 100 L 160 100" />
-				<path d="M 40 60 L 160 60" />
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Economic Transparency: hover reveals true cost, strikes wrapper */}
+			{/* Wrapper column */}
+			<g class="p7-wrapper">
+				<text x="55" y="28" font-size="7" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.5">Wrapper</text>
+				<rect x="35" y="36" width="40" height="120" rx="3" fill="currentColor" fill-opacity="0.04" />
+				<rect x="35" y="36" width="40" height="120" rx="3" />
+				<text x="55" y="72" font-size="10" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.4">$$$</text>
+				<text x="55" y="100" font-size="10" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.3">$$$</text>
+				<text x="55" y="128" font-size="10" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.2">$$$</text>
 			</g>
-			<!-- Zero Markup highlighting -->
-			<rect x="60" y="100" width="20" height="40" fill="currentColor" fill-opacity="0.1">
-				<animate attributeName="height" values="40;20;40" dur="3s" repeatCount="indefinite" />
-				<animate attributeName="y" values="100;120;100" dur="3s" repeatCount="indefinite" />
-			</rect>
-			<rect x="120" y="60" width="20" height="80" fill="currentColor" fill-opacity="0.2">
-				<animate attributeName="height" values="80;90;80" dur="4s" repeatCount="indefinite" />
-				<animate attributeName="y" values="60;50;60" dur="4s" repeatCount="indefinite" />
-			</rect>
-			<!-- Eye / Visibility -->
-			<path d="M 80 50 C 90 40, 110 40, 120 50 C 110 60, 90 60, 80 50 Z" />
-			<circle cx="100" cy="50" r="3" fill="currentColor" />
+			{/* Strikethrough (on hover) */}
+			<line class="p7-strike" x1="30" y1="96" x2="80" y2="96" stroke-width="2.5" />
+			{/* BYOK column */}
+			<g class="p7-byok">
+				<text x="145" y="28" font-size="7" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.5">BYOK</text>
+				<rect x="125" y="116" width="40" height="40" rx="3" fill="currentColor" fill-opacity="0.04" />
+				<rect x="125" y="116" width="40" height="40" rx="3" stroke-width="2" />
+				<text x="145" y="142" font-size="10" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle">$</text>
+			</g>
+			{/* Savings badge (on hover) */}
+			<g class="p7-savings">
+				<rect x="70" y="168" width="60" height="20" rx="4" stroke-width="1.5" />
+				<text x="100" y="181" font-size="7" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle">−90% cost</text>
+			</g>
 		</svg>
 	)}
 
 	{order === 8 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Actionability: One-click commit / Fix generation -->
-			<path d="M 40 80 L 160 80" opacity="0.3" stroke-dasharray="4 4" />
-			<!-- Code Block to be replaced -->
-			<rect x="50" y="50" width="100" height="20" fill="currentColor" fill-opacity="0.1">
-				<animate attributeName="opacity" values="0.1;0;0.1" dur="2s" repeatCount="indefinite" />
-			</rect>
-			<!-- The Fix Block -->
-			<rect x="50" y="90" width="100" height="20" fill="currentColor" opacity="0">
-				<animate attributeName="opacity" values="0;1;1;0" dur="4s" repeatCount="indefinite" />
-			</rect>
-			<!-- Arrow down / Action -->
-			<path d="M 100 40 L 100 130 M 90 120 L 100 130 L 110 120" stroke-width="2">
-				<animate attributeName="stroke-dasharray" values="0,100;100,0" dur="2s" repeatCount="indefinite" />
-			</path>
-			<!-- Checkmark -->
-			<path d="M 90 150 L 95 160 L 115 140" stroke-width="2" opacity="0">
-				<animate attributeName="opacity" values="0;1;1;0" dur="4s" repeatCount="indefinite" />
-			</path>
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Actionability: hover applies the code fix */}
+			{/* File frame */}
+			<rect x="30" y="20" width="140" height="128" rx="4" stroke-width="1" />
+			<line x1="30" y1="36" x2="170" y2="36" stroke-width="0.5" />
+			<line x1="50" y1="36" x2="50" y2="148" stroke-width="0.3" opacity="0.15" />
+			{/* Deletion lines */}
+			<g class="p8-del">
+				<rect x="30" y="42" width="140" height="14" fill="currentColor" fill-opacity="0.04" />
+				<text x="37" y="52" font-size="6" fill="currentColor" stroke="none" font-family="monospace" opacity="0.4">−</text>
+				<line x1="54" y1="49" x2="142" y2="49" stroke-width="0.8" opacity="0.3" />
+			</g>
+			<g class="p8-del">
+				<rect x="30" y="56" width="140" height="14" fill="currentColor" fill-opacity="0.04" />
+				<text x="37" y="66" font-size="6" fill="currentColor" stroke="none" font-family="monospace" opacity="0.4">−</text>
+				<line x1="54" y1="63" x2="128" y2="63" stroke-width="0.8" opacity="0.3" />
+			</g>
+			<g class="p8-del">
+				<rect x="30" y="70" width="140" height="14" fill="currentColor" fill-opacity="0.04" />
+				<text x="37" y="80" font-size="6" fill="currentColor" stroke="none" font-family="monospace" opacity="0.4">−</text>
+				<line x1="54" y1="77" x2="152" y2="77" stroke-width="0.8" opacity="0.3" />
+			</g>
+			{/* Separator */}
+			<line x1="52" y1="91" x2="130" y2="91" stroke-width="0.5" opacity="0.1" />
+			{/* Addition lines */}
+			<g class="p8-add p8-a1">
+				<rect x="30" y="98" width="140" height="14" fill="currentColor" fill-opacity="0.06" rx="0" />
+				<text x="37" y="108" font-size="6" fill="currentColor" stroke="none" font-family="monospace">+</text>
+				<line x1="54" y1="105" x2="148" y2="105" stroke-width="0.8" opacity="0.4" />
+			</g>
+			<g class="p8-add p8-a2">
+				<rect x="30" y="112" width="140" height="14" fill="currentColor" fill-opacity="0.06" />
+				<text x="37" y="122" font-size="6" fill="currentColor" stroke="none" font-family="monospace">+</text>
+				<line x1="54" y1="119" x2="135" y2="119" stroke-width="0.8" opacity="0.4" />
+			</g>
+			<g class="p8-add p8-a3">
+				<rect x="30" y="126" width="140" height="14" fill="currentColor" fill-opacity="0.06" />
+				<text x="37" y="136" font-size="6" fill="currentColor" stroke="none" font-family="monospace">+</text>
+				<line x1="54" y1="133" x2="155" y2="133" stroke-width="0.8" opacity="0.4" />
+			</g>
+			{/* Apply button */}
+			<g class="p8-apply">
+				<rect x="60" y="158" width="80" height="26" rx="5" stroke-width="1.5" />
+				<text x="100" y="174" font-size="7" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle">Apply fix</text>
+			</g>
 		</svg>
 	)}
 
 	{order === 9 && (
-		<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="relative z-10">
-			<!-- Measurable ROI: Observability Dashboard / Charts -->
-			<g opacity="0.3">
-				<path d="M 30 170 L 170 170" />
-				<path d="M 30 170 L 30 30" />
+		<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="pillar-svg">
+			{/* Measurable ROI: hover fills in metric dashboard */}
+			{/* Axes */}
+			<line x1="30" y1="170" x2="185" y2="170" stroke-width="0.5" opacity="0.2" />
+			<line x1="30" y1="170" x2="30" y2="20" stroke-width="0.5" opacity="0.2" />
+			{/* Grid lines */}
+			<line x1="30" y1="130" x2="185" y2="130" stroke-width="0.3" opacity="0.08" />
+			<line x1="30" y1="90" x2="185" y2="90" stroke-width="0.3" opacity="0.08" />
+			<line x1="30" y1="50" x2="185" y2="50" stroke-width="0.3" opacity="0.08" />
+			{/* Bars (grow on hover) */}
+			<rect class="p9-bar p9-b1" x="45" y="170" width="20" height="0" fill="currentColor" fill-opacity="0.1" rx="2" />
+			<rect class="p9-bar p9-b2" x="80" y="170" width="20" height="0" fill="currentColor" fill-opacity="0.12" rx="2" />
+			<rect class="p9-bar p9-b3" x="115" y="170" width="20" height="0" fill="currentColor" fill-opacity="0.15" rx="2" />
+			<rect class="p9-bar p9-b4" x="150" y="170" width="20" height="0" fill="currentColor" fill-opacity="0.18" rx="2" />
+			{/* Line chart (draw on hover) */}
+			<path class="p9-line" d="M 55 145 L 90 110 L 125 85 L 160 45" stroke-width="2" stroke-dasharray="180" stroke-dashoffset="180" />
+			{/* Data point (pulse on hover) */}
+			<circle class="p9-dot" cx="160" cy="45" r="4" fill="currentColor" />
+			{/* Labels */}
+			<g class="p9-labels">
+				<text x="55" y="186" font-size="5" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.4">Q1</text>
+				<text x="90" y="186" font-size="5" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.4">Q2</text>
+				<text x="125" y="186" font-size="5" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.4">Q3</text>
+				<text x="160" y="186" font-size="5" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle" opacity="0.4">Q4</text>
 			</g>
-			<!-- Line Chart growing -->
-			<path d="M 40 150 L 80 110 L 120 130 L 160 60" stroke-width="2">
-				<animate attributeName="stroke-dasharray" values="0,200;200,0" dur="3s" repeatCount="indefinite" />
-			</path>
-			<!-- Bar Chart columns -->
-			<rect x="50" y="120" width="15" height="50" fill="currentColor" fill-opacity="0.1">
-				<animate attributeName="height" values="0;50" dur="1s" fill="freeze" />
-				<animate attributeName="y" values="170;120" dur="1s" fill="freeze" />
-			</rect>
-			<rect x="90" y="80" width="15" height="90" fill="currentColor" fill-opacity="0.1">
-				<animate attributeName="height" values="0;90" dur="1.5s" fill="freeze" />
-				<animate attributeName="y" values="170;80" dur="1.5s" fill="freeze" />
-			</rect>
-			<rect x="130" y="40" width="15" height="130" fill="currentColor" fill-opacity="0.2">
-				<animate attributeName="height" values="0;130" dur="2s" fill="freeze" />
-				<animate attributeName="y" values="170;40" dur="2s" fill="freeze" />
-			</rect>
-			<!-- Target Point -->
-			<circle cx="160" cy="60" r="4" fill="currentColor">
-				<animate attributeName="r" values="4;6;4" dur="2s" repeatCount="indefinite" />
-			</circle>
+			{/* Metric badge */}
+			<g class="p9-badge">
+				<rect x="130" y="24" width="58" height="18" rx="3" stroke-width="1" />
+				<text x="159" y="36" font-size="6" fill="currentColor" stroke="none" font-family="monospace" text-anchor="middle">ROI +340%</text>
+			</g>
 		</svg>
 	)}
 </div>
+
+<style>
+	.pillar-graphic {
+		width: 100%;
+		aspect-ratio: 16 / 10;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		position: relative;
+		cursor: default;
+		--mx: 0.5;
+		--my: 0.5;
+	}
+
+	.pillar-bg {
+		position: absolute;
+		inset: 0;
+		opacity: 0.08;
+		background-image: radial-gradient(currentColor 1px, transparent 1px);
+		background-size: 16px 16px;
+		transition: opacity 0.4s ease;
+	}
+
+	.pillar-graphic:hover .pillar-bg {
+		opacity: 0.12;
+	}
+
+	.pillar-svg {
+		width: 65%;
+		height: 65%;
+		position: relative;
+		z-index: 1;
+		color: inherit;
+	}
+
+	/* ═══════════════════════════════════════
+	   PILLAR 1: Multi-dimensional Context
+	   ═══════════════════════════════════════ */
+	.p1-source {
+		opacity: 0.4;
+		transition: opacity 0.5s ease, transform 0.4s ease-out;
+	}
+	.pillar-graphic:hover .p1-source { opacity: 0.8; }
+	.pillar-graphic:hover .p1-s1 {
+		transform: translate(
+			calc((var(--mx) - 0.5) * -8px),
+			calc((var(--my) - 0.5) * -6px)
+		);
+	}
+	.pillar-graphic:hover .p1-s2 {
+		transform: translate(
+			calc((var(--mx) - 0.5) * 6px),
+			calc((var(--my) - 0.5) * -8px)
+		);
+	}
+	.pillar-graphic:hover .p1-s3 {
+		transform: translate(
+			calc((var(--mx) - 0.5) * -6px),
+			calc((var(--my) - 0.5) * 8px)
+		);
+	}
+
+	.p1-line {
+		transition: stroke-dashoffset 0.6s ease;
+		opacity: 0.3;
+	}
+	.pillar-graphic:hover .p1-line { stroke-dashoffset: 0; }
+	.pillar-graphic:hover .p1-l1 { transition-delay: 0s; }
+	.pillar-graphic:hover .p1-l2 { transition-delay: 0.15s; }
+	.pillar-graphic:hover .p1-l3 { transition-delay: 0.3s; }
+	.pillar-graphic:hover .p1-l4 { transition-delay: 0.6s; opacity: 0.6; }
+
+	.p1-center {
+		opacity: 0.4;
+		transition: opacity 0.4s ease, r 0.4s ease;
+	}
+	.pillar-graphic:hover .p1-center { opacity: 1; }
+
+	.p1-center-dot {
+		opacity: 0.2;
+		transition: opacity 0.4s ease;
+	}
+	.pillar-graphic:hover .p1-center-dot { opacity: 0.5; }
+
+	.p1-check {
+		opacity: 0;
+		transition: opacity 0.3s ease 0.8s;
+	}
+	.pillar-graphic:hover .p1-check { opacity: 0.7; }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 2: Rule-Centric & Default Quiet
+	   ═══════════════════════════════════════ */
+	.p2-comment {
+		transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease;
+	}
+
+	.p2-noise { opacity: 0.5; }
+	.p2-critical { opacity: 0.5; }
+
+	.pillar-graphic:hover .p2-n1 {
+		opacity: 0.08;
+		transform: translateX(-30px);
+		transition-delay: 0.1s;
+	}
+	.pillar-graphic:hover .p2-n2 {
+		opacity: 0.08;
+		transform: translateX(25px);
+		transition-delay: 0.2s;
+	}
+	.pillar-graphic:hover .p2-n3 {
+		opacity: 0.08;
+		transform: translateX(-20px);
+		transition-delay: 0.3s;
+	}
+	.pillar-graphic:hover .p2-n4 {
+		opacity: 0.08;
+		transform: translateX(30px);
+		transition-delay: 0.4s;
+	}
+
+	.pillar-graphic:hover .p2-critical {
+		opacity: 1;
+		transform: translateY(-4px);
+		transition-delay: 0.5s;
+	}
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 3: Dual-Workflow
+	   ═══════════════════════════════════════ */
+	.p3-panel { opacity: 0.5; transition: opacity 0.4s ease; }
+	.p3-annotations { opacity: 0; transition: opacity 0.4s ease; }
+	.p3-surgical { opacity: 0; transition: opacity 0.4s ease; }
+	.p3-label { opacity: 0.2; transition: opacity 0.4s ease; }
+	.p3-ann { transition: opacity 0.3s ease; }
+
+	/* IDE side hover */
+	.pillar-graphic[data-pillar="3"][data-side="left"]:hover .p3-ide,
+	.pillar-graphic[data-pillar="3"]:hover .p3-ide { opacity: 0.9; }
+	.pillar-graphic[data-pillar="3"][data-side="left"]:hover .p3-annotations,
+	.pillar-graphic[data-pillar="3"]:hover .p3-annotations { opacity: 1; }
+	.pillar-graphic[data-pillar="3"][data-side="left"]:hover .p3-label-ide,
+	.pillar-graphic[data-pillar="3"]:hover .p3-label-ide { opacity: 0.6; }
+
+	/* PR side hover */
+	.pillar-graphic[data-pillar="3"][data-side="right"]:hover .p3-pr,
+	.pillar-graphic[data-pillar="3"]:hover .p3-pr { opacity: 0.9; }
+	.pillar-graphic[data-pillar="3"][data-side="right"]:hover .p3-surgical,
+	.pillar-graphic[data-pillar="3"]:hover .p3-surgical { opacity: 1; }
+	.pillar-graphic[data-pillar="3"][data-side="right"]:hover .p3-label-pr,
+	.pillar-graphic[data-pillar="3"]:hover .p3-label-pr { opacity: 0.6; }
+
+	/* When left side is hovered, dim right. When right, dim left. */
+	.pillar-graphic[data-pillar="3"][data-side="left"]:hover .p3-pr { opacity: 0.25; }
+	.pillar-graphic[data-pillar="3"][data-side="left"]:hover .p3-surgical { opacity: 0; }
+	.pillar-graphic[data-pillar="3"][data-side="right"]:hover .p3-ide { opacity: 0.25; }
+	.pillar-graphic[data-pillar="3"][data-side="right"]:hover .p3-annotations { opacity: 0; }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 4: Business Logic Validation
+	   ═══════════════════════════════════════ */
+	.p4-mark { opacity: 0; transition: opacity 0.3s ease; }
+	.p4-warn { opacity: 0; transition: opacity 0.3s ease; }
+	.p4-bridge { transition: stroke-dashoffset 0.5s ease 0.2s; }
+	.p4-highlight { opacity: 0; fill-opacity: 0; transition: fill-opacity 0.4s ease 0.3s; }
+	.p4-code { transition: opacity 0.4s ease; }
+
+	.pillar-graphic:hover .p4-c1 .p4-mark { opacity: 1; transition-delay: 0.2s; }
+	.pillar-graphic:hover .p4-c2 .p4-mark { opacity: 1; transition-delay: 0.4s; }
+	.pillar-graphic:hover .p4-c3 .p4-mark { opacity: 1; transition-delay: 0.6s; }
+	.pillar-graphic:hover .p4-c4 .p4-warn { opacity: 0.7; transition-delay: 0.8s; }
+	.pillar-graphic:hover .p4-bridge { stroke-dashoffset: 0; }
+	.pillar-graphic:hover .p4-highlight { fill-opacity: 0.06; }
+	.pillar-graphic:hover .p4-code { opacity: 0.8; }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 5: Continuous Learning
+	   ═══════════════════════════════════════ */
+	.p5-node {
+		opacity: 0.3;
+		fill: currentColor;
+		fill-opacity: 0;
+		transition: opacity 0.4s ease, fill-opacity 0.4s ease;
+	}
+	.pillar-graphic:hover .p5-node { opacity: 0.8; fill-opacity: 0.1; }
+	.pillar-graphic:hover .p5-n3 { opacity: 1; fill-opacity: 0.15; }
+
+	.p5-conn {
+		transition: stroke-dashoffset 0.5s ease;
+	}
+	.pillar-graphic:hover .p5-conn { stroke-dashoffset: 0; }
+	.pillar-graphic:hover .p5-c1 { transition-delay: 0.1s; }
+	.pillar-graphic:hover .p5-c2 { transition-delay: 0.2s; }
+	.pillar-graphic:hover .p5-c3 { transition-delay: 0.3s; }
+	.pillar-graphic:hover .p5-c4 { transition-delay: 0.4s; }
+	.pillar-graphic:hover .p5-c5 { transition-delay: 0.5s; }
+	.pillar-graphic:hover .p5-c6 { transition-delay: 0.7s; }
+	.pillar-graphic:hover .p5-c7 { transition-delay: 0.9s; }
+
+	.p5-center-fill {
+		opacity: 0.15;
+		transition: opacity 0.5s ease;
+	}
+	.pillar-graphic:hover .p5-center-fill { opacity: 0.5; }
+
+	.p5-loop { transition: stroke-dashoffset 0.8s ease 0.6s; }
+	.pillar-graphic:hover .p5-loop { stroke-dashoffset: 0; }
+	.p5-loop-arrow { transition: opacity 0.3s ease 1.2s; }
+	.pillar-graphic:hover .p5-loop-arrow { opacity: 0.3; }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 6: Sandbox Validation
+	   ═══════════════════════════════════════ */
+	.p6-prompt { transition: opacity 0.3s ease; }
+	.pillar-graphic:hover .p6-prompt { opacity: 0.7; }
+
+	.p6-line { opacity: 0; transition: opacity 0.3s ease; }
+	.pillar-graphic:hover .p6-l1 { opacity: 0.7; transition-delay: 0.3s; }
+	.pillar-graphic:hover .p6-l2 { opacity: 0.7; transition-delay: 0.6s; }
+	.pillar-graphic:hover .p6-l3 { opacity: 0.7; transition-delay: 0.9s; }
+
+	.p6-progress { transition: width 1.2s ease 0.2s; }
+	.pillar-graphic:hover .p6-progress { width: 124px; }
+
+	.p6-result { opacity: 0; transition: opacity 0.3s ease 1.2s; }
+	.pillar-graphic:hover .p6-result { opacity: 0.8; }
+
+	.p6-check { opacity: 0; transition: opacity 0.3s ease 1.4s; }
+	.pillar-graphic:hover .p6-check { opacity: 0.6; }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 7: Economic Transparency
+	   ═══════════════════════════════════════ */
+	.p7-wrapper { transition: opacity 0.5s ease; }
+	.pillar-graphic:hover .p7-wrapper { opacity: 0.25; }
+
+	.p7-strike { opacity: 0; transition: opacity 0.3s ease 0.3s; }
+	.pillar-graphic:hover .p7-strike { opacity: 0.7; }
+
+	.p7-byok { opacity: 0.5; transition: opacity 0.5s ease 0.2s; }
+	.pillar-graphic:hover .p7-byok { opacity: 1; }
+
+	.p7-savings { opacity: 0; transition: opacity 0.4s ease 0.5s; }
+	.pillar-graphic:hover .p7-savings { opacity: 0.8; }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 8: Actionability
+	   ═══════════════════════════════════════ */
+	.p8-del { opacity: 0.6; transition: opacity 0.5s ease; }
+	.pillar-graphic:hover .p8-del { opacity: 0.15; }
+
+	.p8-add { opacity: 0; transition: opacity 0.4s ease; }
+	.pillar-graphic:hover .p8-a1 { opacity: 1; transition-delay: 0.3s; }
+	.pillar-graphic:hover .p8-a2 { opacity: 1; transition-delay: 0.45s; }
+	.pillar-graphic:hover .p8-a3 { opacity: 1; transition-delay: 0.6s; }
+
+	.p8-apply { opacity: 0; transition: opacity 0.4s ease 0.8s, transform 0.4s ease 0.8s; transform: translateY(5px); }
+	.pillar-graphic:hover .p8-apply { opacity: 0.9; transform: translateY(0); }
+
+
+	/* ═══════════════════════════════════════
+	   PILLAR 9: Measurable ROI
+	   ═══════════════════════════════════════ */
+	.p9-bar {
+		transition: height 0.6s ease, y 0.6s ease;
+	}
+	.pillar-graphic:hover .p9-b1 { height: 40px; y: 130; transition-delay: 0.1s; }
+	.pillar-graphic:hover .p9-b2 { height: 70px; y: 100; transition-delay: 0.2s; }
+	.pillar-graphic:hover .p9-b3 { height: 100px; y: 70; transition-delay: 0.3s; }
+	.pillar-graphic:hover .p9-b4 { height: 125px; y: 45; transition-delay: 0.4s; }
+
+	.p9-line { transition: stroke-dashoffset 1s ease 0.3s; }
+	.pillar-graphic:hover .p9-line { stroke-dashoffset: 0; }
+
+	.p9-dot { opacity: 0; transition: opacity 0.3s ease 1.2s; }
+	.pillar-graphic:hover .p9-dot { opacity: 0.8; }
+
+	.p9-badge { opacity: 0; transition: opacity 0.4s ease 1s, transform 0.4s ease 1s; transform: translateY(5px); }
+	.pillar-graphic:hover .p9-badge { opacity: 0.9; transform: translateY(0); }
+
+	.p9-labels { opacity: 0.2; transition: opacity 0.3s ease; }
+	.pillar-graphic:hover .p9-labels { opacity: 0.5; }
+
+
+	/* ═══════════════════════════════════════
+	   SHARED: Cursor glow
+	   ═══════════════════════════════════════ */
+	.pillar-graphic::after {
+		content: '';
+		position: absolute;
+		width: 120px;
+		height: 120px;
+		border-radius: 50%;
+		background: radial-gradient(circle, currentColor 0%, transparent 70%);
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+		left: calc(var(--mx) * 100% - 60px);
+		top: calc(var(--my) * 100% - 60px);
+		transition: opacity 0.3s ease;
+	}
+
+	.pillar-graphic:hover::after {
+		opacity: 0.03;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.pillar-graphic * {
+			transition-duration: 0.01ms !important;
+		}
+	}
+</style>
+
+<script>
+	document.querySelectorAll('.pillar-graphic').forEach((el) => {
+		const htmlEl = el as HTMLElement;
+
+		htmlEl.addEventListener('mousemove', (e) => {
+			const rect = htmlEl.getBoundingClientRect();
+			const x = (e.clientX - rect.left) / rect.width;
+			const y = (e.clientY - rect.top) / rect.height;
+			htmlEl.style.setProperty('--mx', x.toFixed(3));
+			htmlEl.style.setProperty('--my', y.toFixed(3));
+
+			// Pillar 3: track which side the mouse is on
+			if (htmlEl.dataset.pillar === '3') {
+				htmlEl.dataset.side = x < 0.5 ? 'left' : 'right';
+			}
+		});
+
+		htmlEl.addEventListener('mouseleave', () => {
+			htmlEl.style.setProperty('--mx', '0.5');
+			htmlEl.style.setProperty('--my', '0.5');
+			if (htmlEl.dataset.pillar === '3') {
+				delete htmlEl.dataset.side;
+			}
+		});
+	});
+</script>

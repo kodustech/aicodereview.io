@@ -4,9 +4,12 @@ import '../styles/global.css';
 interface Props {
 	title: string;
 	description?: string;
+	breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
-const { title, description = "The engineering standard for evaluating and implementing AI Code Review that actually ships faster, safer code." } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, 'https://aicodereview.io');
+const { title, description = "The 2026 engineering standard for evaluating AI Code Review tools. 9 pillars every AI code reviewer must meet to ship faster, safer code.", breadcrumbs } = Astro.props;
+const ogImage = "https://aicodereview.io/og-image.png";
 ---
 
 <!doctype html>
@@ -14,26 +17,36 @@ const { title, description = "The engineering standard for evaluating and implem
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="canonical" href={canonicalURL.href} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
-		
-		<!-- Open Graph & Twitter -->
+
+		<!-- Open Graph -->
 		<meta property="og:title" content={title} />
 		<meta property="og:description" content={description} />
 		<meta property="og:type" content="website" />
-		<meta property="og:url" content="https://aicodereview.io" />
+		<meta property="og:url" content={canonicalURL.href} />
+		<meta property="og:site_name" content="aicodereview.io" />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+
+		<!-- Twitter -->
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />
-		
+		<meta name="twitter:image" content={ogImage} />
+
 		<!-- Schema.org JSON-LD -->
 		<script type="application/ld+json" set:html={JSON.stringify({
 			"@context": "https://schema.org",
 			"@type": "WebSite",
 			"name": "AI Code Review Standards",
 			"url": "https://aicodereview.io",
-			"description": "The engineering baseline for evaluating and implementing AI Code Review that actually ships faster, safer code.",
+			"description": "The 2026 engineering standard for evaluating AI Code Review tools. 9 pillars every AI code reviewer must meet to ship faster, safer code.",
 			"publisher": {
 				"@type": "Organization",
 				"name": "Kodus",
@@ -41,6 +54,18 @@ const { title, description = "The engineering standard for evaluating and implem
 				"logo": "https://kodus.io/wp-content/themes/kodus-child/assets/img/kodus_dark.webp"
 			}
 		})} />
+		{breadcrumbs && (
+			<script type="application/ld+json" set:html={JSON.stringify({
+				"@context": "https://schema.org",
+				"@type": "BreadcrumbList",
+				"itemListElement": breadcrumbs.map((item, i) => ({
+					"@type": "ListItem",
+					"position": i + 1,
+					"name": item.name,
+					"item": item.url
+				}))
+			})} />
+		)}
 		
 		<!-- Fonts: Space Grotesk & JetBrains Mono -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
