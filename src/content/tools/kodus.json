@@ -1,0 +1,70 @@
+{
+  "name": "Kodus",
+  "website": "https://kodus.io",
+  "tagline": "Open-source AI code review built to run where the organization controls: self-hosted or cloud, models under your keys, org-wide Kody Rules.",
+  "category": "ai-pr-review",
+  "openSource": true,
+  "license": "AGPL-3.0 (dual-licensed; enterprise-marked files commercial)",
+  "pricing": "Free Community cloud tier (BYOK, up to 10 Kody Rules); Teams $10/dev/mo + your token costs; Enterprise custom; self-hosting free under AGPL",
+  "pricingUrl": "https://kodus.io",
+  "selfHosted": "full",
+  "selfHostedNote": "Free under AGPL via Docker Compose, VM, or Kubernetes/Helm; no seat minimums; optional daily heartbeat can be disabled.",
+  "platforms": [
+    "github",
+    "gitlab",
+    "bitbucket",
+    "azure-devops",
+    "forgejo"
+  ],
+  "modelControl": "BYOK on every plan: OpenAI, Anthropic, Gemini, Vertex, Novita, or any OpenAI-compatible endpoint (vLLM/Ollama); zero token markup",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {
+      "status": "yes",
+      "note": "Repo-level analysis plus linked sibling repos; pulls business context from Jira, Linear, and Notion."
+    },
+    "02-rule-centric": {
+      "status": "yes",
+      "note": "Plain-language Kody Rules with global-repo-directory scope; auto-imports .cursorrules, CLAUDE.md, AGENTS.md, etc."
+    },
+    "03-dual-workflow": {
+      "status": "partial",
+      "note": "Reviews run via CLI locally, in CI, and on PRs; distinct local-vs-PR behavior modes not detailed publicly."
+    },
+    "04-business-logic": {
+      "status": "yes",
+      "note": "Pulls context from Jira, Linear, and Notion to check a PR against what the ticket asked for."
+    },
+    "05-continuous-learning": {
+      "status": "yes",
+      "note": "Kody generates rules automatically by analyzing team review history; rules and review history persist."
+    },
+    "06-sandbox-validation": {
+      "status": "no",
+      "note": "No documented sandbox execution or runtime validation of findings."
+    },
+    "07-economic-transparency": {
+      "status": "yes",
+      "note": "BYOK on every plan, zero token markup, published cost estimates, token-usage dashboard."
+    },
+    "08-actionability": {
+      "status": "partial",
+      "note": "Provides fix suggestions in reviews; one-click commit flow not verified in the posts we checked."
+    },
+    "09-measurable-roi": {
+      "status": "partial",
+      "note": "Token-cost and usage dashboard documented; DORA-style ROI reporting not verified in public posts."
+    }
+  },
+  "relatedPosts": [
+    "best-ai-code-review-tools",
+    "open-source-ai-code-review-tools",
+    "self-hosted-ai-code-review",
+    "coderabbit-alternatives",
+    "coderabbit-vs-greptile",
+    "cursor-bugbot-vs-coderabbit",
+    "how-to-evaluate-ai-code-review-tools",
+    "ai-code-review-vs-static-analysis",
+    "what-is-ai-code-review"
+  ]
+}

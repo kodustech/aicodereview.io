@@ -1,0 +1,132 @@
+---
+import { render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { getPublishedPosts, relatedPosts, readingTime, formatDate, CATEGORY_LABELS, SITE_URL } from '../../lib/blog';
+
+export async function getStaticPaths() {
+	const posts = await getPublishedPosts();
+	return posts.map((post) => ({
+		params: { slug: post.id },
+		props: { post, allPosts: posts },
+	}));
+}
+
+const { post, allPosts } = Astro.props;
+const { Content } = await render(post);
+
+const minutes = readingTime(post.body);
+const related = relatedPosts(post, allPosts);
+const url = `${SITE_URL}/blog/${post.id}/`;
+
+const schemas: Record<string, unknown>[] = [
+	{
+		"@type": "Article",
+		"headline": post.data.title,
+		"description": post.data.description,
+		"url": url,
+		"datePublished": post.data.pubDate.toISOString(),
+		"dateModified": (post.data.updatedDate ?? post.data.pubDate).toISOString(),
+		"author": {
+			"@type": "Organization",
+			"name": post.data.author,
+			"url": `${SITE_URL}/about/`
+		},
+		"publisher": {
+			"@type": "Organization",
+			"name": "aicodereview.io",
+			"url": `${SITE_URL}/about/`
+		},
+		"mainEntityOfPage": { "@type": "WebPage", "@id": url },
+		"keywords": post.data.tags.join(', ')
+	},
+];
+
+if (post.data.faq.length > 0) {
+	schemas.push({
+		"@type": "FAQPage",
+		"mainEntity": post.data.faq.map((item) => ({
+			"@type": "Question",
+			"name": item.q,
+			"acceptedAnswer": { "@type": "Answer", "text": item.a }
+		}))
+	});
+}
+---
+
+<Layout
+	title={`${post.data.title} | aicodereview.io`}
+	description={post.data.description}
+	ogType="article"
+	article={{ pubDate: post.data.pubDate, updatedDate: post.data.updatedDate, tags: post.data.tags }}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Blog', url: `${SITE_URL}/blog/` },
+		{ name: post.data.title, url }
+	]}
+	schemas={schemas}
+>
+	<div class="mb-12">
+		<a href="/blog" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-10">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+			Back to Blog
+		</a>
+
+		<div class="flex flex-wrap items-center gap-4 mb-6 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
+			<a href={`/blog/category/${post.data.category}`} class="hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">[ {CATEGORY_LABELS[post.data.category] ?? post.data.category} ]</a>
+			<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+			{post.data.updatedDate && (
+				<span>Updated {formatDate(post.data.updatedDate)}</span>
+			)}
+			<span>{minutes} min read</span>
+		</div>
+
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 leading-tight mb-4">
+			{post.data.title}
+		</h1>
+		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+			{post.data.description}
+		</p>
+	</div>
+
+	<article class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 hover:prose-a:decoration-stone-500 prose-p:text-pretty prose-p:leading-relaxed prose-table:text-sm prose-th:font-mono prose-th:uppercase prose-th:tracking-wider prose-th:text-xs">
+		<Content />
+	</article>
+
+	{post.data.faq.length > 0 && (
+		<section class="mt-20 pt-12 border-t border-stone-200 dark:border-zinc-800">
+			<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ FAQ ]</h2>
+			<div class="space-y-8">
+				{post.data.faq.map((item) => (
+					<div>
+						<h3 class="text-lg font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+						<p class="text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+					</div>
+				))}
+			</div>
+		</section>
+	)}
+
+	{related.length > 0 && (
+		<section class="mt-20 pt-12 border-t border-stone-200 dark:border-zinc-800">
+			<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ Keep Reading ]</h2>
+			<div class="grid md:grid-cols-3 gap-8">
+				{related.map((r) => (
+					<a href={`/blog/${r.id}`} class="block group">
+						<span class="text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 block mb-2">{CATEGORY_LABELS[r.data.category] ?? r.data.category}</span>
+						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">{r.data.title}</span>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
+
+	<div class="mt-24 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluate your AI Code Review Readiness</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Score your current setup against the 9 standards of the 2026 baseline.</p>
+		</div>
+		<a href="/assessment" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
+			Take the Assessment [↗]
+		</a>
+	</div>
+</Layout>

@@ -1,0 +1,27 @@
+{
+  "name": "Tabnine",
+  "website": "https://www.tabnine.com",
+  "tagline": "Enterprise AI dev platform whose Code Review Agent checks PRs against plain-language team rules on GitHub, GitLab, and Bitbucket.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Code Assistant platform $39/user/mo, Agentic platform $59/user/mo (annual billing); no free tier listed as of Aug 2026",
+  "pricingUrl": "https://www.tabnine.com/pricing/",
+  "selfHosted": "full",
+  "selfHostedNote": "Both plans list SaaS, VPC, on-premises, and air-gapped deployment options.",
+  "platforms": ["github", "gitlab", "bitbucket"],
+  "modelControl": "Choose from Tabnine's supported models incl. its protected model; private/self-hosted model deployments supported",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Enterprise context engine draws on codebase awareness; no documented multi-repo dependency resolution."},
+    "02-rule-centric": {"status": "yes", "note": "Prebuilt plus fully customizable plain-language rules; changed lines are checked against team rules."},
+    "03-dual-workflow": {"status": "yes", "note": "Reviews run in the IDE, via CLI (pre-commit hooks), and on pull requests."},
+    "04-business-logic": {"status": "partial", "note": "Separate Jira Validation Agent checks code against Jira issue requirements."},
+    "05-continuous-learning": {"status": "unknown", "note": "No documented learning from review feedback over time."},
+    "06-sandbox-validation": {"status": "no", "note": "No sandbox execution or runtime validation documented."},
+    "07-economic-transparency": {"status": "partial", "note": "Model switching within a vendor-supported list and on-prem model hosting; no pay-your-own-provider BYOK."},
+    "08-actionability": {"status": "partial", "note": "Flags rule deviations with guidance and suggested edits; committable-fix flow not documented."},
+    "09-measurable-roi": {"status": "partial", "note": "Analytics dashboard tracks usage and acceptance; no DORA or review-ROI attribution."}
+  },
+  "relatedPosts": []
+}

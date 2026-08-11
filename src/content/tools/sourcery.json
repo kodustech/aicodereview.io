@@ -1,0 +1,27 @@
+{
+  "name": "Sourcery",
+  "website": "https://sourcery.ai",
+  "tagline": "AI reviewer for GitHub and GitLab with line-by-line reviews, summaries and diagrams, custom rules, and BYO-LLM on its Team tier.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free for open-source repos; Pro $12/seat/mo; Team $24/seat/mo adds analytics, 3x rate limits, daily security scans, BYO-LLM; annual saves 20%; Enterprise custom",
+  "pricingUrl": "https://sourcery.ai/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Enterprise adds self-hosting; below that it is cloud-only.",
+  "platforms": ["github", "gitlab"],
+  "modelControl": "BYO-LLM available on Team tier ($24/seat); vendor models otherwise",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "no", "note": "PR-scoped reviews; shallower context than codebase-indexing tools per our comparison."},
+    "02-rule-centric": {"status": "partial", "note": "Customizable review rules supported; enforcement depth not detailed in sources we verified."},
+    "03-dual-workflow": {"status": "unknown", "note": "IDE/local review surface not covered in the sources we verified."},
+    "04-business-logic": {"status": "unknown", "note": "Ticket/requirements validation not documented."},
+    "05-continuous-learning": {"status": "unknown", "note": "Learning from review feedback not documented."},
+    "06-sandbox-validation": {"status": "unknown", "note": "No documented sandbox validation; Team tier adds daily security scans."},
+    "07-economic-transparency": {"status": "partial", "note": "BYO-LLM on Team tier ($24/seat) is rare at this price; not offered on Pro."},
+    "08-actionability": {"status": "unknown", "note": "Fix-apply flow not documented in the sources we verified."},
+    "09-measurable-roi": {"status": "partial", "note": "Team tier adds repo analytics; ROI/DORA-level reporting not documented."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools", "open-source-ai-code-review-tools"]
+}

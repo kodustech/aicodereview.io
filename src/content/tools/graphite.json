@@ -1,0 +1,27 @@
+{
+  "name": "Graphite",
+  "website": "https://graphite.com",
+  "tagline": "Code review platform built around stacked PRs, with an AI reviewer (formerly Diamond), merge queue, and review automation for GitHub.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Hobby free (limited AI reviews); Starter $20/user/mo; Team $40/user/mo (annual) with unlimited AI reviews and merge queue; Enterprise custom",
+  "pricingUrl": "https://graphite.com/pricing",
+  "selfHosted": "none",
+  "selfHostedNote": "Cloud-only; GitHub Enterprise Server support only on the Enterprise tier.",
+  "platforms": ["github"],
+  "modelControl": "No BYOK or model choice",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Stack-aware review context is unique; no documented codebase index or ticket validation."},
+    "02-rule-centric": {"status": "unknown", "note": "Custom review rules not documented in the sources we verified."},
+    "03-dual-workflow": {"status": "unknown", "note": "Local/IDE review surface not documented in the sources we verified."},
+    "04-business-logic": {"status": "unknown", "note": "Ticket/requirements validation not documented."},
+    "05-continuous-learning": {"status": "unknown", "note": "Learning from review feedback not documented."},
+    "06-sandbox-validation": {"status": "unknown", "note": "No documented sandbox or test-run validation."},
+    "07-economic-transparency": {"status": "no", "note": "No BYOK or model choice; unlimited AI review bundled into $40/user/mo seat with no token visibility."},
+    "08-actionability": {"status": "unknown", "note": "Fix-apply flow not documented in the sources we verified."},
+    "09-measurable-roi": {"status": "partial", "note": "Platform includes insights and review tooling; AI-specific ROI reporting not verified."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools", "coderabbit-alternatives"]
+}

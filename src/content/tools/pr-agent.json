@@ -1,0 +1,27 @@
+{
+  "name": "PR-Agent",
+  "website": "https://github.com/The-PR-Agent/pr-agent",
+  "tagline": "Community-maintained, MIT-licensed PR reviewer with /review, /describe, and /improve commands, self-hosted with your own model keys.",
+  "category": "ai-pr-review",
+  "openSource": true,
+  "license": "MIT",
+  "pricing": "Free and open source (MIT); you pay only infrastructure and LLM API usage at provider list price. Transferred from Qodo to a community org in 2026",
+  "pricingUrl": "https://github.com/The-PR-Agent/pr-agent",
+  "selfHosted": "full",
+  "selfHostedNote": "Runs as a CLI, Docker container, GitHub Action, or persistent webhook server on your own infrastructure.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops", "gitea"],
+  "modelControl": "Full BYOK via LiteLLM: OpenAI, Claude, Gemini, Mistral, DeepSeek, Azure OpenAI, Bedrock, Vertex, OpenRouter, local Ollama",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "no", "note": "Per-PR review only; no codebase index or cross-repo context (per our open-source guide)."},
+    "02-rule-centric": {"status": "partial", "note": "Configurable via TOML with your own conventions; no rule management UI or plain-language rules."},
+    "03-dual-workflow": {"status": "partial", "note": "Runs as CLI locally, in CI, or as PR commands; no distinct local-vs-PR behavior modes documented."},
+    "04-business-logic": {"status": "unknown", "note": "Ticket-compliance features not covered in the sources we verified."},
+    "05-continuous-learning": {"status": "no", "note": "No learning from review history (per our open-source guide)."},
+    "06-sandbox-validation": {"status": "no", "note": "Static per-PR analysis; no sandbox execution or test-run validation."},
+    "07-economic-transparency": {"status": "yes", "note": "MIT-licensed BYOK via LiteLLM; pay providers at list price with full model choice, incl. local Ollama."},
+    "08-actionability": {"status": "partial", "note": "/improve generates code suggestions on the PR; apply flow varies by platform."},
+    "09-measurable-roi": {"status": "no", "note": "No dashboards or metrics (per our open-source guide)."}
+  },
+  "relatedPosts": ["open-source-ai-code-review-tools", "self-hosted-ai-code-review", "coderabbit-alternatives", "best-ai-code-review-tools", "coderabbit-vs-greptile", "cursor-bugbot-vs-coderabbit", "how-to-evaluate-ai-code-review-tools"]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Qodana",
+  "website": "https://www.jetbrains.com/qodana/",
+  "tagline": "JetBrains' static analysis for CI, running IDE inspections in pipelines with quality gates, baselines, and cloud reports.",
+  "category": "static-analysis",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Community linters free; Ultimate $5/contributor/mo (annual; $6 monthly); Ultimate Plus $15/contributor/mo (annual; $18 monthly); 3-contributor minimum",
+  "pricingUrl": "https://www.jetbrains.com/qodana/buy/",
+  "selfHosted": "full",
+  "selfHostedNote": "Linters always run in your CI; Qodana Self-Hosted puts the report server on-prem (license requested via JetBrains support).",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "No LLM component; deterministic JetBrains IDE inspections",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Project-model-aware inspections across the whole codebase; no multi-repo or ticket context."},
+    "02-rule-centric": {"status": "yes", "note": "Deterministic inspection profiles, baselines, and quality gates fully controlled by the team."},
+    "03-dual-workflow": {"status": "yes", "note": "Same inspections in JetBrains IDEs locally and in CI pipelines; IDE-consistent results are the core pitch."},
+    "04-business-logic": {"status": "no", "note": "No issue-tracker or requirements validation."},
+    "05-continuous-learning": {"status": "no", "note": "Static rules; baselines suppress known issues but nothing is learned from feedback."},
+    "06-sandbox-validation": {"status": "no", "note": "Static analysis only; no sandbox or runtime validation."},
+    "07-economic-transparency": {"status": "no", "note": "No LLM/BYOK dimension to be transparent about; flat per-contributor pricing is published."},
+    "08-actionability": {"status": "partial", "note": "Can auto-apply IDE quick-fixes in CI (fixesStrategy apply/cleanup) for supported inspections."},
+    "09-measurable-roi": {"status": "partial", "note": "Qodana Cloud trends and Insights (Ultimate Plus) track code quality over time; no DORA/ROI metrics."}
+  },
+  "relatedPosts": []
+}

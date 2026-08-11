@@ -1,0 +1,118 @@
+---
+title: "AI Code Review Statistics (2026): Sourced Data"
+description: "AI code review statistics for 2026: adoption, trust, review turnaround, AI code volume, and bug-catch benchmarks — every stat linked to a primary source."
+pubDate: 2026-08-11
+category: "explainer"
+tags: ["ai-code-review", "statistics", "code-review", "developer-survey", "benchmarks"]
+faq:
+  - q: "What percentage of developers use AI coding tools?"
+    a: "As of the most recent major surveys, 90% of technology professionals report using AI at work (Google DORA 2025) and 84% of developers say they use or plan to use AI tools in their development process (Stack Overflow 2025, 49,000+ respondents). Both figures rose year over year for the third consecutive year."
+  - q: "How much code is written by AI?"
+    a: "Google reported more than 25% of its new code was AI-generated in October 2024, Microsoft's CEO cited 20-30% in April 2025, and Anthropic's CFO said over 90% of its code is written by Claude. Among Y Combinator's Winter 2025 startups, a quarter had codebases that were roughly 95% AI-generated."
+  - q: "Does AI-generated code have more bugs or vulnerabilities?"
+    a: "Veracode's 2025 study of 100+ LLMs found AI introduced security vulnerabilities in 45% of coding tasks, and NYU researchers found about 40% of Copilot-generated programs in security-relevant scenarios were vulnerable. GitClear's longitudinal data also shows duplicated code rising sharply and refactoring collapsing as AI assistance spreads."
+  - q: "How effective are AI code review tools at catching bugs?"
+    a: "Published numbers vary enormously by who runs the benchmark. Greptile's self-run benchmark reported an 82% catch rate, while Augment Code's re-run on the same repositories scored it at 45%; on the OpenSSF CVE Benchmark, tools ranged from 84.5% F1 down to the mid-30s. The only reliable evaluation is running candidate tools on your own historical bugs."
+  - q: "Does AI actually make developers faster?"
+    a: "The evidence cuts both ways. A 2023 controlled experiment found Copilot users completed a task 55.8% faster, but METR's 2025 randomized trial found experienced open-source developers were 19% slower with AI tools on mature codebases — while believing they were 20% faster. Context and codebase familiarity appear to determine which result you get."
+  - q: "How long do human code reviews take?"
+    a: "At Google, median review latency is under one hour for small changes and about five hours for very large ones, with 70% of changes committed within 24 hours. Industry-wide, turnaround is typically much slower — Microsoft research found reminder nudges alone cut pull request resolution time by 60%, implying most delay is idle waiting."
+---
+
+The most load-bearing AI code review statistics, as of August 2026: 90% of technology professionals use AI at work ([DORA 2025](https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report)), 46% of developers actively distrust AI output accuracy ([Stack Overflow 2025](https://stackoverflow.co/company/press/archive/stack-overflow-2025-developer-survey/)), AI introduces security vulnerabilities in 45% of coding tasks ([Veracode](https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/)), and bug-catch rates for AI review tools range from 82% to 45% *for the same tool on the same repos* depending on who runs the benchmark. This page collects every defensible statistic in the category, grouped by theme, each with a one-line takeaway and a link to its primary source. No unsourced numbers appear anywhere below.
+
+A note on method: we prefer primary sources (survey publishers, papers, vendor engineering blogs reporting their own telemetry) over listicles, we date every figure, and where a number is vendor-published we say so. If a widely-quoted stat is missing, it's because we couldn't trace it to a real source — a surprisingly common outcome in this category. Start with [what AI code review is](/blog/what-is-ai-code-review) if you need the conceptual groundwork.
+
+## Adoption: AI is in the workflow
+
+**90% of technology professionals use AI at work** — up 14 points year over year, per [Google's 2025 DORA report](https://blog.google/innovation-and-ai/technology/developers-tools/dora-report-2025/) (~5,000 respondents). *Takeaway: AI-assisted development is no longer an early-adopter behavior; it's the baseline.*
+
+**Developers spend a median of 2 hours per day working with AI** — also [DORA 2025](https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report). *Takeaway: a quarter of the working day now flows through tools that didn't exist four years ago.*
+
+**84% of developers use or plan to use AI tools**, up from 76% in 2024 and 70% in 2023 — [Stack Overflow 2025 Developer Survey](https://survey.stackoverflow.co/2025/ai/), 49,000+ respondents. *Takeaway: three consecutive years of growth, with the remaining gap mostly organizational rather than attitudinal.*
+
+**GitHub Copilot crossed 20 million all-time users** in July 2025, adding 5 million in a single quarter — [TechCrunch, reporting Microsoft's earnings call](https://techcrunch.com/2025/07/30/github-copilot-crosses-20-million-all-time-users/). *Takeaway: the largest single AI dev tool population on record.*
+
+**Nearly 80% of new GitHub developers use Copilot within their first week** — [GitHub Octoverse 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/). *Takeaway: for the incoming generation of developers, AI-assisted is the only workflow they've ever known.*
+
+**82% of developers use AI coding assistants daily or weekly**, and **59% juggle three or more AI tools** — [Qodo's 2025 State of AI Code Quality survey](https://www.qodo.ai/reports/state-of-ai-code-quality/) (609 developers). *Takeaway: the question inside teams has shifted from whether to use AI to how many overlapping tools to tolerate.*
+
+**CodeRabbit reported 13 million pull requests reviewed across 2 million repositories** by its September 2025 Series B — [company announcement](https://www.businesswire.com/news/home/20250916401011/en/CodeRabbit-Raises-%2460M-Series-B-Following-Unprecedented-Growth-as-Vibe-Coding-Triggers-a-Need-for-New-Code-Quality-Standards) (vendor-published). *Takeaway: dedicated AI review, specifically — not just code generation — is operating at internet scale.*
+
+## The trust gap: usage up, confidence down
+
+**46% of developers actively distrust the accuracy of AI output**, up from 31% a year earlier; **only 3% report high trust** — [Stack Overflow 2025 press release](https://stackoverflow.co/company/press/archive/stack-overflow-2025-developer-survey/). *Takeaway: adoption and trust are moving in opposite directions — the defining tension of this era.*
+
+**30% of professionals report little or no trust in AI-generated code** — even while 90% use AI and 80%+ credit it with productivity gains ([DORA 2025](https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report)). *Takeaway: teams have decided verification, not abstinence, is the answer — which is exactly the job review exists to do.*
+
+**66% of developers say their top AI frustration is "solutions that are almost right, but not quite"**, and **45% say debugging AI-generated code takes more time** — [Stack Overflow 2025](https://survey.stackoverflow.co/2025/ai/). *Takeaway: near-miss code is the costliest kind — plausible enough to merge, wrong enough to bite.*
+
+**65% of developers say AI misses relevant codebase context** during refactoring, testing, and review — [Qodo 2025](https://www.qodo.ai/reports/state-of-ai-code-quality/). *Takeaway: context, not raw model capability, is the binding constraint practitioners actually report.*
+
+**Only 25.8% of senior developers (10+ years) are confident shipping AI-written code without human review** — [Qodo 2025](https://www.qodo.ai/reports/state-of-ai-code-quality/). *Takeaway: the people with the most scar tissue are the least willing to skip review.*
+
+## How much code AI writes now
+
+**More than 25% of Google's new code was AI-generated** as of October 2024, per CEO Sundar Pichai on the Q3 2024 earnings call — [The Hill](https://thehill.com/policy/technology/4962336-google-ceo-says-more-than-25-percent-of-companys-new-code-written-by-ai/). *Takeaway: the first hyperscaler to put a hard number on it, and the number that made the trend undeniable.*
+
+**20-30% of code in Microsoft's repositories is written by AI**, per CEO Satya Nadella in April 2025 — [Entrepreneur's coverage](https://www.entrepreneur.com/business-news/ai-is-taking-over-coding-at-microsoft-google-and-meta/490896). *Takeaway: consistent order of magnitude across the two largest engineering organizations on earth.*
+
+**Over 90% of Anthropic's code is written by Claude**, per its CFO; individual engineers at Anthropic and OpenAI [claim 100% for their own work](https://finance.yahoo.com/news/top-engineers-anthropic-openai-ai-194731072.html) — [TechSpot](https://www.techspot.com/news/112408-anthropic-more-than-90-code-now-written-ai.html). *Takeaway: at the frontier labs, human-typed code is already the exception.*
+
+**A quarter of Y Combinator's Winter 2025 batch had codebases roughly 95% AI-generated** — [TechCrunch, quoting YC partner Jared Friedman](https://techcrunch.com/2025/03/06/a-quarter-of-startups-in-ycs-current-cohort-have-codebases-that-are-almost-entirely-ai-generated). *Takeaway: for new companies, the review question isn't about a minority of AI code — it's about nearly all of it.*
+
+**1.1 million public repositories import an LLM SDK, up 178% year over year** (as of August 2025), and **nearly 1 billion commits were pushed in a year, up 25%** — [GitHub Octoverse 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/). *Takeaway: both the code and the software itself are becoming AI-native, and total change volume is accelerating.*
+
+**GitHub's Copilot coding agent authored over 1 million pull requests in its first five months** (May-September 2025) — [Octoverse 2025](https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/). *Takeaway: agents don't just write code anymore; they open the PRs — and someone, or something, has to review them.*
+
+## Quality and security of AI-generated code
+
+**AI introduced security vulnerabilities in 45% of coding tasks**, across 80 curated tasks and 100+ LLMs; **Java failed 72% of the time** — [Veracode 2025 GenAI Code Security Report](https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/). *Takeaway: security performance has not improved with syntactic fluency — models write working, vulnerable code.*
+
+**About 40% of GitHub Copilot's generated programs were vulnerable** in security-relevant scenarios (1,689 programs, 89 CWE-based scenarios) — [Pearce et al., "Asleep at the Keyboard," IEEE S&P 2022](https://arxiv.org/abs/2108.09293). *Takeaway: the earliest rigorous result in the field, and its headline number has held up remarkably well across four years of newer models.*
+
+**Duplicated code blocks rose 8x during 2024** in GitClear's dataset of 211 million changed lines — [GitClear 2025 AI Code Quality research](https://www.gitclear.com/ai_assistant_code_quality_2025_research). *Takeaway: AI assistants default to copy-paste over reuse, and it shows up at dataset scale.*
+
+**Refactoring collapsed from 21% of changed lines (2022) to 3.8% (mid-2026)** while copy-paste rose from 9.4% to 15.7%, across 623 million analyzed changes — [GitClear 2026 Maintainability Gap research](https://www.gitclear.com/the_ai_code_quality_maintainability_gap). *Takeaway: codebases are accumulating structure debt at the exact moment change volume is exploding.*
+
+**Updates to code older than 12 months fell 74%** (1.7% of changes in 2023 to 0.46% by mid-2026), and cross-file function calls fell 35% — [GitClear 2026](https://www.gitclear.com/the_ai_code_quality_maintainability_gap). *Takeaway: new AI-era code increasingly bolts on rather than integrates — the maintenance bill hasn't arrived yet.*
+
+## Speed and productivity: the evidence cuts both ways
+
+**Developers with Copilot completed a controlled task 55.8% faster** (95 freelancers, HTTP server task, 95% CI of 21-89%) — [Peng et al., 2023](https://arxiv.org/abs/2302.06590). *Takeaway: on greenfield, well-specified tasks, the speedup is real and large.*
+
+**Experienced open-source developers were 19% slower with AI tools** on their own mature codebases (randomized controlled trial, 16 developers, 246 tasks) — and forecast they'd be 24% faster, still believing afterward they'd been 20% faster — [METR, July 2025](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/). *Takeaway: on complex, familiar code, AI can be a net drag — and self-reported productivity is unreliable enough that you should [measure outcomes, not vibes](/standards/09-measurable-roi).*
+
+**A 25% increase in AI adoption correlated with a 1.5% decrease in delivery throughput and a 7.2% decrease in delivery stability** — [DORA 2024 Accelerate State of DevOps report](https://dora.dev/research/2024/dora-report/). *Takeaway: more code, faster, without stronger review and smaller batches, measurably degrades delivery.*
+
+**More than 80% of DORA 2025 respondents say AI increased their productivity** — [DORA 2025](https://cloud.google.com/blog/products/ai-machine-learning/announcing-the-2025-dora-report). *Takeaway: perceived individual gains and measured organizational outcomes are different quantities; the gap between this stat and the previous one is where engineering leadership lives.*
+
+## Human review baselines: the bar AI has to clear
+
+**Median code review latency at Google is under 1 hour for small changes and about 5 hours for very large ones**, with **70% of changes committed within 24 hours** of being sent for review — [Sadowski et al., "Modern Code Review: A Case Study at Google," ICSE 2018](https://sback.it/publications/icse2018seip.pdf). *Takeaway: the best-known review culture in the industry runs on small changes and same-day turnaround — that's the standard, not the average.*
+
+**Reviewers should cover no more than 200-400 lines at a time, yielding 70-90% defect discovery** in 60-90 minutes — [SmartBear's study of code review at Cisco](https://smartbear.com/learn/code-review/best-practices-for-peer-code-review/) (2,500 reviews). *Takeaway: human defect-finding degrades sharply with diff size — a constraint AI-scale code volume violates daily.*
+
+**Fewer than 15% of code review comments at Microsoft relate to actual defects** — the majority of value is knowledge transfer, awareness, and alternative solutions — [Bacchelli & Bird, "Expectations, Outcomes, and Challenges of Modern Code Review," ICSE 2013](https://www.microsoft.com/en-us/research/publication/expectations-outcomes-and-challenges-of-modern-code-review/). *Takeaway: automating defect-finding is tractable; automating what humans mostly do in review — teaching each other the codebase — is not.*
+
+**Targeted reminder nudges cut pull request resolution time by 60%** in a randomized trial across 147 Microsoft repositories (8,500 PRs) — [Maddila et al., "Nudge," 2020](https://arxiv.org/abs/2011.12468). *Takeaway: most review delay is idle waiting, not active reviewing — which is why instant first-pass AI review attacks the right bottleneck.*
+
+## Does AI review work? Effectiveness and benchmark data
+
+**73.8% of an LLM reviewer's comments were resolved by developers** in an industrial deployment across 4,335 pull requests — but average PR closure time rose from 5 hours 52 minutes to 8 hours 20 minutes — [Automated Code Review in Practice, ICSE 2025](https://arxiv.org/abs/2412.18531). *Takeaway: the signal is real and so is the tax; net value depends on filtering, which is why [validating findings before surfacing them](/standards/06-sandbox-validation) matters.*
+
+**81% of developers using AI code review saw code quality improve, versus 55% of fast-moving teams without it** — [Qodo 2025](https://www.qodo.ai/reports/state-of-ai-code-quality/). *Takeaway: the largest practitioner survey in the category finds a 26-point quality gap in favor of AI review.*
+
+**Developers using Copilot Autofix fixed security alerts in a median of 28 minutes versus 1.5 hours manually** — 3x faster overall, 12x for SQL injection — [GitHub, from public beta telemetry](https://github.blog/news-insights/product-news/secure-code-more-than-three-times-faster-with-copilot-autofix/) (vendor-published). *Takeaway: the strongest measured wins come from AI layered on deterministic detection — the [AI-plus-static-analysis architecture](/blog/ai-code-review-vs-static-analysis), not either alone.*
+
+**The same tool scored 82% on its own benchmark and 45% on a competitor's re-run of the same repositories** — [Greptile's benchmark](https://www.greptile.com/benchmarks) versus [Augment Code's evaluation](https://www.augmentcode.com/tools/coderabbit-vs-greptile-vs-augment-cosmos). *Takeaway: vendor benchmark numbers are marketing until independently reproduced — every vendor that publishes one wins it.*
+
+**On 165 real CVEs from the OpenSSF CVE Benchmark, AI-era review tools scored from 84.5% F1 down to the mid-30s** — [DeepSource's 2026 evaluation](https://deepsource.com/benchmarks) (vendor-run, but on the public [OpenSSF dataset](https://github.com/ossf-cve-benchmark/ossf-cve-benchmark)). *Takeaway: the spread within the category is wider than the gap between categories — tool choice matters more than tool type.*
+
+**93.4% of findings in a four-tool, 146-PR field test were caught by exactly one tool**, with false-positive rates from ~0% to 15% depending on tool and severity tier — [independent 3.5-week parallel comparison, 679 findings](https://dev.to/_vjk/best-ai-code-reviewer-in-2026-we-ran-4-in-parallel-for-3-weeks-146-prs-679-findings-1c0f). *Takeaway: AI reviewers barely overlap — coverage is far from saturated, and no single tool sees most of what's catchable.*
+
+## Using these numbers
+
+Three patterns worth extracting from the pile. First, the volume story is settled: AI writes a large and growing share of code, and that share carries a documented defect and vulnerability rate — the review workload is structural, not cyclical. Second, the trust gap is rational: developers distrust AI output *because* they use it daily, which makes verification infrastructure — human and automated — the growth constraint. Third, effectiveness numbers are the least trustworthy category on this page: whenever a bug-catch rate has only one source and that source sells the tool, treat it as a hypothesis. Our [evaluation guide](/blog/how-to-evaluate-ai-code-review-tools) covers how to generate your own numbers from your own bug history, the [tools comparison](/blog/best-ai-code-review-tools) maps the current field, and the [assessment](/assessment) benchmarks your review process against teams at your scale.
+
+Corrections welcome: if any figure above has been updated or corrected by its publisher, we'll revise it — that's the deal a stats page makes with its readers.

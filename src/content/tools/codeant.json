@@ -1,0 +1,27 @@
+{
+  "name": "CodeAnt AI",
+  "website": "https://www.codeant.ai",
+  "tagline": "PR reviewer with severity-ranked comments and one-click fixes across GitHub, GitLab, Bitbucket, and Azure DevOps, plus SAST scanning.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary (MIT-licensed codeant-cli)",
+  "pricing": "14-day free trial (100 PR reviews); Premium $24/user/mo (billing toggle also shows $30); Enterprise custom. Free for open source",
+  "pricingUrl": "https://www.codeant.ai/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "On-prem/VPC deployment on Enterprise; also connects to self-hosted SCMs (GHES, GitLab self-managed, Bitbucket DC).",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Fixed vendor models; no BYOK or model selection documented",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Vendor blog describes LSP-driven graph exploration beyond the diff; not covered in product docs."},
+    "02-rule-centric": {"status": "yes", "note": "Custom rules, instructions, personas, org-wide .codeant config; threshold limits output to critical issues."},
+    "03-dual-workflow": {"status": "yes", "note": "IDE extensions (VS Code, Cursor, JetBrains, more), CLI review, and git hooks alongside PR reviews."},
+    "04-business-logic": {"status": "yes", "note": "Jira Ticket Compliance cross-verifies ticket requirements against the PR (compliant/partial/non-compliant)."},
+    "05-continuous-learning": {"status": "yes", "note": "Learnings feature: teach the reviewer about your codebase by dismissing suggestions."},
+    "06-sandbox-validation": {"status": "unknown", "note": "No documented code execution, test runs, or sandbox validation."},
+    "07-economic-transparency": {"status": "no", "note": "Seat-based pricing; no BYOK, model choice, or token cost visibility documented."},
+    "08-actionability": {"status": "yes", "note": "One-click commit suggestion, Autofix, fix-in-IDE, and AI-agent prompt handoff."},
+    "09-measurable-roi": {"status": "yes", "note": "DORA metrics, developer productivity dashboards, and a developer-metrics API are documented."}
+  },
+  "relatedPosts": []
+}

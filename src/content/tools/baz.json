@@ -1,0 +1,27 @@
+{
+  "name": "Baz",
+  "website": "https://baz.ai",
+  "tagline": "Review platform running specialized agents (code, spec, security, merge) on GitHub, GitLab, and Azure DevOps PRs with sandbox execution.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary (open-source baz-cli under AGPL-3.0)",
+  "pricing": "Pro $30/active dev/mo plus usage credits ($0.01/credit; agent sessions ~$1.00-$4.30; vendor suggests $20-$50/dev/mo); Enterprise custom",
+  "pricingUrl": "https://baz.ai/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Private Mode (data-plane pod in your AWS EKS) on Pro and Enterprise; full VPC deployment is an Enterprise capability.",
+  "platforms": ["github", "gitlab", "azure-devops"],
+  "modelControl": "Fixed vendor models (managed AI services incl. OpenAI); no BYOK or model choice documented",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "yes", "note": "Agents run against the full cloned repo in a sandbox; Datadog integration links production signals to changes."},
+    "02-rule-centric": {"status": "partial", "note": "Custom reviewers via dedicated system prompts dispatched on matching diffs; quiet-default mechanics not documented."},
+    "03-dual-workflow": {"status": "yes", "note": "Terminal CLI for AI-assisted review plus Claude Code and Cursor plugins alongside PR reviews."},
+    "04-business-logic": {"status": "partial", "note": "Jira/Linear tickets enrich review context; CLI docs cite verifying requirements against linked tickets."},
+    "05-continuous-learning": {"status": "partial", "note": "Detects recurring feedback patterns in PR history and turns them into reusable reviewers; no per-suggestion learning."},
+    "06-sandbox-validation": {"status": "yes", "note": "Sandbox runs validation commands (tests/linters) after fixes; Spec Reviewer launches the app and validates in a browser."},
+    "07-economic-transparency": {"status": "partial", "note": "Published per-session credit costs; no BYOK and no token-level cost visibility."},
+    "08-actionability": {"status": "yes", "note": "Fixer sessions apply fixes in the sandbox with validation before committing; can send fixes to Cursor."},
+    "09-measurable-roi": {"status": "partial", "note": "Merger Agent Stats dashboard (merge readiness, throughput); analytics on all plans; no DORA or cost-per-PR metrics."}
+  },
+  "relatedPosts": []
+}

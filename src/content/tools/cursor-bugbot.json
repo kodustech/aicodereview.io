@@ -1,0 +1,27 @@
+{
+  "name": "Cursor BugBot",
+  "website": "https://cursor.com/bugbot",
+  "tagline": "Cursor's PR reviewer scoped to bugs, security issues, and rule violations, billed per run (avg $1.00-1.50) since June 2026.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Usage-based since renewals after June 8, 2026: avg $1.00-1.50 per run (vendor estimate); bundled with Cursor plans (Pro from $20/mo), not sold standalone",
+  "pricingUrl": "https://cursor.com/pricing",
+  "selfHosted": "none",
+  "selfHostedNote": "Connects to self-hosted git (GHES, GitLab self-managed, Bitbucket Data Center) but the review service is SaaS-only.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "No BYOK or model choice; selectable effort levels only",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Reviews the diff plus rule files, surrounding code, and the PR comment thread; no codebase index."},
+    "02-rule-centric": {"status": "yes", "note": "Path-scoped .cursor/BUGBOT.md rules plus org-wide team rules; deliberately quiet, bug-only scope."},
+    "03-dual-workflow": {"status": "no", "note": "PR-only reviewer; 'Fix in Cursor' hands findings to the editor, but there is no local review mode."},
+    "04-business-logic": {"status": "no", "note": "No ticket or process integrations - deliberately out of scope."},
+    "05-continuous-learning": {"status": "partial", "note": "Generates learned repo rules from team activity; reads existing PR comments to avoid duplication."},
+    "06-sandbox-validation": {"status": "no", "note": "No documented sandbox execution or test generation; static diff analysis with effort levels."},
+    "07-economic-transparency": {"status": "no", "note": "No BYOK or model pinning; per-run cost (~$1.00-1.50) is visible but models are Cursor-selected."},
+    "08-actionability": {"status": "partial", "note": "'Fix in Cursor' opens findings in the editor with context; no one-click commit from the PR itself."},
+    "09-measurable-roi": {"status": "unknown", "note": "Cursor reports ~80% resolution rates for itself; customer-facing ROI dashboards not documented."}
+  },
+  "relatedPosts": ["cursor-bugbot-vs-coderabbit", "coderabbit-alternatives", "best-ai-code-review-tools", "open-source-ai-code-review-tools", "ai-code-review-vs-static-analysis", "what-is-ai-code-review"]
+}

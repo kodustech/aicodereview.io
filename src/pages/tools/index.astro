@@ -1,0 +1,89 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getTools, TOOL_CATEGORY_LABELS, SELF_HOSTED_LABELS, SPONSOR_SLUG } from '../../lib/tools';
+import { SITE_URL } from '../../lib/blog';
+
+const tools = await getTools();
+const categories = [...new Set(tools.map((t) => t.data.category))];
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+
+const title = "AI Code Review Tools Directory (2026) | aicodereview.io";
+const description = `${tools.length} AI code review tools mapped against the 9-pillar 2026 standard: pricing, licensing, self-hosting, and platform support — every fact source-verified.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Tools', url: `${SITE_URL}/tools/` }
+	]}
+	schemas={[{
+		"@type": "ItemList",
+		"name": "AI Code Review Tools Directory",
+		"description": description,
+		"numberOfItems": tools.length,
+		"itemListElement": tools.map((tool, i) => ({
+			"@type": "ListItem",
+			"position": i + 1,
+			"name": tool.data.name,
+			"url": `${SITE_URL}/tools/${tool.id}/`
+		}))
+	}]}
+>
+	<section class="max-w-3xl mb-16">
+		<h1 class="text-stone-500 dark:text-zinc-500 font-mono tracking-widest uppercase text-sm mb-4">
+			The Directory
+		</h1>
+		<h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-6 font-sans leading-none">
+			{tools.length} tools, mapped against the standard.
+		</h2>
+		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			No star ratings. Structured facts — pricing, license, self-hosting, platforms — plus how each tool maps against <a href="/#standards" class="underline underline-offset-4 decoration-2 hover:decoration-stone-400">the 9 standards</a>, sourced from public docs. <span class="text-sm font-mono text-stone-500 dark:text-zinc-500">Last verified {lastVerified}. <a href="/about" class="underline underline-offset-2">Methodology</a>.</span>
+		</p>
+	</section>
+
+	{categories.map((cat) => {
+		const catTools = tools.filter((t) => t.data.category === cat);
+		return (
+			<section class="mb-20">
+				<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">
+					[ {TOOL_CATEGORY_LABELS[cat] ?? cat} — {catTools.length} ]
+				</h2>
+				<div class="space-y-6">
+					{catTools.map((tool) => (
+						<a href={`/tools/${tool.id}`} class="block border border-stone-200 dark:border-zinc-800 p-6 hover:border-stone-400 dark:hover:border-zinc-600 transition-colors group">
+							<div class="flex flex-wrap items-baseline gap-3 mb-2">
+								<h3 class="text-xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700">
+									{tool.data.name}
+								</h3>
+								{tool.id === SPONSOR_SLUG && (
+									<span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 border border-stone-300 dark:border-zinc-700 text-stone-500 dark:text-zinc-500">Sponsor</span>
+								)}
+								{tool.data.openSource && (
+									<span class="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900">Open Source · {tool.data.license}</span>
+								)}
+							</div>
+							<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">{tool.data.tagline}</p>
+							<div class="flex flex-wrap gap-x-8 gap-y-2 text-xs font-mono text-stone-500 dark:text-zinc-500">
+								<span><span class="uppercase tracking-wider">Self-hosted:</span> {SELF_HOSTED_LABELS[tool.data.selfHosted]}</span>
+								<span><span class="uppercase tracking-wider">Pricing:</span> {tool.data.pricing.length > 60 ? tool.data.pricing.slice(0, 57) + '…' : tool.data.pricing}</span>
+								<span><span class="uppercase tracking-wider">Platforms:</span> {tool.data.platforms.join(', ') || 'unknown'}</span>
+							</div>
+						</a>
+					))}
+				</div>
+			</section>
+		);
+	})}
+
+	<div class="mt-24 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Comparing a shortlist?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Run the two-week trial protocol from our <a href="/blog/how-to-evaluate-ai-code-review-tools" class="underline underline-offset-4">evaluation guide</a>, then score your setup.</p>
+		</div>
+		<a href="/assessment" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
+			Take the Assessment [↗]
+		</a>
+	</div>
+</Layout>

@@ -1,0 +1,27 @@
+{
+  "name": "Cubic",
+  "website": "https://www.cubic.dev",
+  "tagline": "AI code review for GitHub PRs plus scheduled whole-codebase bug scans, with local CLI review, custom agents, and issue checks.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free: 20 PR reviews/mo; Team $30/dev/mo annual ($40 monthly); Pro $79/dev/mo annual ($99 monthly); Enterprise custom. Free for OSS teams",
+  "pricingUrl": "https://cubic.dev/pricing-plans",
+  "selfHosted": "unknown",
+  "selfHostedNote": "No self-hosted or VPC deployment published; Enterprise details gated behind a demo (lists GitHub Enterprise support only).",
+  "platforms": ["github"],
+  "modelControl": "Fixed vendor models (OpenAI, Anthropic); BYOK listed only as an Enterprise plan feature",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "yes", "note": "AI wiki indexes the repo; cross-repo reviews can read up to 5 linked repositories during PR review."},
+    "02-rule-centric": {"status": "yes", "note": "cubic.yaml custom agents with sensitivity levels and ignore filters; docs promise minimal verbosity."},
+    "03-dual-workflow": {"status": "yes", "note": "Local CLI review before pushing, IDE/agent setup (Cursor, VS Code, Claude Code), and an MCP server."},
+    "04-business-logic": {"status": "yes", "note": "Checks PRs against linked Linear/Jira issue requirements, posting a done/missing table in the review."},
+    "05-continuous-learning": {"status": "yes", "note": "Thumbs up/down calibrate per-codebase noise; typed replies are remembered; learnings visible in settings."},
+    "06-sandbox-validation": {"status": "unknown", "note": "No documented code execution, test runs, or preview-environment validation."},
+    "07-economic-transparency": {"status": "partial", "note": "BYOK gated to Enterprise; per-seat pricing with LOC quotas and flex top-ups; no token-cost visibility."},
+    "08-actionability": {"status": "yes", "note": "'Fix with cubic' background agents generate and apply fixes; Pro adds auto-created fix PRs."},
+    "09-measurable-roi": {"status": "yes", "note": "Review, delivery, and authorship dashboards incl. cycle-time and merge-time trends; no cost-per-PR telemetry."}
+  },
+  "relatedPosts": []
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Aikido Security",
+  "website": "https://www.aikido.dev",
+  "tagline": "All-in-one AppSec platform (SAST, SCA, secrets, cloud) with AI autotriage and autofix PRs, built on tuned open-source scanners.",
+  "category": "security",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free Developer plan (2 users); Basic $300/mo and Pro/Advanced from $600/mo (10 users incl., scales by users); Enterprise custom; 10% off annual billing",
+  "pricingUrl": "https://www.aikido.dev/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "SaaS-first; Pro adds on-premises/local scanning and Enterprise offers on-premises deployment options.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Fixed vendor models (Claude via AWS Bedrock) for AutoFix and AutoTriage; no BYOK",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Reachability engine plus code and cloud context feed AI autotriage; no multi-repo or requirements context."},
+    "02-rule-centric": {"status": "partial", "note": "Curated scanner rules with rule-based plus LLM autotriage; noise reduction is the core pitch."},
+    "03-dual-workflow": {"status": "partial", "note": "IDE plugins, CI gating, and PR security reviews; no documented distinct local-vs-PR behavior modes."},
+    "04-business-logic": {"status": "no", "note": "Jira/Linear sync creates tickets from findings; no validation of code against requirements."},
+    "05-continuous-learning": {"status": "unknown", "note": "No documented learning from team feedback beyond standard ignore/triage states."},
+    "06-sandbox-validation": {"status": "no", "note": "Static and reachability analysis; no sandbox execution of code or fixes."},
+    "07-economic-transparency": {"status": "no", "note": "Vendor-managed LLM (Claude on Bedrock) with credit-metered AI features; no model choice."},
+    "08-actionability": {"status": "partial", "note": "AI AutoFix opens fix PRs for 91 SAST rules (JS/TS, Python, Java, .NET, PHP) plus SCA/IaC fixes."},
+    "09-measurable-roi": {"status": "partial", "note": "Security posture and compliance reporting; no dev-cycle or review-ROI metrics."}
+  },
+  "relatedPosts": []
+}

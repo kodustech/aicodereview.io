@@ -1,0 +1,69 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getPublishedPosts, CATEGORY_LABELS, readingTime, formatDate, SITE_URL } from '../../lib/blog';
+
+const posts = await getPublishedPosts();
+const categories = [...new Set(posts.map((p) => p.data.category))];
+
+const title = "AI Code Review Blog — Comparisons, Guides & Benchmarks | aicodereview.io";
+const description = "In-depth comparisons, alternatives, and evaluation guides for AI code review tools, benchmarked against the 2026 AI Code Review Standard.";
+---
+
+<Layout
+	title={title}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Blog', url: `${SITE_URL}/blog/` }
+	]}
+	schemas={[{
+		"@type": "Blog",
+		"name": "aicodereview.io Blog",
+		"url": `${SITE_URL}/blog/`,
+		"description": description,
+		"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": `${SITE_URL}/about/` }
+	}]}
+>
+	<section class="max-w-3xl mb-16">
+		<h1 class="text-stone-500 dark:text-zinc-500 font-mono tracking-widest uppercase text-sm mb-4">
+			The Blog
+		</h1>
+		<h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-6 font-sans leading-none">
+			Comparisons, guides &amp; evaluations.
+		</h2>
+		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Everything we learn testing AI code reviewers against <a href="/#standards" class="underline underline-offset-4 decoration-2 hover:decoration-stone-400">the 9 standards</a> — tool comparisons, honest alternatives, and evaluation playbooks.
+		</p>
+	</section>
+
+	{categories.length > 1 && (
+		<nav class="flex flex-wrap gap-3 mb-16" aria-label="Blog categories">
+			{categories.map((cat) => (
+				<a href={`/blog/category/${cat}`} class="text-xs font-mono uppercase tracking-widest px-4 py-2 border border-stone-300 dark:border-zinc-700 text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-900 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">
+					{CATEGORY_LABELS[cat] ?? cat}
+				</a>
+			))}
+		</nav>
+	)}
+
+	<section class="space-y-12">
+		{posts.map((post) => (
+			<article class="border-t border-stone-200 dark:border-zinc-800 pt-10 group">
+				<div class="flex items-center gap-4 mb-3 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
+					<span>[ {CATEGORY_LABELS[post.data.category] ?? post.data.category} ]</span>
+					<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+					<span>{readingTime(post.body)} min read</span>
+				</div>
+				<h3 class="text-2xl md:text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4">
+					<a href={`/blog/${post.id}`}>{post.data.title}</a>
+				</h3>
+				<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+					{post.data.description}
+				</p>
+			</article>
+		))}
+		{posts.length === 0 && (
+			<p class="text-stone-500 dark:text-zinc-500 font-mono">No posts yet — first batch shipping soon.</p>
+		)}
+	</section>
+</Layout>

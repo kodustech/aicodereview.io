@@ -1,0 +1,27 @@
+{
+  "name": "Gemini Code Assist",
+  "website": "https://codeassist.google",
+  "tagline": "Google's coding assistant whose GitHub app auto-reviews pull requests with severity-ranked comments and committable fixes.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "GitHub PR review app free in preview (quota of at least 100 reviews/day per installation); Code Assist Standard $19/user/mo annual ($22.80 monthly), Enterprise $45 ($54 monthly); individual free tier phasing out from June 2026",
+  "pricingUrl": "https://codeassist.google",
+  "selfHosted": "none",
+  "selfHostedNote": "Google-hosted; an enterprise code review variant (Preview) supports GitHub Enterprise Cloud/Server sources via Google Cloud.",
+  "platforms": ["github"],
+  "modelControl": "Fixed Google Gemini models; no BYOK or model choice",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Pulls repository information for review context; no documented multi-repo or ticket context."},
+    "02-rule-centric": {"status": "partial", "note": "Custom style guides and a severity threshold config; default posture reviews every PR verbosely."},
+    "03-dual-workflow": {"status": "yes", "note": "IDE assistant (VS Code, JetBrains) plus the GitHub PR review bot cover local and PR surfaces."},
+    "04-business-logic": {"status": "no", "note": "No issue-tracker integration or requirements validation documented."},
+    "05-continuous-learning": {"status": "no", "note": "No documented learning from review feedback; config and style guides are static."},
+    "06-sandbox-validation": {"status": "no", "note": "No sandbox execution or runtime validation of suggestions."},
+    "07-economic-transparency": {"status": "no", "note": "Gemini models only with no BYOK; the GitHub app itself is free in preview."},
+    "08-actionability": {"status": "yes", "note": "Review comments include severity levels and suggested code fixes committable directly from GitHub."},
+    "09-measurable-roi": {"status": "no", "note": "No documented review analytics or ROI reporting for the GitHub app."}
+  },
+  "relatedPosts": []
+}

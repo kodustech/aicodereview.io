@@ -2,12 +2,16 @@
 import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import PillarGraphic from '../components/PillarGraphic.astro';
+import { getPublishedPosts, CATEGORY_LABELS, formatDate } from '../lib/blog';
+import { getTools } from '../lib/tools';
 
 const pillars = await getCollection('pillars');
 // Sort by the 'order' field defined in the frontmatter
 const sortedPillars = pillars.sort((a, b) => a.data.order - b.data.order);
+const latestPosts = (await getPublishedPosts()).slice(0, 4);
+const toolCount = (await getTools()).length;
 
-const title = "AI Code Review Standards | aicodereview.io";
+const title = "AI Code Review: Standards, Tools & Guides (2026) | aicodereview.io";
 ---
 
 <Layout title={title}>
@@ -60,6 +64,45 @@ const title = "AI Code Review Standards | aicodereview.io";
 			</div>
 		))}
 	</section>
+
+	{toolCount > 0 && (
+		<section class="mt-40 pt-16 border-t border-stone-200 dark:border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+			<div>
+				<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-3">[ The Directory ]</h2>
+				<p class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 text-balance">
+					{toolCount} AI code review tools, mapped against the standard.
+				</p>
+				<p class="text-stone-600 dark:text-zinc-400 mt-2 text-pretty">Pricing, licensing, self-hosting, platforms — structured facts, no star ratings.</p>
+			</div>
+			<a href="/tools" class="shrink-0 inline-flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-zinc-100 bg-white dark:bg-zinc-950 px-5 py-3 border border-stone-300 dark:border-zinc-700 hover:bg-stone-50 dark:hover:bg-zinc-900 transition-colors">
+				Browse Tools
+				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+			</a>
+		</section>
+	)}
+
+	{latestPosts.length > 0 && (
+		<section class="mt-40 pt-16 border-t border-stone-200 dark:border-zinc-800">
+			<div class="flex items-baseline justify-between mb-12">
+				<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase">[ From the Blog ]</h2>
+				<a href="/blog" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">All posts →</a>
+			</div>
+			<div class="grid md:grid-cols-2 gap-x-12 gap-y-10">
+				{latestPosts.map((post) => (
+					<a href={`/blog/${post.id}`} class="block group">
+						<div class="flex items-center gap-3 mb-2 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
+							<span>{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
+							<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+						</div>
+						<h3 class="text-xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4">
+							{post.data.title}
+						</h3>
+						<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{post.data.description}</p>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
 
 	<section class="mt-40 pt-16 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col items-center text-center max-w-2xl mx-auto">
 		<h2 class="text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-6">Evaluate your AI Code Review Readiness</h2>

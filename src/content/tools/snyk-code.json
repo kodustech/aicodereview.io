@@ -1,0 +1,27 @@
+{
+  "name": "Snyk Code",
+  "website": "https://snyk.io",
+  "tagline": "Developer-focused SAST built on Snyk's DeepCode AI engine, with PR checks and AI fix suggestions across major git platforms.",
+  "category": "security",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free: 100 Code tests/mo; Team from $25/contributor/mo (1,000 tests/mo); Ignite from $1,260/contributor/yr (unlimited tests); Enterprise custom",
+  "pricingUrl": "https://snyk.io/plans/",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "SaaS platform; Snyk Broker connects private SCMs and an enterprise Local Code Engine runs analysis in your network (with feature limits).",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Fixed vendor engine (DeepCode AI, hybrid symbolic + ML); no BYOK or model choice",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Cross-file interprocedural taint analysis within a repo; no multi-repo or ticket context."},
+    "02-rule-centric": {"status": "partial", "note": "Deterministic security rules with custom rules on higher tiers; scope limited to security findings."},
+    "03-dual-workflow": {"status": "yes", "note": "IDE plugins, CLI, and PR checks with inline comments cover both local and PR workflows."},
+    "04-business-logic": {"status": "no", "note": "No validation against tickets or requirements; security-focused analysis only."},
+    "05-continuous-learning": {"status": "no", "note": "DeepCode AI trains on open-source data; no documented learning from your team's review feedback."},
+    "06-sandbox-validation": {"status": "no", "note": "Static analysis only; no sandbox execution of code or fixes."},
+    "07-economic-transparency": {"status": "no", "note": "No model choice or BYOK; per-contributor subscription with vendor-managed models."},
+    "08-actionability": {"status": "partial", "note": "DeepCode AI Fix offers one-click fix suggestions in the IDE; PR checks flag issues without committing fixes."},
+    "09-measurable-roi": {"status": "partial", "note": "Security reporting (issue trends, fix rates) in the platform; no dev-cycle or review-ROI metrics."}
+  },
+  "relatedPosts": []
+}

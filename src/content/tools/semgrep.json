@@ -1,0 +1,27 @@
+{
+  "name": "Semgrep",
+  "website": "https://semgrep.dev",
+  "tagline": "Open-source static analysis engine with a commercial AppSec Platform adding cross-file analysis and an AI assistant for triage.",
+  "category": "security",
+  "openSource": true,
+  "license": "LGPL-2.1 (CE engine); AppSec Platform proprietary",
+  "pricing": "Free for up to 10 contributors; Teams from $30/contributor/mo per product (Code SAST; Secrets $15) with 20 AI credits/dev/mo; Enterprise custom with 50 AI credits/dev/mo",
+  "pricingUrl": "https://semgrep.dev/pricing/",
+  "selfHosted": "full",
+  "selfHostedNote": "CE engine (LGPL-2.1) runs fully local or in your CI; the AppSec Platform and Assistant are SaaS-only.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Assistant uses OpenAI with Amazon Bedrock fallback; custom AI model provider available on Enterprise",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Cross-file, cross-function dataflow in the Pro engine; Assistant memories add project context; no ticket context."},
+    "02-rule-centric": {"status": "yes", "note": "Fully rule-centric: custom rules, registry, and policy modes (Monitor/Comment/Block) control PR noise."},
+    "03-dual-workflow": {"status": "yes", "note": "CLI, IDE extension, and pre-commit locally; policy-managed PR/MR comments in CI."},
+    "04-business-logic": {"status": "no", "note": "No validation against issue trackers or requirements."},
+    "05-continuous-learning": {"status": "partial", "note": "Assistant Memories store triage decisions and per-project instructions; the core engine does not learn."},
+    "06-sandbox-validation": {"status": "no", "note": "Static analysis only; no sandbox or runtime validation."},
+    "07-economic-transparency": {"status": "partial", "note": "LGPL engine is free to run; Assistant is credit-metered on vendor models, custom provider Enterprise-only."},
+    "08-actionability": {"status": "partial", "note": "Assistant autofix posts suggested code changes in PR/MR comments; coverage varies by rule and language."},
+    "09-measurable-roi": {"status": "partial", "note": "Platform dashboards track findings, fix rates, and remediation times; no dev-cycle ROI attribution."}
+  },
+  "relatedPosts": ["ai-code-review-vs-static-analysis"]
+}

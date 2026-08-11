@@ -1,0 +1,137 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import { getTools, TOOL_CATEGORY_LABELS, SELF_HOSTED_LABELS, STATUS_GLYPHS, STATUS_LABELS, SPONSOR_SLUG } from '../../lib/tools';
+import { getPublishedPosts, SITE_URL } from '../../lib/blog';
+
+export async function getStaticPaths() {
+	const tools = await getTools();
+	return tools.map((tool) => ({ params: { slug: tool.id }, props: { tool } }));
+}
+
+const { tool } = Astro.props;
+const pillars = (await getCollection('pillars')).sort((a, b) => a.data.order - b.data.order);
+const allPosts = await getPublishedPosts();
+const related = allPosts.filter((p) => tool.data.relatedPosts.includes(p.id));
+const url = `${SITE_URL}/tools/${tool.id}/`;
+
+const title = `${tool.data.name} — AI Code Review Tool Profile (2026) | aicodereview.io`;
+const description = `${tool.data.name}: ${tool.data.tagline} Pricing, license, self-hosting, and how it maps to the 9-pillar AI code review standard.`.slice(0, 300);
+
+const specRows = [
+	{ label: 'Category', value: TOOL_CATEGORY_LABELS[tool.data.category] ?? tool.data.category },
+	{ label: 'Open source', value: tool.data.openSource ? `Yes (${tool.data.license})` : 'No' },
+	{ label: 'Pricing', value: tool.data.pricing, href: tool.data.pricingUrl.startsWith('http') ? tool.data.pricingUrl : undefined },
+	{ label: 'Self-hosted', value: SELF_HOSTED_LABELS[tool.data.selfHosted] + (tool.data.selfHostedNote ? ` — ${tool.data.selfHostedNote}` : '') },
+	{ label: 'Platforms', value: tool.data.platforms.join(', ') || 'unknown' },
+	{ label: 'Model control', value: tool.data.modelControl },
+	{ label: 'Last verified', value: tool.data.lastVerified },
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Tools', url: `${SITE_URL}/tools/` },
+		{ name: tool.data.name, url }
+	]}
+	schemas={[{
+		"@type": "SoftwareApplication",
+		"name": tool.data.name,
+		"url": tool.data.website,
+		"applicationCategory": "DeveloperApplication",
+		"description": tool.data.tagline,
+		"operatingSystem": "Web",
+		...(tool.data.openSource ? { "license": tool.data.license } : {})
+	}]}
+>
+	<div class="mb-12">
+		<a href="/tools" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-10">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+			All Tools
+		</a>
+
+		<div class="flex flex-wrap items-center gap-3 mb-4">
+			<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-stone-900 dark:text-zinc-50 leading-tight">
+				{tool.data.name}
+			</h1>
+			{tool.id === SPONSOR_SLUG && (
+				<span class="text-[10px] font-mono uppercase tracking-widest px-2 py-1 border border-stone-300 dark:border-zinc-700 text-stone-500 dark:text-zinc-500">Sponsor</span>
+			)}
+		</div>
+		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl mb-6">
+			{tool.data.tagline}
+		</p>
+		<a href={tool.data.website} target="_blank" rel={tool.id === SPONSOR_SLUG ? 'noopener sponsored' : 'noopener noreferrer'} class="inline-flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-zinc-100 bg-white dark:bg-zinc-950 px-5 py-3 border border-stone-300 dark:border-zinc-700 hover:bg-stone-50 dark:hover:bg-zinc-900 transition-colors">
+			Visit Website [↗]
+		</a>
+	</div>
+
+	<section class="mb-16">
+		<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-6">[ Facts ]</h2>
+		<dl class="border-t border-stone-200 dark:border-zinc-800">
+			{specRows.map((row) => (
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-1 md:gap-6 py-4 border-b border-stone-200 dark:border-zinc-800">
+					<dt class="text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 pt-1">{row.label}</dt>
+					<dd class="md:col-span-3 text-stone-800 dark:text-zinc-200 text-pretty">
+						{row.value}
+						{row.href && (
+							<a href={row.href} target="_blank" rel="noopener noreferrer" class="ml-2 text-xs font-mono text-stone-500 dark:text-zinc-500 underline underline-offset-2 hover:text-stone-900 dark:hover:text-zinc-100">source</a>
+						)}
+					</dd>
+				</div>
+			))}
+		</dl>
+	</section>
+
+	<section class="mb-16">
+		<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-3">[ Against the 9 Standards ]</h2>
+		<p class="text-sm text-stone-500 dark:text-zinc-400 mb-6 max-w-2xl text-pretty">
+			Based on public documentation as of {tool.data.lastVerified}. <span class="font-mono">✓ documented · ~ partial · ✗ not offered · ? unknown</span>. Methodology on the <a href="/about" class="underline underline-offset-2">about page</a>.
+		</p>
+		<div class="border-t border-stone-200 dark:border-zinc-800">
+			{pillars.map((pillar) => {
+				const entry = tool.data.standards[pillar.id] ?? { status: 'unknown', note: '' };
+				return (
+					<div class="grid grid-cols-[2rem_1fr] md:grid-cols-[2rem_16rem_1fr] gap-x-4 gap-y-1 py-4 border-b border-stone-200 dark:border-zinc-800 items-baseline">
+						<span class={`font-mono font-bold text-lg ${entry.status === 'yes' ? 'text-stone-900 dark:text-zinc-100' : 'text-stone-400 dark:text-zinc-600'}`} title={STATUS_LABELS[entry.status]}>
+							{STATUS_GLYPHS[entry.status]}
+						</span>
+						<a href={`/standards/${pillar.id}`} class="font-bold text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">
+							{pillar.data.title}
+						</a>
+						<p class="col-start-2 md:col-start-3 text-sm text-stone-600 dark:text-zinc-400 text-pretty">
+							{entry.note || STATUS_LABELS[entry.status]}
+						</p>
+					</div>
+				);
+			})}
+		</div>
+	</section>
+
+	{related.length > 0 && (
+		<section class="mb-16">
+			<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ In Our Coverage ]</h2>
+			<div class="grid md:grid-cols-2 gap-8">
+				{related.map((r) => (
+					<a href={`/blog/${r.id}`} class="block group">
+						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">{r.data.title}</span>
+						<p class="text-sm text-stone-600 dark:text-zinc-400 mt-1 text-pretty">{r.data.description}</p>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
+
+	<div class="mt-24 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluating {tool.data.name}?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Run it through the two-week trial protocol before you commit.</p>
+		</div>
+		<a href="/blog/how-to-evaluate-ai-code-review-tools" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
+			Evaluation Guide [↗]
+		</a>
+	</div>
+</Layout>

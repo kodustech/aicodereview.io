@@ -1,0 +1,27 @@
+{
+  "name": "Greptile",
+  "website": "https://www.greptile.com",
+  "tagline": "AI code reviewer that indexes the whole codebase into a graph; its TREX agent writes and runs tests for PRs in a sandbox.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free 50 credits/mo (1 dev); Pro $30/seat/mo with 50 credits/seat, $1 per extra credit; TREX review = 3 credits; Enterprise custom; OSS and startup programs",
+  "pricingUrl": "https://www.greptile.com/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Self-hosted deployment on custom-priced Enterprise tier, alongside SOC 2 Type II and SSO/SAML.",
+  "platforms": ["github", "gitlab"],
+  "modelControl": "Fixed vendor models; no BYOK on standard plans",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Graph index of the full codebase gives deep cross-file context; ticket/business context is not a focus."},
+    "02-rule-centric": {"status": "partial", "note": "Plain-English custom rules on Pro; community reports on default precision/noise are mixed."},
+    "03-dual-workflow": {"status": "partial", "note": "PR-focused; MCP, Claude Code plugin, and one-click IDE fixes exist, but no local review surface documented."},
+    "04-business-logic": {"status": "no", "note": "Focus is code-side context rather than ticket-side; no requirements validation documented."},
+    "05-continuous-learning": {"status": "yes", "note": "Learns team standards by reading your PR comments over time."},
+    "06-sandbox-validation": {"status": "yes", "note": "TREX writes and runs tests for each PR in a sandbox to demonstrate bugs (3 credits per review)."},
+    "07-economic-transparency": {"status": "no", "note": "No BYOK or model choice on standard plans; credit billing does not expose model costs."},
+    "08-actionability": {"status": "yes", "note": "One-click IDE fixes and /greploop iterative resolution with coding agents."},
+    "09-measurable-roi": {"status": "unknown", "note": "No review-metrics or ROI dashboards documented in the sources we verified."}
+  },
+  "relatedPosts": ["coderabbit-vs-greptile", "coderabbit-alternatives", "best-ai-code-review-tools", "cursor-bugbot-vs-coderabbit", "open-source-ai-code-review-tools", "self-hosted-ai-code-review", "ai-code-review-vs-static-analysis", "ai-code-review-statistics", "what-is-ai-code-review"]
+}

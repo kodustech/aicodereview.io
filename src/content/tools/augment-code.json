@@ -1,0 +1,27 @@
+{
+  "name": "Augment Code",
+  "website": "https://www.augmentcode.com",
+  "tagline": "Code review agent in the Cosmos platform: risk-triaged inline PR comments with full-codebase context; GitHub-native, others via CLI.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Business $100/mo flat (up to 50 seats) incl. $100/mo pooled usage, plus flat 40% fee on LLM usage; Enterprise custom. Code review on all plans",
+  "pricingUrl": "https://www.augmentcode.com/pricing",
+  "selfHosted": "none",
+  "selfHostedNote": "No self-hosted offering documented; Enterprise cites custom compute and multi-region deployment in Augment's cloud.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Choose from a vendor model list (Claude, GPT-5.x, Gemini families); no BYOK",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "yes", "note": "Context Engine reads the full codebase; cross-repo context via external repos declared in AGENTS.md."},
+    "02-rule-centric": {"status": "yes", "note": "YAML review guidelines with globs and severities; docs commit to high signal-to-noise and no style nags."},
+    "03-dual-workflow": {"status": "partial", "note": "GitHub PR reviews plus Auggie CLI/CI automation; no distinct local pre-commit review mode documented."},
+    "04-business-logic": {"status": "partial", "note": "Jira Cloud and Linear integrations plus MCP tools; ticket-vs-code validation not explicitly documented."},
+    "05-continuous-learning": {"status": "yes", "note": "Code Review Memory captures reviewer feedback and distills per-repo knowledge shared across agents."},
+    "06-sandbox-validation": {"status": "yes", "note": "Cosmos Verifier agent exercises changes in a running environment and reports evidence-backed findings."},
+    "07-economic-transparency": {"status": "partial", "note": "No BYOK; model choice from a vendor list; discloses a flat 40% fee on LLM usage with a credit dashboard."},
+    "08-actionability": {"status": "partial", "note": "'Fix in Augment' hands findings to an agent session in IDE/CLI; no one-click commit from the PR."},
+    "09-measurable-roi": {"status": "partial", "note": "Dashboard: PRs reviewed, % comments addressed, thumbs-up rate, estimated dev hours saved; no DORA metrics."}
+  },
+  "relatedPosts": ["ai-code-review-statistics", "ai-code-review-vs-static-analysis", "what-is-ai-code-review"]
+}

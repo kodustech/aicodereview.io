@@ -1,0 +1,231 @@
+---
+title: "How to Evaluate AI Code Review Tools (2026): A Playbook"
+description: "A practical playbook for how to evaluate AI code review tools: a 9-standard scoring rubric, red flags, a 2-week trial protocol, and vendor questions."
+pubDate: 2026-08-11
+category: "guide"
+tags: ["ai-code-review", "evaluation", "engineering-management", "developer-tools", "code-quality"]
+faq:
+  - q: "How long should a trial of an AI code review tool take?"
+    a: "Two weeks of instrumented use on real repositories is the minimum. Week one measures raw signal-to-noise and recall on planted bugs; week two measures whether the tool responds to your rules and feedback. Anything shorter only tells you what the demo already told you."
+  - q: "What is a good signal-to-noise ratio for an AI code reviewer?"
+    a: "In a two-week trial, at least half of all comments should be actionable — something a developer actually changes code in response to. If fewer than 50% of comments are actionable, or more than 20% are outright wrong, the tool will get muted within a quarter."
+  - q: "Should we test AI code review tools on real PRs or synthetic ones?"
+    a: "Both, because they measure different things. Synthetic PRs with planted bugs measure recall — does the tool catch what you know is there. Real PRs measure precision and noise — what does the tool say when nothing is wrong. A tool needs to pass both tests."
+  - q: "How many AI code review tools should we trial at once?"
+    a: "Two or three, on different repositories or with only one commenting per PR. Running two bots on the same PR doubles the noise and contaminates your time-to-merge measurements. Use the same planted-bug set and the same rubric for each so scores are comparable."
+  - q: "How do we measure whether an AI code review tool actually saves time?"
+    a: "Baseline your median time-to-merge and human review effort for 4 weeks before the trial, then compare during the trial. Two weeks is too short to prove a speedup, but it is enough to catch a regression — if time-to-merge goes up because developers are triaging bot comments, that is disqualifying."
+  - q: "Are open-source AI code review tools worth including in an evaluation?"
+    a: "Yes, and they are easy to include because you can trial them without a sales call. Tools like Kodus (AGPLv3) and PR-Agent (MIT) run against your own LLM API keys, which also gives you a true cost-per-PR number to compare against per-seat pricing."
+  - q: "What is the single biggest red flag when evaluating an AI code reviewer?"
+    a: "Repetition. If you reject a suggestion and the tool makes the same suggestion again a few PRs later, it has no feedback loop. Teams forgive a wrong comment once; a tool that cannot learn from rejection gets uninstalled."
+---
+
+To evaluate AI code review tools, score them against nine measurable standards — context depth, noise discipline, workflow separation, business-logic awareness, learning, runtime validation, economic transparency, actionability, and provable ROI — and then run a two-week instrumented trial on your own repositories: plant known bugs to measure recall, label every comment to measure signal-to-noise, and compare time-to-merge against a pre-trial baseline. A demo and a feature matrix cannot tell you whether a reviewer works on your codebase. A trial with numbers can.
+
+This playbook turns those nine standards into something you can execute: a weighted scoring rubric, the red flags that should end an evaluation early, a day-by-day trial protocol, and the questions that separate real answers from sales answers.
+
+## Why most evaluations of AI code reviewers fail
+
+Most teams evaluate AI code review the way they evaluate a linter: install it on one repo, watch it comment for a few days, and go with gut feel. That process fails for three predictable reasons.
+
+**The first week is the honeymoon.** Every AI reviewer looks impressive on day one because any plausible-sounding comment feels like magic. The failure modes — repetitive nitpicks, hallucinated APIs, suggestions that ignore your architecture — show up over weeks, after the team has stopped reading carefully. If you're new to the category, start with [what AI code review actually is](/blog/what-is-ai-code-review) and what it structurally can and cannot do.
+
+**Demos are run on codebases chosen by the vendor.** A reviewer that shines on a clean, single-repo TypeScript project may collapse on your 9-year-old monorepo with three languages and a service mesh. The only codebase that matters is yours.
+
+**Nobody measures.** "The team seems to like it" is not an evaluation. Without a baseline for time-to-merge, a count of actionable versus noise comments, and a recall number against known bugs, you are choosing based on vibes — and you will re-run the whole evaluation in six months when the vibes wear off.
+
+The fix is to treat the evaluation like an engineering problem: define the criteria up front, instrument the trial, and let the numbers decide.
+
+## The nine standards, and how to test each one
+
+These nine standards define what a production-grade AI code reviewer looks like in 2026. For each one: what it means, how to test it during a trial, and the red flags that should cost points — or end the conversation.
+
+### 1. Multi-dimensional context
+
+A reviewer that only reads the git diff is reviewing a chapter without knowing the plot. It must index the whole repository, resolve cross-repo dependencies, and understand the intent behind the change. Full standard: [Multi-dimensional Context](/standards/01-multi-dimensional-context).
+
+**How to test:** Open a PR that changes a shared interface or API contract, then check whether the reviewer flags the consumers of that interface elsewhere in the codebase — or, better, in a sibling repository. Also watch for hallucinations: suggestions to call helpers that don't exist in your project.
+
+**Red flags:** The tool suggests functions from libraries you don't use. It "optimizes" code in ways that break callers it never saw. It enforces generic style conventions instead of reading your existing code and contribution docs.
+
+### 2. Rule-centric and default quiet
+
+Unprompted style opinions are a linter's job done badly. Every stylistic or architectural comment should be backed by an explicit, version-controlled team rule; absent a rule or an objective bug, the reviewer should stay silent. Full standard: [Rule-Centric & Default Quiet](/standards/02-rule-centric).
+
+**How to test:** Run the tool with zero configuration on five real PRs and count the comments. Then define three team rules in plain language (for example: "never log request bodies", "all money math uses the decimal type", "no new endpoints without an authorization check") and verify the tool enforces exactly those — and stops commenting on things you never asked about.
+
+**Red flags:** Comments about naming, indentation, or missing semicolons. Ten-plus comments on a routine PR. No mechanism to define rules as versioned plain text alongside the code.
+
+### 3. Dual workflow: local vs. PR
+
+The IDE is for exploration; the PR is for verification. A reviewer that behaves identically in both — verbose everywhere, or silent everywhere — will either exhaust the team in PRs or be useless locally. Full standard: [Dual-Workflow: Local vs. PR](/standards/03-dual-workflow).
+
+**How to test:** Check whether the tool offers a local surface (CLI, IDE, pre-commit) at all, and whether its PR behavior is configurably stricter than its local behavior.
+
+**Red flags:** The PR bot brainstorms alternative architectures on "done" code. There is one global verbosity setting for every surface. The vendor treats "IDE plugin" and "PR reviewer" as the same product with two logos.
+
+### 4. Business logic validation
+
+Whether code compiles is a solved problem. The hard question is whether the code does what the ticket asked. A 2026-grade reviewer connects to your issue tracker via MCP or a native integration, reads the acceptance criteria, and reviews the PR against intent. Full standard: [Business Logic Validation](/standards/04-business-logic).
+
+**How to test:** Link a PR to a ticket with three explicit acceptance criteria, and deliberately leave one unimplemented. Does the reviewer notice? Even partial credit here — surfacing the ticket and summarizing the gap — is worth more than a dozen syntax observations.
+
+**Red flags:** No issue-tracker integration at all. The tool reviews a PR titled "Fix ENG-104" with no idea what ENG-104 says. It praises a technically clean implementation of the wrong feature.
+
+### 5. Continuous learning
+
+Correcting the same bot mistake twice is how trust dies. Rejections should update the tool's context — or propose a new team rule — so the same suggestion never comes back. Full standard: [Continuous Learning](/standards/05-continuous-learning).
+
+**How to test:** This is the repetition test in the week-two protocol below: explicitly reject a category of suggestion, then count how many PRs pass before it reappears.
+
+**Red flags:** A static system prompt with no per-team memory. Rejected suggestions reappearing within days. No way to see what the tool has "learned" about your team, and no way to correct it.
+
+### 6. Sandbox validation
+
+A suggestion that has never been executed is a hypothesis. The strongest reviewers can validate assumptions at runtime — generating tests for their own fixes, exercising preview environments, probing edge cases. Full standard: [Sandbox Validation](/standards/06-sandbox-validation).
+
+**How to test:** When the tool proposes a non-trivial fix, check whether it ships a verifying test with it, and whether the suggested code actually compiles and passes CI when applied unmodified.
+
+**Red flags:** Suggested fixes that don't compile. Refactors that break an API contract the tool never checked. Confident claims about runtime behavior ("this will deadlock") with no way to substantiate them.
+
+### 7. Economic transparency
+
+If a vendor charges $30 per seat per month for what amounts to $0.50 of LLM calls, you are paying a wrapper tax. You should be able to bring your own API keys, choose which models run which tasks, and see exactly what tokens cost. Full standard: [Economic Transparency](/standards/07-economic-transparency).
+
+**How to test:** Ask for per-PR token and cost telemetry during the trial. Ask whether you can plug in your own OpenAI, Anthropic, or Azure OpenAI credentials. Divide your trial's total cost by PRs reviewed and write that number down — it's the denominator of every ROI claim.
+
+**Red flags:** Opaque per-seat pricing with no usage visibility. No BYOK option. Lock-in to a single model provider. A vendor that cannot — or will not — tell you how many tokens a review consumed.
+
+### 8. Actionability
+
+An auditor points at problems; an engineer fixes them. If the reviewer found an issue, it should produce the exact diff that fixes it, applyable in one click — with imports resolved and surrounding code respected. Full standard: [Actionability](/standards/08-actionability).
+
+**How to test:** During the trial, count what fraction of comments come with a committable code suggestion, and how many of those apply cleanly and pass CI. Also check what happens to valid-but-deferred suggestions: do they become tracked tech-debt issues, or evaporate?
+
+**Red flags:** Five-paragraph explanations with no code. Suggestions referencing utilities that were never imported. "Consider refactoring this" as a complete review comment.
+
+### 9. Measurable ROI
+
+Six months in, your CFO will ask whether the tool is working, and "the team likes it" is not an answer. The platform itself should track acceptance rate, cycle time impact, bugs caught pre-merge, and cost per PR. Full standard: [Measurable ROI](/standards/09-measurable-roi).
+
+**How to test:** Ask to see the dashboard during the trial — with your data in it. If the tool doesn't measure its own acceptance rate, you'll be measuring it by hand forever.
+
+**Red flags:** No analytics beyond "comments posted." No way to correlate reviews with time-to-merge or escaped bugs. ROI claims in the sales deck that the product itself cannot reproduce.
+
+## The scoring rubric
+
+Score each standard 0-5 based on trial evidence, not vendor claims. The weighted total gives you a comparable score out of 100 across tools.
+
+| Standard | Weight | 5 looks like | 0 looks like |
+|---|---|---|---|
+| 1. Multi-dimensional context | 15 | Flags cross-file and cross-repo impacts; zero hallucinated APIs in the trial | Diff-only review; invents helpers your repo doesn't have |
+| 2. Rule-centric, default quiet | 15 | Silent unless a rule or real bug is violated; rules are plain text in version control | Unprompted style nitpicks on every PR; no rules mechanism |
+| 3. Dual workflow | 5 | Distinct local and PR behavior; strict, surgical PR mode | One verbosity everywhere, or no local surface at all |
+| 4. Business logic validation | 10 | Reads the linked ticket; flags the unimplemented acceptance criterion | No issue-tracker awareness whatsoever |
+| 5. Continuous learning | 10 | Rejected suggestion never returns; rejections can become team rules | Same rejected suggestion within 3 PRs |
+| 6. Sandbox validation | 5 | Fixes ship with verifying tests; suggestions pass CI unmodified | Suggested code doesn't compile |
+| 7. Economic transparency | 10 | BYOK, model choice per task, per-PR cost telemetry | Opaque seat pricing, single locked model, no usage data |
+| 8. Actionability | 15 | Nearly every finding has a one-click, CI-passing fix; ignored suggestions become tracked issues | Prose-only comments; broken suggested diffs |
+| 9. Measurable ROI | 15 | Live dashboard: acceptance rate, cycle time, cost per PR | No analytics; "trust us" |
+
+Scoring guidance: a 3 means the capability exists and worked in your trial with caveats; a 5 means it worked without your team compensating for it. Do not award points for roadmap items — "coming next quarter" scores zero, because you are buying what exists.
+
+**Interpreting the total:** below 50, pass — the tool will be muted within a quarter. 50-70, viable if its weak standards are ones you don't care about (a solo-repo startup can shrug at multi-repo context). Above 70, adopt and negotiate. If two tools land within 5 points, the tiebreakers are economic transparency and learning, because those determine cost and annoyance at scale.
+
+Weights are a starting point. A regulated fintech should bump business logic validation and actionability; a platform team drowning in bot noise should bump rule-centricity. Change the weights before the trial, not after — deciding weights after you've seen scores is how you rationalize a favorite.
+
+## The two-week trial protocol
+
+Run this on 1-2 real, active repositories. If you're comparing tools, run them on different repos, or on the same repo with only one tool commenting per PR — two bots on one PR contaminates every measurement.
+
+### Day 0: baseline before the bot
+
+You cannot measure change without a "before." From your Git provider's data, capture the previous 4 weeks:
+
+- **Median time-to-merge** (first commit to merge) per repo.
+- **Median human review comments per PR**, and roughly how many led to a code change.
+- **Escaped defects:** bugs filed against code merged in that window, if your tracker supports the query.
+
+Also set up a shared spreadsheet with one row per bot comment and four labels: **actionable** (a developer changed code because of it), **correct-but-trivial** (true, but nobody acted), **wrong** (factually incorrect or hallucinated), **duplicate** (repeat of previously rejected feedback). Fifteen minutes of labeling per day is the entire cost of a rigorous evaluation.
+
+### Week 1: recall and raw noise
+
+**Plant known bugs.** Create 2-3 sacrificial PRs seeded with 8-12 real bugs — ideally reintroduced from your actual bug history, lightly disguised. Cover distinct categories:
+
+1. An off-by-one in a loop boundary
+2. A SQL query built with string interpolation
+3. A new endpoint missing the authorization check every sibling endpoint has
+4. A race condition on shared state
+5. An N+1 query in a hot path
+6. A null/undefined dereference on an optional field
+7. A resource leak (unclosed connection or file handle)
+8. A hardcoded secret in a config file
+9. A timezone bug (naive datetime crossing a boundary)
+10. A business-rule violation: code that contradicts the linked ticket's acceptance criteria
+
+Record which bugs each tool catches. **Recall on planted bugs is your single most honest capability number.** Expect no tool to catch everything — the race condition and the business-rule violation are genuinely hard, and that's the point: they discriminate between tools. Anything below 60% on the list overall, or a miss on the SQL injection or the missing auth check, is disqualifying.
+
+**Run real PRs with zero configuration.** Let the tool comment on every real PR this week, unconfigured, and label everything. This measures the out-of-the-box signal-to-noise — what a new team on this tool would actually experience.
+
+### Week 2: rules, learning, and cost
+
+**Configure rules.** Write 3-5 team rules in the tool's rules mechanism, drawn from real conventions ("we use date-fns, never moment.js" is the classic). Verify the tool enforces them — and verify the noise from week 1 drops. A tool that can't get quieter when told to is not [default quiet](/standards/02-rule-centric); it's default loud with settings.
+
+**Run the repetition test.** Explicitly reject one category of suggestion — dismiss it with a comment explaining why. Then count PRs until it reappears. Reappearance within three PRs fails [continuous learning](/standards/05-continuous-learning) outright.
+
+**Measure time-to-merge.** Compare the trial's median time-to-merge against your Day 0 baseline. Two weeks is too short to prove a speedup — but it is plenty to catch a regression. If time-to-merge went up because developers are triaging bot comments, that's a red flag no feature offsets.
+
+**Compute cost per PR.** Total trial cost (tokens if BYOK, or prorated seats) divided by PRs reviewed. You'll need this number for the ROI conversation, and vendors who can't help you compute it are telling you something.
+
+### The numbers that decide
+
+| Metric | How you got it | Healthy range |
+|---|---|---|
+| Planted-bug recall | Seeded PRs, week 1 | 60%+ overall; 100% on injection and authz |
+| Actionable-comment rate | Label sheet | 50%+ of all comments |
+| Wrong-comment rate | Label sheet | Under 20%, trending down in week 2 |
+| Repetition after rejection | Week 2 test | Zero recurrences |
+| Time-to-merge delta | Baseline vs. trial | Flat or better; any sustained increase fails |
+| Cost per PR | Spend ÷ PRs reviewed | Known and explainable — the number existing matters most |
+
+Feed the evidence into the rubric, compute weighted totals, decide. If you want a shortlist to run this protocol against, our comparison of the [best AI code review tools](/blog/best-ai-code-review-tools) is a reasonable starting bench.
+
+## Questions to ask vendors
+
+Ask these with the trial data in front of you. Vague answers to specific questions are answers.
+
+**Context and correctness**
+
+- "Does the reviewer index the full repository, or only the diff plus N lines of context? How do you handle cross-repository dependencies?"
+- "Show me a hallucinated suggestion from any customer and walk me through what you changed."
+
+**Noise and rules**
+
+- "What does the tool comment on with zero configuration? Can we see the default severity thresholds?"
+- "Are team rules plain text in our repo, or settings in your UI? What happens to them if we leave?"
+
+**Learning**
+
+- "When a developer rejects a suggestion, what concretely updates? Where can we inspect what the tool has learned about our team?"
+
+**Economics**
+
+- "Can we bring our own API keys and choose models per task? What exactly do we pay you for, if not tokens?" (The wrong answer to this one is the [wrapper tax](/standards/07-economic-transparency) in action.)
+- "What's the average cost per PR across your customers, and will we see ours in the product?"
+
+**Accountability**
+
+- "Which metrics does your dashboard track — acceptance rate, time-to-merge impact, bugs caught? Can we export them?"
+- "If the acceptance rate of your suggestions is below 30% after 90 days, what do you do about it?"
+
+**Deployment and data**
+
+- "Where does our code go, and to whom? Is there a self-hosted or BYOK option if InfoSec requires it?"
+- "What happens to our data, embeddings, and learned context when we cancel?"
+
+A note on disclosure: this site is sponsored by [Kodus](https://kodus.io), an open-source (AGPLv3) AI code reviewer designed around these standards — self-hostable, BYOK, with plain-text team rules (Kody Rules). A sponsor naturally thinks it scores well on this rubric, but the rubric is the point: run the protocol, and let your numbers pick the tool — sponsor's or anyone else's.
+
+## Run the assessment
+
+The nine standards give you the criteria; the trial gives you the evidence; the rubric turns evidence into a decision your CFO can audit. Before you schedule a single vendor call, spend ten minutes scoring your current setup — or the tool you're already trialing — against the standards with our [assessment](/assessment). It will tell you exactly where your biggest gaps are, and which standards deserve extra weight when you run this playbook for real.

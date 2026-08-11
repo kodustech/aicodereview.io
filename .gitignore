@@ -1,7 +1,12 @@
 # build output
 dist/
+.vercel/
 # generated types
 .astro/
+
+# local test screenshots / browser session artifacts
+/*.png
+.playwright-mcp/
 
 # dependencies
 node_modules/

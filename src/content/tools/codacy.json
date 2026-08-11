@@ -1,0 +1,27 @@
+{
+  "name": "Codacy",
+  "website": "https://www.codacy.com",
+  "tagline": "Code-quality platform covering 49 languages and 12,000+ static rules, SAST, secrets, SCA, and IaC, with an AI review layer on top.",
+  "category": "code-quality",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free Developer tier (IDE plugin); Team $18/dev/mo annual ($21 monthly), up to 30 devs and 100 private repos; free for open source; Business custom",
+  "pricingUrl": "https://www.codacy.com/pricing",
+  "selfHosted": "none",
+  "selfHostedNote": "Cloud-only; pricing page confirms no self-hosted option for the current cloud product.",
+  "platforms": ["github", "gitlab", "bitbucket"],
+  "modelControl": "unknown - no published BYOK or model choice for the AI review layer",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Mature rule-based static analysis across the repo; AI review layer is younger with undocumented depth."},
+    "02-rule-centric": {"status": "yes", "note": "12,000+ configurable rules with first-class quality gates and merge blocking; rules are config, not prose."},
+    "03-dual-workflow": {"status": "yes", "note": "IDE guardrails check AI-generated code as it's written; quality gates and AI review at the PR."},
+    "04-business-logic": {"status": "no", "note": "Reviews code, not ticket requirements; no MCP or issue-tracker validation documented."},
+    "05-continuous-learning": {"status": "unknown", "note": "Learning from review feedback not documented."},
+    "06-sandbox-validation": {"status": "no", "note": "Static analysis plus AI comments; no documented sandbox execution or test generation."},
+    "07-economic-transparency": {"status": "no", "note": "No published BYOK or model choice; AI costs bundled into seat pricing."},
+    "08-actionability": {"status": "yes", "note": "One-click fixes documented for AI-flagged issues."},
+    "09-measurable-roi": {"status": "partial", "note": "Quality dashboards and metrics are core to the platform; AI-review ROI metrics not documented."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools"]
+}

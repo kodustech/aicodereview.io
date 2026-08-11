@@ -1,0 +1,27 @@
+{
+  "name": "SonarQube",
+  "website": "https://www.sonarsource.com",
+  "tagline": "Deterministic static analysis platform (Server and Cloud) with PR decoration and LLM-generated AI CodeFix suggestions.",
+  "category": "code-quality",
+  "openSource": true,
+  "license": "LGPL-3.0 (Community Build); commercial editions proprietary",
+  "pricing": "Cloud: free tier up to 50k LoC private, Team from $34/mo (100k LoC), Enterprise custom. Server: Community Build free; Developer/Enterprise/Data Center priced per instance/yr by LoC (quote-based)",
+  "pricingUrl": "https://www.sonarsource.com/plans-and-pricing/",
+  "selfHosted": "full",
+  "selfHostedNote": "SonarQube Server is self-managed, incl. the free LGPL Community Build; AI CodeFix can use a fully self-hosted LLM gateway.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "AI CodeFix: Sonar-hosted GPT-5.1/GPT-4o, your Azure OpenAI/Bedrock, or a self-hosted OpenAI-compatible gateway; core analysis has no LLM",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Whole-project analysis with cross-file taint in paid editions; no multi-repo or ticket context."},
+    "02-rule-centric": {"status": "yes", "note": "Deterministic rule engine with per-project quality profiles and gates; flags only configured rule violations."},
+    "03-dual-workflow": {"status": "yes", "note": "Same rules locally via SonarQube for IDE (SonarLint) connected mode and in CI with PR decoration."},
+    "04-business-logic": {"status": "no", "note": "No issue-tracker or requirements integration; validates code against static rules only."},
+    "05-continuous-learning": {"status": "no", "note": "Issues can be accepted or marked false-positive individually; no generalized learning from team feedback."},
+    "06-sandbox-validation": {"status": "no", "note": "Static analysis only; no sandbox execution or runtime validation of fixes."},
+    "07-economic-transparency": {"status": "partial", "note": "AI CodeFix supports customer-managed or self-hosted LLMs; commercial pricing is LoC-based quotes."},
+    "08-actionability": {"status": "partial", "note": "AI CodeFix generates fix suggestions for supported rules and languages; many findings remain explain-only."},
+    "09-measurable-roi": {"status": "partial", "note": "Tracks code quality metrics and quality-gate trends; no DORA or review-ROI attribution."}
+  },
+  "relatedPosts": ["ai-code-review-vs-static-analysis"]
+}

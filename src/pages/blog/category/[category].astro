@@ -1,0 +1,57 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { getPublishedPosts, CATEGORY_LABELS, readingTime, formatDate, SITE_URL } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+	const posts = await getPublishedPosts();
+	const categories = [...new Set(posts.map((p) => p.data.category))];
+	return categories.map((category) => ({
+		params: { category },
+		props: { posts: posts.filter((p) => p.data.category === category) },
+	}));
+}
+
+const { category } = Astro.params;
+const { posts } = Astro.props;
+const label = CATEGORY_LABELS[category!] ?? category;
+
+const title = `${label} — AI Code Review Blog | aicodereview.io`;
+const description = `${label} for AI code review tools: in-depth, engineer-written posts benchmarked against the 2026 AI Code Review Standard.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Blog', url: `${SITE_URL}/blog/` },
+		{ name: label!, url: `${SITE_URL}/blog/category/${category}/` }
+	]}
+>
+	<section class="max-w-3xl mb-16">
+		<a href="/blog" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-8">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+			All Posts
+		</a>
+		<h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 leading-none">
+			{label}
+		</h1>
+	</section>
+
+	<section class="space-y-12">
+		{posts.map((post) => (
+			<article class="border-t border-stone-200 dark:border-zinc-800 pt-10 group">
+				<div class="flex items-center gap-4 mb-3 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
+					<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+					<span>{readingTime(post.body)} min read</span>
+				</div>
+				<h2 class="text-2xl md:text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4">
+					<a href={`/blog/${post.id}`}>{post.data.title}</a>
+				</h2>
+				<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+					{post.data.description}
+				</p>
+			</article>
+		))}
+	</section>
+</Layout>

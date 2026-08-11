@@ -1,0 +1,123 @@
+---
+title: "AI Code Review vs Static Analysis: 2026 Guide"
+description: "AI code review vs static analysis compared: determinism vs reasoning, false positives, SAST coverage, cost, and why mature teams run both."
+pubDate: 2026-08-11
+category: "explainer"
+tags: ["ai-code-review", "static-analysis", "sast", "code-quality", "comparison"]
+faq:
+  - q: "What is the difference between AI code review and static analysis?"
+    a: "Static analysis parses code into formal representations (ASTs, dataflow graphs) and checks them against deterministic rules — same input, same output, every time. AI code review feeds the diff plus codebase context to a large language model that reasons about intent and logic probabilistically. Static analysis proves the provable; AI review judges the semantic layer rules can't express."
+  - q: "Can AI code review replace SAST tools?"
+    a: "Not today, and not for compliance. SAST tools provide deterministic, auditable coverage of known vulnerability classes, which frameworks like SOC 2 and PCI-DSS effectively assume. Benchmark results for AI tools on real CVEs vary wildly between evaluators, so treat AI review as an additional detection layer, not a SAST replacement."
+  - q: "Which has more false positives, AI review or static analysis?"
+    a: "They fail differently. Static analyzers produce systematic false positives — the same over-broad rule fires on every matching pattern until you tune or suppress it. AI reviewers produce unpredictable ones: hallucinated bugs and irrelevant suggestions that vary run to run. Field data shows well-filtered AI tools can hit low single-digit false-positive rates, but the variance between tools is enormous."
+  - q: "Is SonarQube an AI code review tool?"
+    a: "SonarQube is fundamentally a static analysis platform built on deterministic rules, though Sonar has added AI-assisted features like fix suggestions and AI-code detection. The distinction that matters is the decision mechanism: rule-based analyzers flag only patterns someone encoded in advance, whereas LLM-based reviewers can flag novel logic errors."
+  - q: "Do small teams need both static analysis and AI review?"
+    a: "Usually yes, because the cheap layer is nearly free: linters and open-source static analyzers like Semgrep cost minutes to configure and run deterministically forever. Add AI review when PR volume or AI-generated code volume outgrows your senior reviewers' capacity — that's the layer that catches logic and context bugs static tools structurally miss."
+  - q: "Why do AI code review benchmark results disagree so much?"
+    a: "Because vendors run their own benchmarks and make dozens of scoring judgment calls — what counts as a catch, which bugs make the dataset, how partial credit works. Greptile's self-benchmark reported an 82% catch rate; Augment Code re-ran the same repos and scored it at 45%. Until independent benchmarks mature, run tools on your own recent bugs."
+  - q: "Should AI review run before or after static analysis in CI?"
+    a: "Run them in parallel on PR open — they don't depend on each other. The practical rule is to configure the AI reviewer to stay silent on anything the linter or SAST already covers, so each layer only reports what it is uniquely good at. Deduplication is a configuration task, not a product feature you can assume."
+---
+
+AI code review and static analysis solve different problems, and the honest answer to "which one?" is that mature teams run both. Static analysis parses your code into formal structures — syntax trees, control-flow and dataflow graphs — and checks them against deterministic rules: same input, same findings, every run, with the ability to prove a pattern is absent. AI code review feeds the diff plus surrounding context to a large language model that reasons about what the change is trying to do — catching logic errors, broken invariants, and intent mismatches no rule can express, at the cost of determinism. One is a proof engine with a bounded rulebook; the other is a judgment engine with unbounded scope and probabilistic reliability.
+
+This is a technical comparison, not a category pitch: how each actually works, how their false positives differ in kind, what the security benchmarks really show, what each costs, and how to stack them. Tools named on both sides — SonarQube, Semgrep, and CodeQL for static analysis; CodeRabbit, Kodus, and Greptile for AI review.
+
+## How static analysis actually works
+
+Static analyzers never execute your code. They build formal representations and query them:
+
+- **AST matching.** The cheapest layer: parse the code, walk the tree, flag structural patterns. Most linter rules and a large share of [Semgrep's registry](https://github.com/semgrep/semgrep-rules) — thousands of community rules across 30+ languages — operate here. Fast enough to run on every keystroke.
+- **Dataflow and taint analysis.** The layer that makes SAST useful for security: track how values propagate from *sources* (user input, network reads) to *sinks* (SQL execution, HTML rendering, shell calls) and flag flows that skip sanitization. [CodeQL](https://codeql.github.com/), which powers GitHub code scanning, treats code as a queryable database and expresses these flows as declarative queries; Semgrep's cross-file dataflow and [SonarQube's](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/languages/overview) injection analyzers do the same within their engines.
+- **Symbolic and abstract interpretation.** The deep end — reasoning about all possible values a variable could take. Powerful, expensive, and where analysis-time budgets go to die on large codebases.
+
+Three properties fall out of this design, and they're the ones AI cannot replicate. **Determinism:** a finding today is a finding tomorrow; CI gates can be built on it. **Provable absence:** "no `eval` calls exist in this codebase" is a statement a static tool can actually make. **Auditability:** every finding traces to a specific rule with a documented CWE mapping, which is what compliance frameworks consume.
+
+The structural limitation is the same property inverted: a static analyzer can only flag what someone wrote a rule for. An inverted discount calculation, a retry loop without backoff, an authorization check missing from one endpoint out of five — all syntactically unremarkable, all invisible to any rulebook, all exactly the bugs that reach production.
+
+## How AI code review actually works
+
+An LLM-based reviewer — [CodeRabbit, Greptile, Kodus, Cursor Bugbot, and the rest of the field](/blog/best-ai-code-review-tools) — runs a different pipeline: ingest the PR diff, assemble context (surrounding files, symbol graphs, linked tickets, team rules), prompt one or more models to reason about the change, then filter and rank the candidate findings before posting line comments.
+
+The two stages that differentiate tools are context and filtering. Context, because the diff alone can't tell you a signature change breaks a caller three directories away — this is the argument for [multi-dimensional context](/standards/01-multi-dimensional-context) as a first-class requirement, and it's backed by field data: in [Qodo's 2025 survey of 609 developers](https://www.qodo.ai/reports/state-of-ai-code-quality/), 65% named missing context as AI's top failure during review-critical tasks. Filtering, because raw LLM output includes hallucinations, and the strongest pipelines [validate findings in a sandbox before a human ever sees them](/standards/06-sandbox-validation).
+
+What you gain is scope: reasoning about intent ("the ticket says backoff, the code busy-waits"), cross-file consistency, [business-logic correctness](/standards/04-business-logic), and novel bug classes with no CVE and no rule. What you give up is every guarantee in the previous section. Run the same reviewer twice on the same diff and you may get different findings. Nothing can be proven absent. And a finding's justification is a paragraph of generated prose, not a rule ID an auditor can cite.
+
+## Determinism vs reasoning: the actual trade
+
+It's worth being precise about what non-determinism costs, because it's the fault line the whole comparison sits on.
+
+A deterministic tool can be a **contract**. You can gate merges on it, write exceptions against specific rule IDs, diff its output between releases, and hand its configuration to an auditor. Its false positives are *systematic* — annoying, but fixable once, permanently, per rule.
+
+A probabilistic tool is a **colleague**. It can be brilliant about things no contract anticipated and confidently wrong about things a contract would have caught. Its findings need the same treatment as a human reviewer's: evaluated, sometimes pushed back on. The [ICSE 2025 industrial study of an LLM reviewer](https://arxiv.org/abs/2412.18531) across 4,335 PRs captures both halves — 73.8% of the AI's comments were resolved by developers (high signal), yet average PR closure time rose from 5 hours 52 minutes to 8 hours 20 minutes (real cost), and practitioners' main complaints were faulty reviews and irrelevant comments (the colleague being wrong).
+
+The mistake teams make is applying one category's mental model to the other: gating merges on a probabilistic tool's unfiltered output, or expecting a rulebook to catch logic bugs.
+
+## False positive profiles: different shapes of wrong
+
+Both tool families produce false positives; they produce them *differently*, and the difference dictates how you manage them.
+
+**Static analysis: systematic, tunable, front-loaded.** An over-broad rule fires on every matching pattern in the codebase, immediately, on day one. The industry's benchmark for what's tolerable comes from Google: their Tricorder platform enforced that [any check surfaced at review time must stay under a 10% effective false-positive rate](https://cacm.acm.org/research/lessons-from-building-static-analysis-tools-at-google/) — where "effective" means the *developer* judged it useless, regardless of technical correctness — or the check gets removed. That paper's core insight transfers directly to AI tools: developers, not vendors, define what counts as a false positive, and they stop reading tools that waste their time.
+
+**AI review: unpredictable, per-finding, ongoing.** There is no rule to suppress; each hallucinated bug or irrelevant suggestion is its own event. The empirical picture, as of August 2026, is wide variance with a good ceiling: an [independent 3.5-week field test running four AI reviewers in parallel on 146 production PRs](https://dev.to/_vjk/best-ai-code-reviewer-in-2026-we-ran-4-in-parallel-for-3-weeks-146-prs-679-findings-1c0f) (679 findings total) measured false-positive rates of roughly 0% for Greptile, 2.3% for CodeRabbit, and 4.8% for Bugbot with default configs — well under Google's 10% bar — while other tools' rates climbed to 15% in some severity tiers. The same test's most striking result: 93.4% of all findings were caught by exactly one of the four tools. AI reviewers barely overlap, which says the space of catchable issues is much larger than any single tool's coverage.
+
+The operational consequence: static-analysis noise is a *configuration debt* you pay down once; AI-review noise is a *per-PR tax* you can only control by choosing tools that filter aggressively and by [measuring resolution rates continuously](/standards/09-measurable-roi).
+
+## Security coverage: what SAST does that AI doesn't (yet)
+
+Security is where the determinism trade bites hardest, and where marketing outruns evidence most often.
+
+The strongest public evidence comes from the [OpenSSF CVE Benchmark](https://github.com/ossf-cve-benchmark/ossf-cve-benchmark) — 200+ real, historical CVEs from real codebases, built specifically to test whether tools catch vulnerabilities that actually shipped. On a [2026 evaluation run against 165 of those CVEs](https://deepsource.com/benchmarks), F1 scores across AI-era review tools ranged from 84.5% at the top to the mid-30s for some of the most popular tools — a spread wide enough that the category label tells you nothing. Note the evaluator (DeepSource) is itself a vendor that finished first on its own run; the dataset is real and public, but the caveat from the next section applies.
+
+Meanwhile the demand side of the problem is well documented: [Veracode's 2025 GenAI Code Security Report](https://www.veracode.com/resources/analyst-reports/2025-genai-code-security-report/) found LLMs introduced vulnerabilities in 45% of coding tasks across 100+ models (Java worst at a 72% failure rate), consistent with the NYU "[Asleep at the Keyboard](https://arxiv.org/abs/2108.09293)" result that roughly 40% of Copilot-generated programs in security-relevant scenarios were vulnerable. More AI-generated code means more injected vulnerabilities per week, which is precisely the workload SAST's taint engines were built for.
+
+The convergence point is real, though: GitHub's [Copilot Autofix](https://github.blog/news-insights/product-news/secure-code-more-than-three-times-faster-with-copilot-autofix/) layers an LLM *on top of* CodeQL findings — deterministic detection, AI-generated remediation — and GitHub's customer data showed median fix time dropping from 1.5 hours to 28 minutes, with SQL injection fixes 12x faster. That architecture (SAST finds, AI fixes and explains) is likely the durable shape of the security stack, not one side replacing the other.
+
+For compliance, the answer is not close: SOC 2, PCI-DSS, and internal security programs are built on auditable, reproducible scans mapped to CWEs. A probabilistic reviewer cannot produce an artifact that says "we scanned for the OWASP Top 10 and here is the evidence."
+
+## Cost: two different bills
+
+| Cost component | Static analysis | AI code review |
+|---|---|---|
+| Licensing | OSS free (Semgrep CE, SonarQube CE, CodeQL for OSS); commercial tiers per-seat | Per-seat SaaS, typically priced like a mid-tier dev tool; open-source options ([Kodus](https://kodus.io)) self-hostable |
+| Compute | Your CI minutes; deep interprocedural analysis can get slow on large repos | Vendor-side LLM inference baked into subscription, or your own tokens if self-hosted |
+| Setup | Days to weeks: rule selection, baseline triage of the initial finding flood | Hours to install; days to tune rules and suppress overlap with linters |
+| Ongoing | Rule/config maintenance; suppressions accumulate | Per-PR triage of findings; prompt/rule tuning as the codebase evolves |
+| Hidden cost | Alert fatigue from untuned rules — the classic reason teams ignore SAST dashboards | Review latency and noise — the ICSE study measured PR closure time up ~40% post-adoption |
+
+The subscription line is rarely what matters. The dominant cost on both sides is *engineer attention*: an untuned SAST deployment burns it in a one-time flood, an unfiltered AI reviewer burns it forever in a drip. Price the triage time, not the seat.
+
+Two cost asymmetries deserve explicit mention. Static analysis scales with *codebase size* — analysis time and finding volume grow with lines of code, but adding contributors is free. AI review scales with *change volume* — every PR costs inference and triage, but a 10-million-line legacy monolith costs nothing extra to sit there. Teams with large stable codebases and modest PR throughput get static analysis nearly free; teams shipping hundreds of AI-assisted PRs weekly onto a young codebase feel the AI reviewer's per-PR economics directly. Model the bill against your actual shape.
+
+## Convergence: the line is blurring from both directions
+
+Worth naming, because it changes how you should read vendor positioning as of August 2026: the categories are actively merging. From the static side, Sonar ships AI-assisted fix suggestions and AI-generated-code detection on top of its deterministic engine, and Semgrep layers an LLM assistant over its rule findings to auto-triage false positives. From the AI side, review tools increasingly embed deterministic sub-checks — running linters and secret scanners inside their pipeline and reserving the LLM for what rules can't express. GitHub's [Copilot Autofix](https://github.blog/news-insights/product-news/secure-code-more-than-three-times-faster-with-copilot-autofix/) is the cleanest specimen: CodeQL's taint engine decides *what* is a vulnerability, the LLM decides *how to fix and explain it*, and each component does only the job it's structurally suited for.
+
+The composite architecture wins because the failure modes cancel: deterministic detection eliminates hallucinated vulnerabilities, generative remediation eliminates the "here's a finding, good luck" dead end that made developers ignore SAST dashboards for a decade. Expect every serious tool on both sides to look more like this hybrid each year — which means the buying question shifts from "which category?" to "which pipeline composes both with the least noise?"
+
+## The benchmark problem: read every number adversarially
+
+This comparison would be incomplete without the epistemics, because as of August 2026 the AI-review benchmark landscape is vendor-run and self-serving — on all sides.
+
+The canonical example: Greptile's [own benchmark](https://www.greptile.com/benchmarks) of five tools across 50 real-bug PRs reported Greptile catching 82%, with CodeRabbit at 44%. [Augment Code re-ran an evaluation on the same five repositories](https://www.augmentcode.com/tools/coderabbit-vs-greptile-vs-augment-cosmos) and scored Greptile at 45%. Same repos, same tool, half the score, depending on who runs it. DeepSource — which, again, won its own OpenSSF-based benchmark — published a [candid analysis of why this keeps happening](https://deepsource.com/blog/notes-on-ai-code-review-benchmarks): ground truth in code review is genuinely subjective ("is a missing null check a bug or a design choice?"), datasets are hand-picked, and scoring rules embed dozens of judgment calls that reliably favor whoever makes them. Every vendor that publishes a benchmark wins it.
+
+Static analysis had decades to develop independent evaluation (NIST SATE, the original OpenSSF benchmark, academic tool comparisons); AI review has not yet. Until it does, the only benchmark that matters is the one you run yourself: take your last 20 escaped bugs, reconstruct the PRs that introduced them, and see what each candidate flags. We maintain a [structured evaluation methodology](/blog/how-to-evaluate-ai-code-review-tools) for exactly this, and a [comparison of the current tool field](/blog/coderabbit-alternatives) if you're shortlisting.
+
+## When you need both — which is almost always
+
+The two families cover disjoint failure classes, fail in complementary ways, and barely overlap even with each other (recall: 93.4% of findings unique to one tool in the four-way field test). The layered pipeline that follows from the evidence:
+
+1. **Pre-commit / editor: linters and formatters.** Deterministic, instant, free. Style never reaches review.
+2. **CI: static analysis and SAST.** Semgrep or SonarQube for maintainability rules, CodeQL or equivalent for taint-based security. Deterministic gates you can build policy on; the compliance artifact.
+3. **PR open: AI review.** The semantic layer — logic, intent, cross-file consistency, edge cases — configured to stay silent on anything layers 1-2 already cover, with severity routing so only validated, high-confidence findings block.
+4. **Human review: architecture and product judgment.** With the mechanical and semantic layers cleared, the scarce resource — senior attention — goes where nothing else works. Microsoft's research found [most human review value is knowledge transfer, not defect-finding](https://www.microsoft.com/en-us/research/publication/expectations-outcomes-and-challenges-of-modern-code-review/) anyway; the machines free humans to do the part that was always uniquely theirs.
+
+Skip layer 2 and you lose your guarantees and your audit trail. Skip layer 3 and, at 2026 code volumes — [Google reporting a quarter-plus of new code AI-written](https://thehill.com/policy/technology/4962336-google-ceo-says-more-than-25-percent-of-companys-new-code-written-by-ai/) back in 2024, and [DORA linking AI adoption to degraded delivery stability](https://dora.dev/research/2024/dora-report/) — the semantic bug classes flow straight to your most expensive reviewers, or to production.
+
+If you want to know which layer is your current bottleneck, the [assessment](/assessment) scores your review pipeline against these standards in a few minutes. And for the definitional groundwork this comparison builds on, start with [what AI code review is](/blog/what-is-ai-code-review).
+
+## Bottom line
+
+Static analysis is a proof engine: deterministic, auditable, tunable once, blind to everything outside its rulebook. AI code review is a judgment engine: unbounded in scope, probabilistic in reliability, taxed per-PR rather than per-rule. They are not competitors — they cover different bug classes with different failure modes at different points in the pipeline, and the best current security tooling already composes them. Run the deterministic layer as your contract, the AI layer as your tireless first-pass colleague, and reserve your skepticism for anyone's benchmark — including the one you'll inevitably run yourself.

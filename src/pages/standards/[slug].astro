@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import PillarGraphic from '../../components/PillarGraphic.astro';
+import { getPublishedPosts, CATEGORY_LABELS } from '../../lib/blog';
 
 export async function getStaticPaths() {
   const pillars = await getCollection('pillars');
@@ -13,6 +14,7 @@ export async function getStaticPaths() {
 
 const { pillar } = Astro.props;
 const { Content } = await render(pillar);
+const latestPosts = (await getPublishedPosts()).slice(0, 3);
 ---
 
 <Layout
@@ -38,6 +40,20 @@ const { Content } = await render(pillar);
   <article class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-h1:text-4xl md:prose-h1:text-5xl prose-h1:tracking-tight prose-h1:text-balance prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 hover:prose-a:decoration-stone-500 prose-p:text-pretty prose-p:leading-relaxed">
     <Content />
   </article>
+
+  {latestPosts.length > 0 && (
+    <section class="mt-24 pt-12 border-t border-stone-200 dark:border-zinc-800">
+      <h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ Related Reading ]</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        {latestPosts.map((post) => (
+          <a href={`/blog/${post.id}`} class="block group">
+            <span class="text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 block mb-2">{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
+            <span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">{post.data.title}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
 
   <div class="mt-32 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
     <div class="text-center md:text-left">

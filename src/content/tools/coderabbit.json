@@ -1,0 +1,27 @@
+{
+  "name": "CodeRabbit",
+  "website": "https://www.coderabbit.ai",
+  "tagline": "Hosted AI PR reviewer with summaries, linter/SAST integration, and agentic chat across GitHub, GitLab, Azure DevOps, and Bitbucket.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free tier (summaries); Pro $24/dev/mo (annual); Pro Plus $48/dev/mo; Enterprise custom. Hourly review rate limits per tier (5/10/12 per dev)",
+  "pricingUrl": "https://www.coderabbit.ai/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Self-hosted deployment on custom-priced Enterprise; docs cite availability for orgs with 500+ seats, connecting to your own LLM provider.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Fixed vendor models; no BYOK on standard plans (own LLM provider only on self-hosted Enterprise)",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Diff plus related files, learnings, linters/SAST; linked-repo analysis capped (1 on Pro, 10 on Pro Plus)."},
+    "02-rule-centric": {"status": "partial", "note": "Custom instructions, path filters, and a quieter review profile; default posture is verbose."},
+    "03-dual-workflow": {"status": "yes", "note": "IDE extensions (VS Code, Cursor, Windsurf) and CLI pre-commit reviews alongside PR reviews."},
+    "04-business-logic": {"status": "yes", "note": "Jira and Linear integration on paid plans; checks changes against linked tickets."},
+    "05-continuous-learning": {"status": "yes", "note": "Learnings accumulate from team replies; stops flagging patterns you tell it are fine."},
+    "06-sandbox-validation": {"status": "partial", "note": "Pro Plus adds pre-merge checks and unit test generation; no documented sandbox execution of findings."},
+    "07-economic-transparency": {"status": "no", "note": "No BYOK or model choice on standard plans; model costs bundled into seat price."},
+    "08-actionability": {"status": "yes", "note": "One-click committable suggestions, agentic chat on the PR, and fix flows via IDE extensions."},
+    "09-measurable-roi": {"status": "partial", "note": "Analytics and reports on paid tiers; no documented token-level cost or DORA ROI reporting."}
+  },
+  "relatedPosts": ["coderabbit-alternatives", "coderabbit-vs-greptile", "cursor-bugbot-vs-coderabbit", "best-ai-code-review-tools", "open-source-ai-code-review-tools", "self-hosted-ai-code-review", "ai-code-review-vs-static-analysis", "ai-code-review-statistics", "what-is-ai-code-review"]
+}

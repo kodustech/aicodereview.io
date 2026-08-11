@@ -1,0 +1,27 @@
+{
+  "name": "Panto",
+  "website": "https://www.getpanto.ai",
+  "tagline": "AI code reviewer with 30,000+ security checks, IaC and secrets scanning, and business context pulled from Jira and Confluence.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Not clearly published as of Aug 2026 (pricing page dominated by QA product); third-party trackers cite ~$15/dev/mo with a ~$40 tier - verify with vendor",
+  "pricingUrl": "https://www.getpanto.ai/",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Self-hosted/on-prem deployment offered at the enterprise level.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "unknown - no published BYOK or model choice",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Pulls business context from Jira/Confluence; codebase-wide context depth not documented."},
+    "02-rule-centric": {"status": "unknown", "note": "Team-defined custom rules not documented; ships 30,000+ predefined security checks."},
+    "03-dual-workflow": {"status": "unknown", "note": "Local/IDE review surface not documented."},
+    "04-business-logic": {"status": "yes", "note": "Aligns PR analysis with requirements from Jira and Confluence - its core differentiator."},
+    "05-continuous-learning": {"status": "unknown", "note": "Learning from review feedback not documented."},
+    "06-sandbox-validation": {"status": "unknown", "note": "Sandbox or test-run validation not documented for the review product."},
+    "07-economic-transparency": {"status": "no", "note": "Pricing not clearly published for the review product; no BYOK or token transparency documented."},
+    "08-actionability": {"status": "unknown", "note": "Fix-apply flow not documented in the sources we verified."},
+    "09-measurable-roi": {"status": "unknown", "note": "Audit-friendly security reporting exists; review ROI metrics not documented."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools", "coderabbit-alternatives"]
+}

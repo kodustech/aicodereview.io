@@ -1,0 +1,27 @@
+{
+  "name": "Qodo",
+  "website": "https://www.qodo.ai",
+  "tagline": "AI platform spanning IDE assistant, CLI, and Qodo Merge PR review with test generation; enterprise on-prem and air-gapped options.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary (the open-source PR-Agent is now community-owned and separate)",
+  "pricing": "Pro Team $30/mo base (up to 30 users) + credit packs at $0.012/credit (~18 reviews per 2,500-credit pack, ~$1.50-1.70/review); credits expire monthly; Enterprise custom",
+  "pricingUrl": "https://www.qodo.ai/pricing/",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Enterprise offers single-tenant SaaS, on-prem, and air-gapped deployment at custom pricing.",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "Vendor-managed models on SaaS; self-hosted model options on Enterprise air-gapped deployments",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Repo-aware RAG-based context; cross-repo and codebase-graph depth not documented."},
+    "02-rule-centric": {"status": "partial", "note": "Rules system with unlimited rules on the commercial platform; default-quiet posture not documented."},
+    "03-dual-workflow": {"status": "yes", "note": "One subscription spans IDE assistant (Gen), CLI, and Qodo Merge PR review."},
+    "04-business-logic": {"status": "unknown", "note": "Ticket/requirements validation not documented in the sources we verified."},
+    "05-continuous-learning": {"status": "unknown", "note": "No public documentation of learning from review history found in our sources."},
+    "06-sandbox-validation": {"status": "partial", "note": "Test generation is a core platform capability; sandbox validation of review findings not documented."},
+    "07-economic-transparency": {"status": "partial", "note": "No BYOK on standard plans (~140 credits/review at $0.012); self-hosted models on Enterprise air-gapped."},
+    "08-actionability": {"status": "unknown", "note": "One-click fix depth for the commercial product not documented in our sources."},
+    "09-measurable-roi": {"status": "partial", "note": "Qodo Merge includes dashboards; DORA/ROI reporting depth not verified."}
+  },
+  "relatedPosts": ["coderabbit-alternatives", "best-ai-code-review-tools", "open-source-ai-code-review-tools", "self-hosted-ai-code-review", "coderabbit-vs-greptile", "ai-code-review-vs-static-analysis", "ai-code-review-statistics", "what-is-ai-code-review"]
+}

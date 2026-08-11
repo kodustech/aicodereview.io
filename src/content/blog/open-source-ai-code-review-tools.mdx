@@ -1,0 +1,141 @@
+---
+title: "Open Source AI Code Review: The Real Options (2026)"
+description: "Open source AI code review tools compared: Kodus (AGPL), PR-Agent (MIT), and more — real licenses, BYOK costs, and how they stack up against closed SaaS."
+pubDate: 2026-08-11
+category: "guide"
+tags: ["open-source", "ai-code-review", "self-hosted", "byok", "agpl", "guide"]
+faq:
+  - q: "What is the best open source AI code review tool?"
+    a: "Kodus is the most complete open-source option as of August 2026: AGPL-3.0 core, self-hosted via Docker or Helm, bring-your-own-key model support, and plain-language rules that sync from files like .cursorrules and CLAUDE.md. PR-Agent (MIT, community-maintained) is the best lightweight alternative if you want a simpler tool you wire up yourself."
+  - q: "Is PR-Agent still open source after Qodo?"
+    a: "Yes. In 2026 Qodo transferred PR-Agent to a community-owned GitHub organization (The-PR-Agent), and the project is MIT-licensed as of August 2026. It is now community-maintained and explicitly separate from Qodo's commercial Qodo Merge product, though Qodo sponsors the project."
+  - q: "Is CodeRabbit open source?"
+    a: "No. CodeRabbit is closed-source SaaS; it offers self-hosting only on its custom-priced Enterprise plan, and self-hosting a closed binary is not the same as open source. You cannot read the code, audit the prompts, or run it without a commercial agreement."
+  - q: "Can I run AI code review fully offline or air-gapped?"
+    a: "Yes, with the right stack. Kodus self-hosted pointed at a self-hosted OpenAI-compatible model keeps everything inside your network, and the lightweight ai-review project supports Ollama so reviews never leave your infrastructure. Among closed vendors, only enterprise plans (Qodo, DeepSource) offer air-gapped deployments."
+  - q: "What does BYOK mean for AI code review costs?"
+    a: "Bring-your-own-key means the tool calls the LLM with your API credentials, so you pay the model provider directly at list price instead of paying a vendor's marked-up bundle. It also gives you model choice and a clean data path — your code goes to a provider you already have a data agreement with. Kodus publishes token estimates of roughly $345-570/month for a 30-developer team, depending on model."
+  - q: "Is AGPL a problem for commercial use?"
+    a: "Using an AGPL tool internally — running Kodus to review your private code — does not obligate you to open-source anything. AGPL obligations trigger when you modify the software and offer it to others as a network service. If you wanted to resell a hosted version, you'd need the commercial license; for the common case of an internal review bot, AGPL is a non-issue."
+  - q: "Do open source AI code review tools match commercial ones on quality?"
+    a: "The gap has mostly closed for the serious projects. Review quality is driven by the model (which you choose under BYOK) and by how much context the tool feeds it — and Kodus's cross-repo context matches or beats most closed tools. Where closed SaaS still leads is polish: onboarding, dashboards, and support. Small wrapper scripts, though, remain far behind dedicated tools."
+---
+
+Open source AI code review means you can read the reviewer's code, run it on your own infrastructure, and point it at models you control — instead of shipping every pull request to a closed SaaS. As of August 2026, the serious options are Kodus (AGPL-3.0, the most complete platform), PR-Agent (MIT, community-maintained since Qodo handed it over), and a handful of lighter tools like ai-review and OpenReview. This guide covers what's genuinely open source, what just markets the word, and when a closed tool is honestly the better call.
+
+Disclosure before anything else: Kodus sponsors this site, and Kodus is one of the tools reviewed here. Every license and claim below is verifiable in public repos, and we've been as blunt about Kodus's limitations as everyone else's.
+
+## First, check the license — "open source" is doing a lot of work in 2026
+
+Vendors have noticed that "open source" converts, and the term gets stretched three ways in this category:
+
+1. **Actually open source.** A public repo with an OSI-approved license (MIT, Apache-2.0, AGPL-3.0). You can fork it, audit it, self-host it, and the license survives the vendor pivoting or dying.
+2. **Open core / dual license.** The core is open, some features are commercial. This is legitimate — Kodus works this way (AGPL core, enterprise-marked files under a commercial license) — but you should know exactly which files sit on which side before you build on them.
+3. **"Open source" as a vibe.** A repo that says open source in the README but ships no license file at all — which legally means all rights reserved, and you technically can't even self-host it safely. We found exactly this while researching: Vercel's OpenReview describes itself as "an open-source, self-hosted AI code review bot," but as of August 2026 the repository contains no license file. That's presumably an oversight, but until it's fixed, it isn't open source.
+
+The 30-second audit before adopting anything: open the repo, check the `LICENSE` file (not the README), check the last commit date, and check whether "enterprise" directories carry different terms. Every claim in this post went through that filter.
+
+## Why open source matters more for code review than for most tools
+
+For a terminal theme, licensing is philosophy. For an AI code reviewer, it's operational:
+
+- **Your code is the input.** A code reviewer reads every diff your team produces — arguably your most sensitive IP stream. With a closed SaaS you're trusting a privacy policy; with self-hosted open source, the code path is inspectable and the data never has to leave your network. This is the whole argument of our [self-hosted AI code review guide](/blog/self-hosted-ai-code-review).
+- **You can audit the reviewer's judgment.** Review quality depends on what context the tool assembles and what it asks the model — see [multi-dimensional context](/standards/01-multi-dimensional-context). In an open tool, the prompts and context pipeline are readable code. In a closed tool, they're a black box that changes without notice.
+- **BYOK economics.** Open tools let you bring your own model keys, paying providers at list price with no markup, and swapping models as the frontier moves. Closed per-seat pricing bundles model costs opaquely — you can't see what you're actually paying for inference.
+- **No rug-pulls.** Pricing on closed tools moved a lot in 2026 (Cursor's BugBot switched from $40/seat to usage-based billing; GitHub Copilot moved to metered credits). An AGPL or MIT tool can change its pricing too — but the version you run today is yours forever.
+
+If you're still weighing whether AI review belongs in your pipeline at all, start with [what AI code review is](/blog/what-is-ai-code-review) and how it [differs from static analysis](/blog/ai-code-review-vs-static-analysis).
+
+## The genuinely open source options, compared
+
+Licenses and activity verified on GitHub, August 2026.
+
+| Tool | License | Stars (Aug 2026) | Platforms | Models | Deployment |
+|---|---|---|---|---|---|
+| [Kodus](https://github.com/kodustech/kodus-ai) | AGPL-3.0 (dual: `ee` files commercial) | ~1.3K | GitHub, GitLab, Bitbucket, Azure Repos | Any: Claude, GPT, Gemini, Llama, self-hosted OpenAI-compatible | Docker Compose, VM, Kubernetes/Helm; also cloud |
+| [PR-Agent](https://github.com/The-PR-Agent/pr-agent) | MIT | ~12.5K | GitHub, GitLab, Bitbucket, Azure DevOps | OpenAI, Claude, and others via config | GitHub Action, CLI, self-hosted app |
+| [ai-review](https://github.com/Nikita-Filonov/ai-review) | Apache-2.0 | ~540 | GitHub, GitLab, Bitbucket (Cloud + Server), Azure DevOps, Gitea | OpenAI, Claude, Gemini, Ollama, Bedrock, OpenRouter, Azure OpenAI | CLI/CI; fully offline with Ollama |
+| [OpenReview](https://github.com/vercel-labs/openreview) | None published (see caveat) | ~1.5K | GitHub | Vercel AI SDK providers | Self-hosted Next.js app on Vercel |
+| [ai-codereviewer](https://github.com/freeedcom/ai-codereviewer) | MIT | ~1K | GitHub | OpenAI | GitHub Action |
+
+### Kodus — the full platform, open
+
+Kodus is the most complete open-source AI code reviewer: not a script that pipes a diff to a model, but a review platform — context assembly, rule management, learning from review history — that happens to be AGPL.
+
+What sets it apart, all verifiable in the [repo](https://github.com/kodustech/kodus-ai) and [docs](https://docs.kodus.io):
+
+- **Self-hosting is the product, not a concession.** Docker Compose for a quick start, generic VM installs, Kubernetes and OpenShift via Helm. No seat minimums, no sales call. Self-hosted instances send one anonymous daily heartbeat (aggregated counters, no code or identifiers), and you can disable it with an environment variable — the kind of telemetry disclosure you only get from open source.
+- **BYOK, radically.** Claude, GPT, Gemini, Llama, GLM, Kimi, or any OpenAI-compatible endpoint — including models you host yourself, which is how you get a fully air-gapped review pipeline. Zero markup: you pay your provider at list price, and a token-usage dashboard shows exactly where spend goes.
+- **Rules as plain language, synced from what you already have.** Kody Rules are written in natural language and inherit global → repository → directory. Kodus auto-detects existing rule files — `.cursorrules`, `.cursor/rules/*.mdc`, `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md`, `.windsurfrules`, and more — so the standards your coding agents follow while writing code are the same ones enforced at review. That closes a loop most teams don't realize is open; it's the [rule-centric review standard](/standards/02-rule-centric) in practice.
+- **Context beyond the repo.** Linked repositories let the reviewer read sibling repos to catch cross-repo contract breaks — the kind of bug diff-scoped reviewers structurally cannot see.
+- **CLI + CI.** Reviews run locally, in pipelines, or on PRs.
+
+The honest caveats: it's dual-licensed, so files marked `ee` are commercial, not AGPL — check the [license](https://github.com/kodustech/kodus-ai/blob/main/license.md) if you plan to fork. Running it yourself means owning a deployment (Postgres, the orchestrator, model keys) that a SaaS would own for you. And the community is smaller than PR-Agent's star count suggests, though the company behind it ships actively. There's also a managed cloud if you want the open-source model without the ops: free Community tier on your own API key, Teams at $10/dev/month plus token costs (verified August 2026).
+
+### PR-Agent — the original, now community-owned
+
+PR-Agent has the best origin story in the category, and 2026 rewrote its ending. Built by CodiumAI (later Qodo), it was the original open-source PR reviewer — `/review`, `/describe`, `/improve` commands on PRs, configurable models, self-hostable as a GitHub Action, CLI, or app across GitHub, GitLab, Bitbucket, and Azure DevOps.
+
+In 2026, Qodo transferred the project to a community-owned organization, [The-PR-Agent](https://github.com/The-PR-Agent/pr-agent), where it's MIT-licensed (verified August 2026) and community-maintained — the README now states plainly that it "is not the Qodo free tier." Qodo remains a sponsor, and its commercial, closed Qodo Merge product continues separately. For open-source users this is a good outcome: a permissive license, a maintainer community with ~12.5K stars behind it, and no ambiguity about where the open project ends and the paid one begins.
+
+Where it fits: PR-Agent is a tool, not a platform. You get solid per-PR review, description, and improvement commands with your own keys — but no rule management UI, no learning from review history, no cross-repo context, no dashboards. For a small team comfortable wiring a GitHub Action and tuning a TOML config, it's the fastest path to self-hosted AI review. For an org that needs enforced standards across 50 repos, it runs out of road.
+
+### ai-review — the offline option
+
+[ai-review](https://github.com/Nikita-Filonov/ai-review) (Apache-2.0, ~540 stars, actively maintained as of August 2026) is a lighter tool with one killer feature: breadth of backends. It supports GitHub, GitLab, Bitbucket Cloud and Server, Azure DevOps, and Gitea on the git side, and OpenAI, Claude, Gemini, Bedrock, OpenRouter, Azure OpenAI, and Ollama on the model side. The Ollama support means reviews can run entirely inside your network with a local model — no tokens leave the building, full stop. If your constraint is a hard air-gap and your expectations are per-PR review rather than a platform, this is a pragmatic pick.
+
+### OpenReview — promising, but read the fine print
+
+Vercel Labs' [OpenReview](https://github.com/vercel-labs/openreview) (~1.5K stars) is a self-hosted AI code review bot you deploy as a Next.js app — unsurprisingly polished for a Vercel project, and a nice architecture if you're already in that ecosystem. Two caveats, both verified August 2026: the repo ships no license file, so despite the "open-source" description it currently grants you no formal rights — and activity has been quiet since March 2026. Watch it, star it, but don't build your review pipeline on it until the license lands.
+
+### ai-codereviewer — the minimal GitHub Action
+
+[freeedcom/ai-codereviewer](https://github.com/freeedcom/ai-codereviewer) (MIT, ~1K stars) is the "smallest thing that works": a GitHub Action that sends your PR diff to OpenAI and posts comments. It's a fine weekend install for a side project and a useful reference implementation for understanding how these tools work. It is not a team review process — no rules, no context beyond the diff, one model vendor. Worth knowing it exists; worth being honest about what it is.
+
+### Worth a mention: the non-AI plumbing
+
+[reviewdog](https://github.com/reviewdog/reviewdog) and [Danger](https://danger.systems/) predate the LLM wave — they post linter output and enforce PR conventions rather than reason about code. They pair well underneath an AI reviewer (deterministic checks stay deterministic), and if you're deciding how to split responsibilities between the two layers, that's exactly the topic of [AI code review vs static analysis](/blog/ai-code-review-vs-static-analysis).
+
+## "Self-hosted enterprise plan" is not open source
+
+This distinction gets blurred constantly, so let's be precise. CodeRabbit, Greptile, Sourcery, and DeepSource all offer self-hosted deployment — on custom-priced enterprise plans. Qodo goes further with air-gapped options, and DeepSource's enterprise tier even allows BYOK. Those are real options for regulated companies, and for some teams they're the right call.
+
+But self-hosting a closed binary gives you data locality, not transparency. You still can't read the context pipeline, audit the prompts, patch a bug yourself, or keep running the current version if the vendor changes terms. You also can't try before the sales call — every one of those self-hosted options is gated behind "contact us." The open-source difference is that `docker compose up` is the trial. We keep a fuller comparison of the closed tools in our [CodeRabbit alternatives](/blog/coderabbit-alternatives) breakdown and the [best AI code review tools](/blog/best-ai-code-review-tools) roundup.
+
+Where closed SaaS honestly wins: polish and ops. CodeRabbit's onboarding is smoother than any self-hosted install; hosted tools own uptime, scaling, and model-vendor churn for you; and per-seat billing is easier to get through procurement than "platform fee plus metered tokens." If nobody on your team wants to own a deployment, that's a legitimate reason to pay for closed SaaS — pick it with eyes open, not because a vendor's "open" marketing blurred the line.
+
+## The cost math: BYOK vs per-seat
+
+Concrete numbers for a 30-developer team, using prices verified in August 2026:
+
+- **CodeRabbit Pro:** $24/user/month → $720/month ($1,440 on Pro Plus), model costs bundled and invisible.
+- **Greptile Pro:** $30/seat/month → $900/month, plus $1 per review beyond included credits.
+- **Kodus self-hosted (Community):** $0 platform + your tokens. Kodus's own published estimates for a 30-dev team: roughly $570/month on Claude Sonnet 4.5 down to about $345/month on Gemini Flash — visible, tunable line items.
+- **Kodus cloud (Teams):** $10/dev → $300/month + the same token costs, still landing near or below the closed per-seat tools with model choice included.
+- **PR-Agent / ai-review self-hosted:** $0 platform + tokens; on a cheap model, plausibly the cheapest functional setup, minus the platform features.
+
+The structural point matters more than any single number: under BYOK, your two cost levers — which model, how much context — are in your hands, and dropping to a cheaper model for routine PRs is a config change. Under per-seat SaaS, the lever belongs to the vendor. Neither is automatically cheaper at every scale, but only one of them lets you do the arithmetic yourself.
+
+## What self-hosting actually involves
+
+The part open-source advocates undersell: someone on your team now owns a service. Be clear-eyed about what that means before you commit.
+
+**The install is the easy part.** Kodus comes up with Docker Compose in an afternoon; PR-Agent is a GitHub Action plus a config file; ai-review is a CLI in your pipeline. If the tool can't demonstrate value in the first week on real PRs, the problem isn't your ops — it's the tool.
+
+**The steady state is small but nonzero.** Expect to own upgrades (monthly-ish for active projects), model-key rotation and spend monitoring, and the database if the tool keeps state — Kodus persists rules and review history, which is exactly what makes it more useful over time and what makes it a real service rather than a stateless script. Budget a few hours a month, not a headcount.
+
+**Security posture flips in your favor.** With self-hosting, webhook traffic from your git provider terminates inside your network, model calls go to providers you already have data agreements with — or never leave at all if you run local models — and there's no third-party retention policy to diligence. For most teams that's the entire reason to be here.
+
+**Quality tuning is on you, and that's a feature.** Closed SaaS tunes noise thresholds globally for their average customer. Self-hosting an open tool means you set the bar: which rules block, which merely comment, how aggressive the reviewer is on legacy directories. The best practice we've seen is treating reviewer output like production alerts — track the dismissed-comment rate weekly and prune whatever your engineers ignore, the same discipline behind the [sandbox validation standard](/standards/06-sandbox-validation). An open tool lets you enforce that discipline in config rather than in a feature request to a vendor.
+
+## How to choose
+
+- **You want a real review platform — rules, context, metrics — with open-source control:** Kodus. Self-host it free under AGPL, or take the cloud tier and keep BYOK.
+- **You want a lightweight, permissively-licensed tool you fully wire yourself:** PR-Agent.
+- **You have a hard air-gap requirement and modest expectations:** ai-review with Ollama, or Kodus pointed at a self-hosted model for the platform version of the same idea.
+- **You're experimenting on a side project:** ai-codereviewer, ten minutes, done.
+- **Nobody will own a deployment and budget is available:** be honest with yourself and evaluate the closed SaaS tools — our [evaluation guide](/blog/how-to-evaluate-ai-code-review-tools) and the [assessment](/assessment) will tell you what to test.
+
+Whichever way you go, apply the same two-week test: run it on real PRs, count the comments your engineers acted on versus dismissed, and check the license file — not the README — before you commit.
+
+If the platform-with-control option is what you're after, [Kodus](https://kodus.io) is open source for exactly that reason: read the code, run it on your infra, bring your own models, and pay no markup on tokens.

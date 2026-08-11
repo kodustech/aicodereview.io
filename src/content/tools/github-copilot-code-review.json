@@ -1,0 +1,27 @@
+{
+  "name": "GitHub Copilot code review",
+  "website": "https://github.com/features/copilot",
+  "tagline": "Pull request review bundled into paid GitHub Copilot plans; reviews the diff with instructions-file customization, metered by AI credits.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Included from Copilot Pro $10/mo ($15 AI credits), Pro+ $39 ($70), Max $100 ($200); Business $19 and Enterprise $39/user/mo; metered AI credits since June 1, 2026 plus Actions minutes",
+  "pricingUrl": "https://github.com/features/copilot/plans",
+  "selfHosted": "none",
+  "selfHostedNote": "Cloud service; agentic checks can run on self-hosted Actions runners (ARC, Ubuntu x64), but that is compute placement, not self-hosting.",
+  "platforms": ["github"],
+  "modelControl": "No model choice; GitHub-managed models with Lite/Balanced review effort levels",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "no", "note": "Reviews the diff plus instructions files, not the codebase - shallowest context in our comparison."},
+    "02-rule-centric": {"status": "partial", "note": "Repo instructions (copilot-instructions.md, AGENTS.md, path-scoped files) give basic standards control."},
+    "03-dual-workflow": {"status": "partial", "note": "Copilot spans IDE assistance and PR review, but the review product itself is PR-only."},
+    "04-business-logic": {"status": "no", "note": "No ticket or requirements validation documented."},
+    "05-continuous-learning": {"status": "no", "note": "No learning loop documented; re-reviews can repeat previously dismissed comments."},
+    "06-sandbox-validation": {"status": "partial", "note": "Agentic architecture (Mar 2026) runs validation steps on Actions runners; validation scope unclear."},
+    "07-economic-transparency": {"status": "no", "note": "No model choice or BYOK; metered AI credits at model token rates plus Actions minutes."},
+    "08-actionability": {"status": "partial", "note": "Suggested fixes can be applied via the Copilot coding agent; otherwise comment-only, no follow-up replies."},
+    "09-measurable-roi": {"status": "unknown", "note": "No review ROI metrics documented; spend visible only through AI credit consumption."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools", "coderabbit-alternatives", "self-hosted-ai-code-review", "open-source-ai-code-review-tools", "ai-code-review-vs-static-analysis", "ai-code-review-statistics", "what-is-ai-code-review"]
+}

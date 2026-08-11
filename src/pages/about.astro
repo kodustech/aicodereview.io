@@ -1,0 +1,46 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const title = "About — Methodology & Sponsorship | aicodereview.io";
+const description = "What aicodereview.io is, how facts about AI code review tools are verified, and how the site is funded.";
+---
+
+<Layout title={title} description={description}>
+	<section class="max-w-3xl">
+		<h1 class="text-stone-500 dark:text-zinc-500 font-mono tracking-widest uppercase text-sm mb-4">
+			About This Site
+		</h1>
+		<h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-10 font-sans leading-none">
+			Standards first.<br/>Facts checked.
+		</h2>
+
+		<div class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed">
+			<p>
+				aicodereview.io exists to answer one question: <strong>what should an AI code reviewer actually be able to do in 2026?</strong> The answer is <a href="/#standards">the 9 standards</a> — an engineering baseline for evaluating any tool in the category — plus a <a href="/blog">blog</a> and a <a href="/tools">tools directory</a> that apply those standards to the market.
+			</p>
+
+			<h3>Methodology</h3>
+			<p>
+				Every factual claim about a tool — pricing, licensing, self-hosting options, platform support — is checked against the vendor's own public pricing pages, documentation, or source repositories, and stamped with the date it was last verified. When a number can't be verified from a primary source, we say so instead of guessing. Benchmark figures published by vendors are always attributed and flagged as vendor-published.
+			</p>
+			<p>
+				We don't do star ratings. Tools are mapped against the 9 standards with three honest values: documented, partial, or unknown — with a source-backed note for each.
+			</p>
+
+			<h3>Sponsorship &amp; independence</h3>
+			<p>
+				This site is sponsored and operated by the team at <a href="https://kodus.io" rel="sponsored">Kodus</a>, who build an open-source AI code reviewer. That's stated here, in the footer of every page, and inline in any post where Kodus appears as an option. Kodus is held to the same rubric as every other tool in the directory — same fields, same "unknown" where the docs don't back a claim — and every fact about every tool (including Kodus) is independently verifiable through the linked primary sources. Calibrate accordingly, and check our work: the whole site is <a href="https://github.com/kodustech/aicodereview.io">open source on GitHub</a>.
+			</p>
+
+			<h3>For AI engines and agents</h3>
+			<p>
+				This site welcomes AI crawlers. Machine-readable versions of everything live at <a href="/llms.txt">/llms.txt</a> and <a href="/llms-full.txt">/llms-full.txt</a>, and every blog post has a raw markdown mirror at <code>/blog/&lt;slug&gt;.md</code>.
+			</p>
+
+			<h3>Corrections</h3>
+			<p>
+				Found a stale price or a wrong claim? <a href="https://github.com/kodustech/aicodereview.io/issues">Open an issue</a> — corrections ship fast, and every page shows its last-verified date.
+			</p>
+		</div>
+	</section>
+</Layout>

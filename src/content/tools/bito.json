@@ -1,0 +1,27 @@
+{
+  "name": "Bito",
+  "website": "https://bito.ai",
+  "tagline": "AI Code Review Agent for GitHub, GitLab, and Bitbucket with repo-aware reviews, custom guidelines, Jira integration, and analytics.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Team $12/seat/mo annual ($15 monthly); Professional $20/seat annual ($25 monthly), 14-day trial; both include 5K LOC reviewed/seat/mo, then $5 per extra 1K lines",
+  "pricingUrl": "https://bito.ai/pricing/",
+  "selfHosted": "unknown",
+  "selfHostedNote": "Supports self-managed git (GHES, GitLab self-managed, Bitbucket Data Center); agent deployment model unclear from public materials - verify with vendor.",
+  "platforms": ["github", "gitlab", "bitbucket"],
+  "modelControl": "BYOK advertised but details unverified - confirm scope with vendor",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Repo-aware reviews; less context depth than category leaders per our comparison."},
+    "02-rule-centric": {"status": "partial", "note": "Custom review guidelines supported (Professional tier); enforcement depth not documented."},
+    "03-dual-workflow": {"status": "unknown", "note": "Local/IDE review surface not covered in the sources we verified."},
+    "04-business-logic": {"status": "partial", "note": "Jira integration available; validation against ticket requirements not documented."},
+    "05-continuous-learning": {"status": "unknown", "note": "Learning from review feedback not documented."},
+    "06-sandbox-validation": {"status": "unknown", "note": "Sandbox or test-run validation not documented."},
+    "07-economic-transparency": {"status": "partial", "note": "BYOK advertised but unverified; LOC metering ($5/1K lines over cap) rather than token transparency."},
+    "08-actionability": {"status": "unknown", "note": "Fix-apply flow not documented in the sources we verified."},
+    "09-measurable-roi": {"status": "partial", "note": "Review analytics included; ROI/DORA-level reporting not documented."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools", "self-hosted-ai-code-review"]
+}

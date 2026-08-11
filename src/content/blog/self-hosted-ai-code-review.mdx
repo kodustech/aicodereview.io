@@ -1,0 +1,157 @@
+---
+title: "Self-Hosted AI Code Review: Options & Trade-Offs (2026)"
+description: "Self-hosted AI code review explained: full-stack vs BYOK vs on-prem runners, verified vendor options, and what deployment really costs in 2026."
+pubDate: 2026-08-11
+category: "guide"
+tags: ["self-hosted", "ai-code-review", "open-source", "byok", "compliance", "devops"]
+faq:
+  - q: "What does self-hosted AI code review actually mean?"
+    a: "It means the software that reads your pull requests and produces review comments runs on infrastructure you control — your VMs, your Kubernetes cluster, your VPC. In the strictest form, the LLM itself also runs in your infrastructure, so no code ever crosses your network boundary."
+  - q: "Is BYOK the same as self-hosting?"
+    a: "No. Bring-your-own-key means LLM inference is billed to your API account and can be routed through your Azure OpenAI or AWS Bedrock tenancy, but the vendor's cloud application still receives and processes your code. BYOK solves cost transparency and model choice; it does not, by itself, keep code inside your network."
+  - q: "Can I run AI code review fully offline or air-gapped?"
+    a: "Yes, but only with tools that support both self-hosted deployment and locally served models. Open-source reviewers pointed at a vLLM or Ollama endpoint can run with zero external egress, and GitLab Duo Self-Hosted and Qodo's enterprise tier both advertise air-gapped deployment options as of August 2026."
+  - q: "Does AGPLv3 licensing create problems for internal self-hosting?"
+    a: "For ordinary internal use — running the tool for your own team's code review — AGPLv3 obligations are generally not triggered by simply using the software; they mainly concern offering modified versions to others as a network service. Most companies self-hosting an AGPL tool internally are fine, but this is not legal advice: run it past your counsel."
+  - q: "What hardware do I need to run review models locally?"
+    a: "Code review benefits from strong reasoning models, and the local models that review well are large. Serving a 70B-class model typically means one or more 80GB-class GPUs (fewer with quantization, at some quality cost), plus vLLM or a similar serving stack. Many teams instead use models hosted inside their cloud tenancy via AWS Bedrock, Azure OpenAI, or Vertex AI, which satisfies most residency requirements without owning GPUs."
+  - q: "Is self-hosting cheaper than paying per seat?"
+    a: "Often, but not automatically. BYOK API billing usually lands in the cents-to-low-dollars per PR range depending on diff size and model, which undercuts per-seat pricing for most teams. Dedicated GPUs are the expensive path: they cost the same whether or not PRs are flowing, so they only pay off at high, steady review volume or when compliance mandates them."
+  - q: "Does GitHub Copilot code review have a self-hosted version?"
+    a: "No. As of August 2026, Copilot code review is a GitHub cloud service. It can execute its agentic validation steps on self-hosted Actions runners (ARC on Ubuntu x64), but that is compute placement, not a self-hosted review service — your code is still processed by GitHub's cloud."
+---
+
+Self-hosted AI code review means running the review system — the service that reads your pull requests, builds context, calls a model, and posts comments — on infrastructure you control, so your source code never leaves your network. In practice, vendors use "self-hosted" to describe three very different things: full-stack self-hosting (the whole application in your infra, as with Kodus or PR-Agent), BYOK (vendor cloud app, your model keys), and on-prem runners (your compute executes jobs for a vendor's cloud control plane). Which one you need depends on whether your driver is compliance, IP protection, data residency, or cost — and conflating the three levels is the most common way teams end up buying the wrong thing.
+
+This guide defines the levels precisely, lists the real options as of August 2026 with what each vendor actually offers, and walks through the deployment decisions — models, GPUs, secrets — that determine what self-hosting really costs.
+
+## Why teams self-host AI code review
+
+Nobody self-hosts for fun. The teams that need this have one of four concrete drivers.
+
+**Compliance and regulation.** If you operate under HIPAA, PCI DSS, SOC 2 with strict data-handling commitments, or government security frameworks, "we send source code to a third-party SaaS which forwards it to an LLM provider" can be somewhere between a hard conversation and a non-starter. Banks, healthcare companies, and defense contractors routinely require that code — which often embeds schema details, credentials-adjacent config, and security logic — stays inside audited boundaries. Some environments are fully air-gapped, which rules out every cloud service categorically.
+
+**Intellectual property.** For some companies, the codebase is the company. Trading firms, chip designers, and anyone with genuinely novel algorithms treat source code as a trade secret, and their security posture forbids transmitting it to third parties regardless of contractual promises. Vendor DPAs and "we don't train on your data" commitments help, but a contract is a legal control, not a technical one. Self-hosting converts the promise into an architecture.
+
+**Data residency.** GDPR-driven residency requirements, sector rules in markets like Germany and Brazil, and customer contracts that mandate "data stays in-region" all extend to source code and the metadata around it (commit messages, ticket contents, reviewer identities). A US-hosted review SaaS calling a US-hosted LLM can violate commitments you've made to your own customers, even if the vendor behaves perfectly.
+
+**Cost control at scale.** This one is underrated. Per-seat SaaS pricing for AI review typically runs tens of dollars per developer per month, while the underlying inference for a typical PR costs a fraction of that. Self-hosting with your own model keys means you pay the provider's base token price and nothing on top — the argument our [economic transparency standard](/standards/07-economic-transparency) makes in detail. At 200 engineers, the delta funds a platform engineer.
+
+If none of these four apply to you, a well-run cloud tool with a strong data policy is probably less total effort. But if one applies, it usually applies absolutely — which is why the next distinction matters so much.
+
+## What "self-hosted" really means: three levels
+
+Vendors use one term for three architectures. The question that separates them: **where does your source code go, and who operates the software that processes it?**
+
+### Level 1: Full-stack self-hosting
+
+The entire application — webhook receivers, context engine, orchestration, database, dashboard — runs in your infrastructure. You deploy it (typically Docker Compose or Kubernetes), you upgrade it, you control every byte of egress. If you also serve the model locally (vLLM, Ollama) or through an endpoint inside your cloud tenancy (AWS Bedrock, Azure OpenAI, Vertex AI), code never crosses your boundary at all. This is the only level that satisfies air-gapped and strict-residency requirements, and it's the level open-source tools naturally provide.
+
+The cost: you are now operating a distributed system. Someone owns upgrades, monitoring, database backups, and the repo index.
+
+### Level 2: BYOK (bring your own key)
+
+The vendor's cloud application still receives and processes your code, but LLM inference runs against your API keys — direct provider keys, or endpoints inside your tenancy like Azure OpenAI. BYOK gives you cost transparency (you see every token at base price), model choice, and sometimes inference-side residency. What it does not give you: your code still transits and is processed by the vendor's cloud.
+
+BYOK is the right level when your driver is cost and model control rather than data boundary. It is genuinely valuable — and it is genuinely not self-hosting, no matter what the pricing page implies.
+
+### Level 3: On-prem runners and hybrid architectures
+
+Your compute executes review jobs, but a vendor cloud control plane orchestrates them. GitHub Copilot code review is the clearest example: since its March 2026 move to an agentic architecture, it can execute validation steps on self-hosted Actions runners (ARC-managed, Ubuntu x64 only, per GitHub's docs) — but the review service itself remains GitHub's cloud. Some vendors offer variations, like CodeRabbit's reverse-tunnel option for reaching private networks without inbound access. Hybrid setups solve network reachability and compute placement; they do not keep your code out of the vendor's cloud.
+
+### What actually leaves your network
+
+| Level | Code leaves your network? | Inference under your control? | Ops burden | Satisfies air-gap? |
+|---|---|---|---|---|
+| Full-stack self-hosted | No (with local or in-tenancy models) | Yes | High | Yes |
+| BYOK on vendor SaaS | Yes — vendor app processes it | Partially (your keys, your endpoints) | Low | No |
+| On-prem runners / hybrid | Yes — vendor control plane orchestrates | Sometimes | Medium | No |
+
+When a vendor says "self-hosted," ask which row they mean. It's a one-question filter that eliminates most ambiguity — and most disappointment.
+
+## The honest options list (as of August 2026)
+
+What each vendor verifiably offers. Deployment offerings change; treat vendor docs as the source of truth and this as your shortlist.
+
+### Kodus — open source, AGPLv3, full-stack
+
+[Kodus](https://kodus.io) is an open-source AI code review platform licensed under AGPLv3 (with a separate enterprise license covering some EE features — the repo carries both license files). The [self-hosting guide](https://docs.kodus.io/how_to_deploy/en/deploy_kodus/generic_vm) covers deployment on your own VM with Docker Compose; the stack is a NestJS API, background workers, a webhook service, and a Next.js dashboard, integrating with GitHub, GitLab, Bitbucket, and Azure Repos. BYOK is native: as of August 2026, the project supports OpenAI, Anthropic, Google Gemini, Vertex AI, Novita, and any OpenAI-compatible endpoint — which is the escape hatch that makes fully local serving via vLLM or Ollama work. You pay model providers directly, with no markup. Team conventions are enforced through Kody Rules, plain-language review rules scoped to organizations, repos, or paths. Disclosure: Kodus sponsors this site — evaluate it with the same rigor you'd apply to anything else.
+
+### PR-Agent — open source, MIT, maximum flexibility
+
+[PR-Agent](https://github.com/qodo-ai/pr-agent) is MIT-licensed as of August 2026 and describes itself as a community-maintained open-source project (the legacy of what became Qodo's commercial platform). It runs as a CLI, a Docker container, a GitHub Action, or a persistent webhook server, against GitHub, GitLab, Bitbucket, Azure DevOps, and Gitea. Model support goes through LiteLLM, which means effectively everything: OpenAI, Claude, Gemini, Mistral, DeepSeek, Azure OpenAI, Bedrock, Vertex, OpenRouter, and local Ollama. It's a toolkit more than a platform — commands like review, improve, and describe that you wire into your workflow — so expect to build your own conventions around it rather than configure them in a dashboard. For a deeper look at this category, see our guide to [open-source AI code review tools](/blog/open-source-ai-code-review-tools).
+
+### GitLab Duo Code Review — self-managed with self-hosted models
+
+If you're already on self-managed GitLab, Duo Code Review with self-hosted models is a serious option: it reached general availability in GitLab 18.4 (2026), supporting Mistral, Meta Llama, Anthropic Claude, and OpenAI GPT model families served via vLLM, Azure OpenAI, or AWS Bedrock, per GitLab's documentation. GitLab positions Duo Self-Hosted explicitly at air-gapped and regulated environments, with request and response logs staying in your domain, and GitLab 19.0 broadened the supported open-model list further. The catches: it requires GitLab Duo add-on licensing (check current packaging), and it reviews merge requests on GitLab — it is not an option for GitHub or Bitbucket shops.
+
+### Enterprise tiers of commercial tools
+
+Several closed-source vendors offer self-hosted deployment at the top of their pricing ladder:
+
+- **CodeRabbit** offers self-hosted deployment for Enterprise customers — as of August 2026 its docs state the option is available to organizations with 500+ seats, runs the review agent inside your infrastructure, and connects to your own LLM provider, with configuration delivered during onboarding ([CodeRabbit self-hosted docs](https://docs.coderabbit.ai/self-hosted/overview)). Below that threshold, you're on their cloud — one reason smaller regulated teams end up surveying [CodeRabbit alternatives](/blog/coderabbit-alternatives).
+- **Qodo** (the platform that grew out of Qodo Merge) offers single-tenant SaaS, on-premises, and air-gapped deployment options on its Enterprise plan, at custom pricing, per its documentation as of August 2026.
+- **Greptile** advertises self-hosted deployment for enterprise customers with strict data-privacy requirements, alongside SOC 2 Type II and SSO/SAML, per its enterprise page as of August 2026; details and pricing are custom, so confirm scope directly.
+- **Bito** supports self-managed Git platforms (GitHub Enterprise, GitLab self-managed, Bitbucket Data Center) and advertises BYOK options; verify the current deployment model for the agent itself with their team.
+
+The pattern across all four: self-hosting exists, but behind a sales conversation, at custom or high-minimum pricing, and you operate a black box — you can run the software, but you can't read it, and your ability to keep running it is tied to the contract.
+
+### What you can't self-host
+
+**GitHub Copilot code review** has no self-hosted version as of August 2026 — self-hosted runners execute its agentic checks, but the review service is GitHub's cloud. If your constraint is "code never reaches a third-party cloud," Copilot code review is out, full stop. The same logic applies to any reviewer that offers only Level 2 or Level 3 deployment: check the vendor's architecture docs, not the marketing page. Our comparison of the [best AI code review tools](/blog/best-ai-code-review-tools) flags deployment models alongside capability.
+
+### Summary table
+
+| Tool | License / tier gate | Deployment model | Model options |
+|---|---|---|---|
+| Kodus | AGPLv3 open source (plus EE tier) | Full stack, Docker Compose on your infra | BYOK: OpenAI, Anthropic, Gemini, Vertex, any OpenAI-compatible endpoint (vLLM, Ollama) |
+| PR-Agent | MIT open source | CLI, Action, Docker, webhook server | Anything via LiteLLM, incl. Bedrock, Azure OpenAI, Ollama |
+| GitLab Duo Code Review | Duo licensing, self-managed GitLab | Inside your GitLab deployment | Mistral, Llama, Claude, GPT via vLLM / Azure OpenAI / Bedrock |
+| CodeRabbit | Enterprise, 500+ seats | Agent in your infra, vendor-guided | Your LLM provider account |
+| Qodo | Enterprise, custom pricing | Single-tenant, on-prem, or air-gapped | Incl. self-hosted model options |
+| Greptile | Enterprise, custom pricing | Self-hosted for enterprise | Confirm with vendor |
+| GitHub Copilot code review | — | Cloud only (self-hosted runners execute checks) | GitHub-managed |
+
+## Deployment considerations
+
+Choosing a tool is half the decision. The other half is the infrastructure underneath it.
+
+### Models: three routes, one real trade-off
+
+Your model routing decision matters more than your tool decision for both quality and compliance.
+
+**Direct provider APIs** (OpenAI, Anthropic, Google) give you the strongest review quality — code review is a reasoning-heavy task, and frontier models still catch logic and architecture issues that smaller models miss. Code goes to the provider under their API data terms, which most providers pair with no-training commitments on API traffic; whether that satisfies your compliance bar is a question for your counsel, not your vendor.
+
+**In-tenancy cloud endpoints** — AWS Bedrock, Azure OpenAI, Google Vertex AI — are the pragmatic middle. You get frontier or near-frontier models served inside your cloud account and region, which satisfies most data-residency and many compliance requirements, with zero GPUs to own. For most regulated teams below "air-gapped," this is the right answer, and it's why BYOK support for these endpoints should be a hard requirement on your tool shortlist.
+
+**Fully local serving** — vLLM or Ollama running open-weight models (Llama, Qwen, DeepSeek, Mistral families) — is the only route for air-gapped environments. Be honest about the quality trade: open models have closed much of the gap, but review depth on subtle, cross-file logic issues still correlates with model strength. Whatever you deploy, test it with planted bugs before trusting it — the trial protocol in our guide on [how to evaluate AI code review tools](/blog/how-to-evaluate-ai-code-review-tools) works identically for a local model behind a self-hosted tool.
+
+### GPU vs. API economics
+
+The math is less about unit prices (which change quarterly — verify current cloud pricing) than about utilization shape.
+
+Code review is bursty: PRs cluster around working hours and release cycles. API billing fits that shape perfectly — you pay per token, and a typical PR review lands in the cents-to-low-dollars range depending on diff size, context depth, and model choice. A 200-PR-per-month team on BYOK usually spends less on inference than one SaaS seat costs.
+
+Dedicated GPUs invert the shape. Serving a 70B-class model well means one or more 80GB-class GPUs (quantization reduces the footprint at some quality cost), running around the clock whether PRs are flowing or not, plus the serving stack and the person who owns it. That only pays off in two cases: review volume high and steady enough to keep utilization up, or a compliance mandate that removes the API option entirely. If you're buying GPUs to save money on code review alone, re-run the spreadsheet; if you're buying them because the code cannot leave, the spreadsheet was never the point.
+
+One under-appreciated cost either way: context. A reviewer that meets the [multi-dimensional context standard](/standards/01-multi-dimensional-context) indexes your repositories and feeds cross-file context into every review — that's more tokens per PR than diff-only tools burn, and it's exactly the spend that makes reviews worth reading. Budget for it rather than optimizing it away.
+
+### Secrets and the security boundary
+
+Ironically, the tool you deploy for security reasons is itself a high-value target: it holds credentials that can read every repository. Treat it accordingly.
+
+- **Git tokens:** scope to the minimum (read code, write PR comments, read webhooks) and prefer short-lived app installations over long-lived PATs. Rotate on a schedule.
+- **LLM keys:** store in a real secret manager (Vault, AWS Secrets Manager, sealed secrets), never in compose files or env-committed config. Set provider-side spend alerts — a runaway review loop is a real failure mode.
+- **Webhook endpoints:** verify signatures on every event; an unauthenticated webhook receiver that triggers LLM calls is both an injection surface and a wallet drain.
+- **Egress control:** the point of Level 1 is a small, auditable egress list. Enforce it at the network layer — allowlist your model endpoint and Git platform, and alert on anything else. This is also how you verify a vendor's claims about their own agent.
+- **Data at rest:** review context, embeddings, and logs contain source code. Encrypt the database, apply your retention policy, and include the deployment in your existing backup and audit scope.
+
+### The operational reality
+
+A self-hosted reviewer is a production service: webhook ingestion, queues, workers, a database, a repo index that must stay fresh as the codebase moves. Budget a real fraction of an engineer — heavier at setup, lighter in steady state — for upgrades, monitoring, and the occasional index rebuild. Open-source tools make this tractable (you can read the code when something breaks, and Docker Compose setups keep the surface small), but "self-hosted" is never "no-ops." If your team can't own another service, in-tenancy BYOK on a managed tool may be the honest compromise.
+
+## How to choose
+
+Work backwards from your constraint. Air-gapped or "code never leaves the network": you need Level 1 plus local models — realistically Kodus, PR-Agent, GitLab Duo Self-Hosted, or an enterprise on-prem contract with Qodo. Residency and auditability, but cloud inference acceptable: Level 1 with in-tenancy endpoints (Bedrock, Azure OpenAI, Vertex), which the open-source tools support today without a sales call. Cost and model control only: BYOK may be all you need — just stop calling it self-hosting in your security review.
+
+Then evaluate the shortlist like an engineering decision, not a procurement one: deployment model is one axis, but review quality, noise discipline, and learning behavior decide whether the thing gets used after month one. Our [assessment](/assessment) scores any tool — including a self-hosted deployment you're already running — against the nine standards in about ten minutes, and tells you which gaps are architectural and which are just configuration.

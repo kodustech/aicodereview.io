@@ -1,0 +1,27 @@
+{
+  "name": "DeepSource",
+  "website": "https://deepsource.com",
+  "tagline": "Static-analysis platform (quality, coverage, secrets) with Autofix and a metered AI Review add-on; free for open-source repos.",
+  "category": "code-quality",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "Free for OSS (unlimited public repos, 1,000 PRs/mo); Team $24/user/mo annual incl. $100/yr AI Review credit; AI review metered $8-15 per 10K LOC; Enterprise custom",
+  "pricingUrl": "https://deepsource.com/pricing",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Enterprise adds self-hosted and air-gapped deployment plus BYOK (Anthropic, OpenAI, or Gemini keys).",
+  "platforms": ["github", "gitlab", "bitbucket", "azure-devops"],
+  "modelControl": "BYOK (Anthropic, OpenAI, Gemini) on Enterprise only; vendor-managed models otherwise",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "unknown", "note": "AI Review context depth not documented in the sources we verified; static analyzers run per-repo."},
+    "02-rule-centric": {"status": "partial", "note": "Configurable static analyzers; custom AI review rules not documented."},
+    "03-dual-workflow": {"status": "unknown", "note": "Local/IDE review surface not covered in the sources we verified."},
+    "04-business-logic": {"status": "unknown", "note": "Ticket/requirements validation not documented."},
+    "05-continuous-learning": {"status": "unknown", "note": "Learning from review feedback not documented."},
+    "06-sandbox-validation": {"status": "unknown", "note": "Sandbox or test-run validation not documented."},
+    "07-economic-transparency": {"status": "partial", "note": "BYOK (Anthropic, OpenAI, Gemini) is Enterprise-only; AI metering ($8-15/10K LOC) hard to map to tokens."},
+    "08-actionability": {"status": "partial", "note": "Autofix generates fixes for static findings; AI Review fix actionability not documented."},
+    "09-measurable-roi": {"status": "unknown", "note": "ROI/metrics reporting not documented in the sources we verified."}
+  },
+  "relatedPosts": ["best-ai-code-review-tools", "open-source-ai-code-review-tools", "ai-code-review-vs-static-analysis", "ai-code-review-statistics", "what-is-ai-code-review"]
+}

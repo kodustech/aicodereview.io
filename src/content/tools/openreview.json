@@ -1,0 +1,27 @@
+{
+  "name": "OpenReview",
+  "website": "https://github.com/vercel-labs/openreview",
+  "tagline": "Vercel Labs' self-hosted GitHub review bot: mention @openreview for Claude-powered inline suggestions; dormant beta since March 2026.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "None (no LICENSE file as of Aug 2026; README says MIT)",
+  "pricing": "Free to run; you pay your own Anthropic API and Vercel hosting. Beta with no commits since March 2026 (~1.5K stars, not archived)",
+  "pricingUrl": "unknown",
+  "selfHosted": "full",
+  "selfHostedNote": "Self-hosted only: deploy the Next.js app to Vercel with your own GitHub App credentials and Anthropic key.",
+  "platforms": ["github"],
+  "modelControl": "BYOK Anthropic key on your own deployment; model hardcoded (Claude Sonnet 4.6), no provider choice without forking",
+  "lastVerified": "2026-08-11",
+  "standards": {
+    "01-multi-dimensional-context": {"status": "partial", "note": "Explores the codebase and runs project tooling during review; single repo, no persistent index."},
+    "02-rule-centric": {"status": "partial", "note": "Reviews only when mentioned, quiet by design; extensible skills in .agents/skills, no severity config."},
+    "03-dual-workflow": {"status": "no", "note": "GitHub App reviewing PRs only; no IDE, CLI, or pre-commit surface."},
+    "04-business-logic": {"status": "no", "note": "No issue tracker or MCP integration documented; reviews the PR in isolation."},
+    "05-continuous-learning": {"status": "no", "note": "Emoji reactions gate applying fixes per PR; no persistent learning from feedback."},
+    "06-sandbox-validation": {"status": "partial", "note": "Runs project tooling (lint/format) as part of review; no documented test execution or preview environments."},
+    "07-economic-transparency": {"status": "partial", "note": "Runs on your infra with your Anthropic key at zero markup; model hardcoded, no model independence."},
+    "08-actionability": {"status": "yes", "note": "Inline GitHub suggestion blocks with one-click apply; commits simple fixes directly to the PR branch."},
+    "09-measurable-roi": {"status": "no", "note": "No dashboards or metrics of any kind."}
+  },
+  "relatedPosts": ["open-source-ai-code-review-tools"]
+}
