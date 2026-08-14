@@ -1,0 +1,29 @@
+---
+title: "Netlify tested 11 coding models side by side"
+description: "Netlify ran the same build prompt across 11 AI models using their open-source AXIS evaluator. Here is what the results tell us about model selection for code generation."
+pubDate: 2026-08-14
+category: "comparison"
+tags: ["aicodingmodels", "modelcomparison", "netlify", "axis"]
+---
+
+Netlify published an experiment this week that more teams should run. They tested 11 different AI models on the same three coding prompts, using their open-source AXIS evaluation tool to score the results. Same task, same agent framework, same evaluation criteria. Only the model changed.
+
+The test covered three scenarios: a static coffee-shop site, a to-do list app with a database, and a recipe app that calls an AI inference API. Each model ran three times per prompt. The results are published at the-coffee-shop-brief.netlify.app for anyone to inspect.
+
+Some things that stood out.
+
+**Cost variance was wide**
+
+On the simple coffee-shop site, average credit cost ranged from 103 (Gemini 3.6 Flash) to 519 (Claude Opus 5). That is a 5x difference for a static one-pager. The gap would shrink on harder tasks where cheaper models fail more and require retries, but for straightforward work the cost spread is real.
+
+**Output quality was not uniform**
+
+While Netlify focused on functional correctness rather than aesthetics, the generated sites differed meaningfully. Some models picked a reasonable color palette and layout; others produced broken navigation or misused database primitives. The full report includes links to each generated site so you can judge visually.
+
+**Structured evaluation beats vibes**
+
+Netlify used their AXIS framework, which defines pass/fail checks programmatically (does the site use a database when needed, does it call the right API, is the site over-engineered). This catches regressions that manual review would miss. AXIS is open-source, so teams can adapt it to their own standards.
+
+The practical takeaway: model selection for code generation should be an empirical choice, not a brand preference. Run your prompts on 3-5 models. Measure pass rates and cost. The results will surprise you.
+
+Netlify's post hinted at follow-ups covering the harder scenarios. I will run the same methodology on my own test suite and report back with numbers.
