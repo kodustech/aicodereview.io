@@ -1,0 +1,35 @@
+---
+title: "Reproducing zizmor's flag on the Snowflake injection"
+description: "I ran zizmor 1.29.0 against the exact Snowflake GitHub Actions workflow. A deterministic static rule flagged the injection at High confidence while AI review cleared it."
+pubDate: 2026-08-18
+category: "explainer"
+tags: ["githubactions", "sast", "zizmor", "aicodereview"]
+---
+
+The public Snowflake incident is a useful test case for one question I keep coming back to: in a mixed workflow with both deterministic static analyzers and AI review, which one actually catches the injection?
+
+I decided to find out empirically instead of arguing from vibes. I pulled the exact vulnerable workflow pattern and ran zizmor 1.29.0 against it in a sandbox.
+
+Result: it flags the injection line. Rule `template-injection`, description "code injection via template expansion", High confidence / High severity, pointing at `jira_issue.yml:24:29` and naming `github.event.issue.title` as attacker-controllable input that can expand into a command. It reproduces with a plain `zizmor --quiet` run; the JSON output carries the same finding.
+
+Here is the boring mechanics of the bug, because that is the part worth understanding and it is checkable by eye:
+
+The workflow interpolates the issue title directly into a shell script:
+
+```
+run: |
+  TITLE=$(echo '${{ github.event.issue.title }}' | sed 's/"/\\"/g' | sed "s/'/\\'/g")
+```
+
+The sed escaping runs after GitHub's `${{ }}` template expansion, not before. A single quote in the issue title breaks out of `echo '...'` and reaches the shell. That is the escape-ordering bug: you cannot escape a value that has already been interpolated into an execution context.
+
+Two structural bugs are worth separating because they fail at different layers:
+
+1. Escape-ordering. The sanitizer runs after the expansion that made the value dangerous, so it is pure theater. This is structural, not a model failure, and you do not need AI to explain it. A linter rule can and does catch it.
+2. The protective `if:` guard does not match the actual invocation path. A guard that only makes sense for a handler it never fires for is dead weight. Again fully statically checkable.
+
+The part I found notable: this is the same workflow that GH Advanced Security scanned and did not flag, and an AI autofix was associated with the same PR in a related file. So you get a clean A/B in the wild: a deterministic rule with an autofix caught the exact dangerous line, while the AI-assisted layer shipped a fix elsewhere in the same change.
+
+That is not a claim that static analysis replaces code review. It is a claim about layering and about test selection. If you have a static analyzer that flags `${{ }}` interpolation into `run:` with High confidence, that is reproducible evidence a given PR needs a human or an AI read on that specific line. The value of the deterministic layer is that it nominates the exact places where judgement is required.
+
+The reproducibility point is the one I want to keep: every claim here was derived by running a pinned tool version against a known input, not by reading a vendor's marketing page. That is the standard I would like the rest of the field held to. If a review tool claims it catches script injection, ask for the flag it produces on this workflow. It either names the line or it does not.
