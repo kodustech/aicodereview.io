@@ -1,0 +1,33 @@
+---
+title: "AI code review benchmarks: offline vs online evals"
+description: "How Martian's Code Review Bench separates reproducible fixed-dataset evals from streaming real-world evals, and the tradeoffs hidden in each."
+pubDate: 2026-08-20
+category: "guide"
+tags: ["aicodereview", "benchmark", "llmasajudge", "evals"]
+---
+
+Every AI code review vendor now publishes a benchmark where they win. Most of them are "we tested our own tool and it's great" documents. Martian took a different route with Code Review Bench, and the split between its two evals is worth understanding, because it exposes a real tension in how we grade these tools.
+
+## The offline benchmark: fixed dataset, reproducible
+
+Fifty PRs, five open-source projects, human-verified golden comments. Sentry (Python), Grafana (Go), Cal.com (TypeScript), Discourse (Ruby), Keycloak (Java). Each golden comment carries a severity label, and an LLM judge decides whether a tool's comment describes the same underlying issue as a golden one. Standard precision and recall from there.
+
+The strong part is that it's reproducible. The PRs, the goldens, the judge prompts, the whole pipeline are all in an MIT-licensed repo. You can run it on your own stack, add a tool in an afternoon, and compare against the same fixed ground truth. That instantly beats the closed "we benchmarked ourselves" pages most vendors ship.
+
+The weak part is flagged right in their own README: **static datasets risk training data leakage**. The tools have almost certainly seen Sentry or Discourse in training. A tool could look great on this eval and have never learned a general "catch bugs" skill.
+
+## The online benchmark: fresh PRs, recall as a proxy
+
+That's why they run a second, online eval. It streams real, recent PRs from GitHub where review bots commented, then does a three-step job: extract the bot's suggestions, extract what the developer actually fixed in post-review commits, and judge how many bot suggestions map to real fixes.
+
+Now precision and recall mean something different. Precision is "comments the dev acted on," and recall is "real fixes the dev made that the bot caught." It avoids leakage because the PRs are too fresh to be memorized.
+
+## Where it gets interesting
+
+In both evals, the "judge" is an LLM matching whether two descriptions are the same underlying issue. The offline side mitigates this by storing per-judge-model results, and they report which model scored what. That's honest.
+
+The online side has a quieter assumption: **developer action is treated as evidence that a comment was correct**. A dev can merge a suggested fix because it's low-risk and they were about to refactor anyway, or reject a correct comment because they don't have time. Recall here is a proxy for "comments people acted on," not a clean measure of "comments that were right." It's a reasonable proxy, but it's a proxy.
+
+For anyone picking a reviewer, the practical reading is simple. Skim the offline results to confirm a tool doesn't embarrass itself on a held-out set you can inspect, then trust the online time series for real-world signal, because fresh PRs can't be gamed by memorization. And read which judge model produced the numbers. If a vendor won't tell you, treat the score as marketing.
+
+Run the benchmark yourself. The whole thing is open, which is more than most tool vendors can say about their own evals.
