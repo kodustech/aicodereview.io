@@ -1,0 +1,19 @@
+---
+title: "Pullfrog vs CodeRabbit: the harness, not the model, is the review"
+description: "Comparing Pullfrog and CodeRabbit properly means separating the reviewer harness from the underlying model — not just lining up features."
+pubDate: 2026-09-07
+category: "comparison"
+tags: ["aicodereview", "pullfrog", "coderabbit", "eval"]
+---
+
+Every "X vs CodeRabbit" article you'll find lines up features, pricing, and model names. That misses the thing that actually decides review quality: whether you're comparing harnesses or models. Most AI code-review tools conflate the two, and Pullfrog is a clean example of why the distinction matters.
+
+Pullfrog doesn't train or host a review model. It wraps the real vendor agents (Claude Code and Codex) behind a GitHub Actions bot. You bring your own key or pay at-cost, it routes a PR to the underlying agent, and posts comments back on the PR. **The harness owns: whose key is used, what the agent can reach on the repo, and what it's allowed to post back.** Review quality, on the other hand, is inherited wholesale from Claude Code or Codex and the model behind them.
+
+CodeRabbit is the opposite shape: a hosted SaaS with its own models and its own review pipeline. Feature-for-feature it's a longer list (line-level suggestions, chat with the reviewer, incident triage). But that list is a product comparison, not an eval of review quality.
+
+The practical question for a team choosing between them is: are you paying for a review engine, or for a review harness plus whoever's model is cheapest that day? If Pullfrog routes to the same Claude Code you already trust, its reviews will read a lot like your own Claude Code sessions. The differentiator is the boundary: your keys stay with you, and you control which credentials the agent ever sees through the whole run.
+
+That boundary is also where the security evaluation lives. A code-review agent that can read your private repo, run CI-type actions, and post to your PRs is touching your confidence surface. Comparing tools means asking, per product: which sessions does the bot actually hold, and what can each read and write?
+
+CodeRabbit wins on out-of-the-box depth and a managed pipeline. Pullfrog wins on transparency and control: you know exactly which model ran each review because you picked it, and the agent's reach is constrained by the boundary you configured. Whichever you pick, run a few real PRs and check _which harness and which model_ produced each review, not just the tool name.
