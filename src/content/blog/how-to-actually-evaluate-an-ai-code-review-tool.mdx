@@ -1,0 +1,26 @@
+---
+title: "How to Actually Evaluate an AI Code Review Tool"
+description: "The failure mode that matters in AI review is not missing a bug, it is fluent output that is structurally wrong and easy to trust. How to benchmark for it."
+pubDate: 2026-09-08
+category: "guide"
+tags: ["aicodereview", "evaldesign", "codereviewtools"]
+faq:
+  - q: "What is the worst failure mode in an AI code review tool?"
+    a: "Not missing a bug, but producing review output that reads like a real review while being structurally wrong. Because it looks valid, you act on it, and the defect sits where the tool said nothing was wrong."
+  - q: "How do I benchmark an AI code review tool for structural errors?"
+    a: "Aim at the slice of changes where the tool produces plausible but wrong feedback, not the average bug-catch rate. Check whether the tool resolves code against the codebase and surrounding contracts rather than reviewing the patch text in isolation."
+---
+
+The failure mode that matters in AI code review isn't a missed bug. It's output that reads like a real review but is structurally wrong, because that's the version you trust and act on.
+
+I keep coming back to a database-recovery writeup from Oskar Gross at Glazer. They used Codex to crack an obfuscated schema in a proprietary Cronos database and convert it to CSV. The surprising part was that getting the values out was not the hard part. Proving each value still sat under the correct column was.
+
+The line worth stealing for how you evaluate a review tool: a CSV containing readable values under the wrong headers would be worse than an obvious error, because it could look valid while being semantically corrupted.
+
+That is what an AI review gives you when it only checks whether the code reads well. It can flag a real surface issue and miss that the overall framing is off. Or it can bless a change that is coherent and wrong. The output reads fine, so you trust it, and the defect sits exactly where the tool told you nothing was wrong. Fluent and wrong beats obviously-wrong every time, because obviously-wrong makes you look.
+
+So when comparing review tools, weigh structural validation over apparent readability. Does the tool actually resolve the change against the codebase, or does it review the patch text in isolation? Does it check the change against surrounding types, contracts, and callers, or only that the lines scan okay? Can it tell you "this looks valid but violates the shape of the system," or just that the prose is fine?
+
+A tool that is fluent but structurally blind is more dangerous than a conservative one that says "not sure" often. The conservative one makes you look closer. The fluent one makes you stop.
+
+Benchmark the worst case, not the average. A mean bug-catch rate hides the region that decides whether you can trust the tool: the slice of changes where it produces plausible, authoritative, wrong feedback. Build your eval to surface exactly that, then decide.
