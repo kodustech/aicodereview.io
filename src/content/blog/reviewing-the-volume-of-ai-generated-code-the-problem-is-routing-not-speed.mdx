@@ -1,0 +1,27 @@
+---
+title: "Reviewing the volume of AI-generated code: the problem is routing, not speed"
+description: "AI made PRs smaller but much more numerous. Reviewing the volume isn't a per-PR speed problem, it's a routing problem. Here's how teams actually triage AI-generated code."
+pubDate: 2026-09-09
+category: "guide"
+tags: ["aicodereview", "aigeneratedcode", "prreview", "reviewvolume"]
+---
+
+The standard story on AI-generated code volume is that you need to review each pull request a little faster. That's the wrong framing, and it's why most teams stay stuck.
+
+When teams adopt AI coding tools, the mix of PRs changes in a specific way: individual changes get smaller, but there are far more of them. A developer who used to open one 400-line PR now opens five 80-line PRs because the assistant keeps making incremental suggestions they accept. The total surface under review does not shrink. It grows, because every one of those smaller PRs still carries the same fixed review overhead: context load, opening the diff, deciding whether the change is worth your attention.
+
+So speed per review is the wrong lever. You cannot read your way out of a higher-volume feed. The teams that actually cope don't process more PRs faster. They route most of them away from the human bottleneck before a human ever looks.
+
+That is the real design question: which changes need human judgment, and which can be mechanically screened first? In practice, three buckets fall out.
+
+The first bucket is style and convention noise. AI generators reliably produce internally consistent code that violates your team's actual standards, because the model learned the generally popular version and not your specific rules. Flagging that is genuinely automatable, but only if the tool reads your conventions as input rather than hoping the model guesses them. This is the difference between a checker that consumes a config or a rules file and one that only knows the common case.
+
+The second bucket is local correctness. Does the new function break a caller? Is the null check missing? Does this change a contract silently? A static analyzer plus a model that can read the surrounding context catches much of this before a human is in the room.
+
+The third bucket, and the only one a human should reliably see, is design intent. Did the author intend the API to change this way? Is this the right abstraction at all? No tool that reviews the diff text tells you whether the design is right, because that question lives outside the diff. It lives in the product context and the codebase's history.
+
+The mistake most teams make is treating an AI review tool as a device that needs to be right on every diff. It doesn't. It needs to be reliably wrong on the things a human would have rubber-stamped anyway, so the human's remaining decisions are the ones that actually require judgment.
+
+If you are choosing a tool for a high-volume AI-code pipeline, structure the evaluation around that routing. Build a small eval set of PRs you already reviewed by hand and label how each one should have been handled: auto-pass, auto-flag with a one-line reason, or escalate to a human. Then measure how the candidate routes them. Report two numbers: how many of the auto-flag-and-escalate cases it caught, and how much noise it pushed at humans. A tool that catches everything but floods your reviewers with a hundred marginal comments per day has made the volume problem worse, not better.
+
+The practical lesson is that volume is not a throughput problem. It is a filter problem. Stop asking how fast the tool reviews a PR and start asking what it keeps humans from having to see.
