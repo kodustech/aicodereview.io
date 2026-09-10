@@ -1,0 +1,32 @@
+---
+title: "Reviewing the surge in AI-generated code: what scales and what breaks"
+description: "AI is producing more code than teams can review. First-party data on why the old loop breaks (Salesforce, DORA) and what actually scales."
+pubDate: 2026-09-10
+category: "guide"
+tags: ["aicodereview", "aigeneratedcode", "codereview", "reviewvolume"]
+faq:
+  - q: "Why is code review time actually increasing with AI-generated code?"
+    a: "AI raises output volume (~30% per Salesforce) and PR size (often 20+ files, 1000+ lines) faster than review capacity grows. Reviewers disengage on oversized PRs, flipping from careful reading to rubber-stamping."
+  - q: "Does using an AI code review tool solve the volume problem?"
+    a: "Not by itself. Tools that only skim or annotate still assume a human reads everything. The reliable fixes are running the change rather than reading it, reviewing the prompt's intent, and keeping PRs small enough to actually verify."
+---
+
+Every team that turns on AI coding tools hits the same wall within a quarter: the volume of code to review climbs way faster than review capacity does. The vendors promised the tools would make review faster. The first-party numbers tell a more specific story.
+
+Salesforce's engineering team measured it directly. Code volume up roughly 30%, pull requests regularly over 20 files and 1000 lines, review latency rising quarter over quarter. Then the sharp part: review time on their largest PRs plateaued and even declined while submission volume kept growing. Their read of that is not that review got efficient, it's that reviewers disengaged. When a PR is that big and arrives that often, people stop reading carefully and start stamping approval. The reviewer becomes the only filter left between generated code and production, and the filter is quietly turning itself off.
+
+DORA's 2024 report points the same direction from a different angle. Teams reporting higher AI adoption showed higher delivery throughput but lower delivery stability, and delivery performance actually declined versus the prior year. Same shape as Salesforce: you ship more, but the reliability cost shows up somewhere else.
+
+So the blunt summary is: volume doubles because generation is cheap, review capacity is unchanged, and the gap gets papered over by surface-level approvals that don't catch anything. Optimizing for faster review on that curve is optimizing the wrong thing.
+
+The shift that actually works is changing what review is. Three things held up in teams that didn't collapse under the volume:
+
+1. Run it, don't just read it. A reviewer eyeballing a generated diff is guessing. Incentivize pulling the branch and exercising the code path, or hook up a tool that runs the change. Execution catches what skimming misses.
+
+2. Review the prompt and the intent, not just the diff. If a change is AI-generated, the highest-signal artifact is what you asked for and the boundary you drew around it. Same generated code with a sloppy or wrong instruction is a different class of problem.
+
+3. Collapse the review surface. Small, focused PRs that decompose one intent at a time are reviewable, and reviewability is the scarcity now. When every PR reliably lands over 20 files, the process itself is the bug.
+
+The practical test for a single change: can one person actually load the full intent of this PR and verify it in under ten minutes? If not, it doesn't matter how clever the assistant was that wrote it, the review is a rubber stamp.
+
+None of this is anti-AI. Generation is a genuinely good tool, and the constraint isn't writing code, it's trusting it at review time. The teams that stay healthy are the ones that treat the reviewer as a scarce resource and redesign around that, instead of assuming AI review tools will fix the volume problem on their own.
