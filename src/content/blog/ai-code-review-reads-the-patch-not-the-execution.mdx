@@ -1,0 +1,25 @@
+---
+title: "AI code review reads the patch, not the execution"
+description: "When AI writes 30% of your lines, patch-text review hits a ceiling. The fix is an execution layer, not a bigger reviewer."
+pubDate: 2026-09-11
+category: "explainer"
+tags: ["aicodereview", "evaldesign", "verification", "codevolume"]
+---
+
+Every guide I read this month on reviewing AI-generated code has the same shape. GitHub's checklist, Salesforce's re-architecture story, Sonar's how-to. Start with functional checks. Verify context and intent. Scrutinize dependencies. It's all reading the diff, in some order.
+
+That framing worked when a human wrote most of the lines and a reviewer could actually read them. Salesforce's own numbers show why it's breaking: code volume up about 30%, PRs routinely past 20 files and 1,000 lines. Nobody is reading those diffs cover to cover. So the natural move is to hand review to an AI reviewer. Which reads the patch text too.
+
+That's the trap. Human reviewer reads the diff. AI reviewer reads the diff. Nobody sees the execution. The deeper the AI writes code, the more patches get "reviewed" by reading, and the wider the gap grows between "this was reviewed" and "this was verified."
+
+A few things only show up at runtime, and they're exactly the failures AI code is prone to produce with full confidence:
+
+- The happy path works, the boundary input is unhandled.
+- The change is correct in isolation and breaks an integration three layers up.
+- The diff is sound because the model wrote it to sound sound.
+
+Reading the patch text can catch style and obvious bugs. It cannot catch any of those. No checklist makes it able to.
+
+The practical fix is not a bigger reviewer. It's a separate layer that doesn't depend on review bandwidth at all: a build gate, a real test suite on the actual change, a runtime assertion on the entry point. Review effort shifts from "read every line" to "set the invariants the code must satisfy and let execution check them." That layer runs whether the human reviews 10 lines or 1,000, and it scales with volume instead of collapsing under it.
+
+So when a tool that reviews AI code talks about confidence or coverage, the question worth asking is not how many lines it read. It's whether it ever logged on after the patch and watched it run. If the answer is no, it's a reader. And readers are what your review bottleneck already has too many of.
