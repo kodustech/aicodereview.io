@@ -1,0 +1,32 @@
+---
+title: "Who reviews the AI-generated code before the human does?"
+description: "The volume of AI-generated code is rising faster than review capacity. The fix starts in evaluation design: don't let the model that wrote the code also judge it."
+pubDate: 2026-09-12
+category: "guide"
+tags: ["aicodereview", "evaldesign", "aigeneratedcode", "codereview"]
+faq:
+  - q: "Why shouldn't an AI review the code it generated?"
+    a: "A model that wrote a chunk of code shares a correlated blind spot with that code. It has no independent view, so self-review repeats the same gap instead of catching it. The fix is to have a different model do the first pass."
+  - q: "Does cross-model review actually help?"
+    a: "Two models with different training and different failure modes are more likely to catch each other's mistakes than one model is to catch its own. The same logic applies in benchmark design: you do not let the contestant score its own run."
+  - q: "What separates a useful AI review from noise?"
+    a: "A reviewer that just confirms the code looks fine adds little. A reviewer that verifies against a spec, a test contract, or a concrete invariant adds real signal. Independent verification beats a second opinion."
+  - q: "How does this help a human reviewer's workload?"
+    a: "It changes the queue from a wall of self-consistent generated diffs into candidates that already passed an independent cross-check. The human then spends attention on the genuinely new and risky changes."
+---
+
+Every team leaning harder on AI coding tools hits the same wall a few weeks in: PRs are up a lot, individual diffs are smaller, and the reviewers feel like they are drowning in a volume they did not create. I keep hearing the version of this from engineers: we generate code faster than we can review it.
+
+The usual advice is about process. Smaller PRs. More focused review sessions. Rotate reviewers. That all helps, but it misses the part that actually decides whether the review can keep up: who is doing the first pass.
+
+Here is the assumption I see people make most often, and I think it is wrong. A team adopts an AI coding assistant, and when the review funnel fills up, they point the same assistant at the PRs it helped generate. One model writes, one model reviews. That is the crux of the problem, and it is an evaluation-design problem, not a scheduling one.
+
+A model that produced a chunk of code shares a correlated blind spot with that code. It does not know what it got wrong because it has no independent view. Having it review its own output is like grading your own homework: you catch the obvious things and miss the same gap that created the bug in the first place. Zero independent signal gets added. You have effectively measured one model's opinion twice.
+
+Two changes make the practical difference.
+
+First, cross-model review. The code a coding agent writes should be looked at by a different model than the one that wrote it. Two models with different training and different failure modes are more likely to catch each other's mistakes than either is to catch its own. This is the same logic you would apply to a benchmark: you do not let the model score its own run, because the judge and the contestant share a blind spot.
+
+Second, independent verification instead of confidence. A reviewer model that confirms the code looks fine is not adding much. A reviewer that goes and checks against a spec, a test contract, or a concrete invariant is adding real value. The signal density is in verification against something external, not in producing a second opinion that agrees with the first.
+
+For the human in the loop, this changes what the queue looks like. Instead of a reviewer facing a wall of self-consistent generated diffs, they get candidates that already passed through an independent cross-check, which is exactly the signal they need to triage where their attention matters most. The human judgment then concentrates on the genuinely new, genuinely risky changes, which is what good review was always supposed to be. That is the workflow that lets a team absorb a rising volume of AI-generated code instead of being buried by it.
