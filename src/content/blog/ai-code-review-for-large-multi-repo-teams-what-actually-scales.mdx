@@ -1,0 +1,30 @@
+---
+title: "AI code review for large multi-repo teams: what actually scales"
+description: "Eval-grounded comparison of AI code review tools for large teams with many repositories: cross-repo context, verification, permission boundary."
+pubDate: 2026-09-13
+category: "comparison"
+tags: ["aicodereview", "multirepo", "evaldesign", "codereview"]
+faq:
+  - q: "Do AI code review tools still help on large multi-repo codebases?"
+    a: "Only if the tool actually fetches context across the repos a change touches. A flat single-PR pass misses cross-repo changes a human reviewer would catch. Verify on a real cross-repo diff before trusting it."
+  - q: "How do you evaluate AI review quality on a big team?"
+    a: "Pick a real cross-repo change and check three things: did the tool retrieve the symbol from the other repo, was the finding reproducible, and did it stay inside its permission boundary. That beats any vendor scorecard."
+---
+
+When an engineering team gets big enough to own a dozen repositories, the "AI code review tool" question stops being about which bot leaves the best comments. It becomes three separate questions that most tool roundups never separate:
+
+1. Can the tool actually pull context from across all the repos your change touches?
+2. Can its review be verified, or is it an uncheckable opinion?
+3. Where does its permission boundary stop?
+
+Most vendor listicles answer none of these. They rank on marketing features: "400,000+ files indexed!", "works with GitHub, GitLab, Bitbucket!". Indexing more files is not the same as retrieving the right ones across a cross-repo change.
+
+The sharper framing comes from how Cloudflare described building its own orchestration layer for code review: they stopped relying on a single model pass over one diff and instead organized several specialists that each pull from different slices of the codebase, then combine. That design exists because a flat "review this diff" prompt does not give a model the cross-repo context a human reviewer carries in their head. A tool that wraps Claude Code or Codex and hands it one PR is giving the model a sliver of that context. A tool built around cross-repo retrieval changes what the model can even see before it forms an opinion.
+
+So the first eval axis for a multi-repo team is the context-fetching harness, not the model. Pin it the way you pin model parameters. Does the tool know a symbol is defined in `services/api`, referenced in `web/client`, and changed in this PR across both? Or does each repo get reviewed as an island? A change that spans two repos is exactly what a human reviewer struggles with and what a single-PR bot will get wrong silently.
+
+The second axis is verification. An AI review is a claim that a problem exists. On a large team, a false positive costs an engineer an interruption, and a false negative is a bug shipped. The tools that hold up are the ones where the reviewer's finding can be reproduced: a failing test, a linter hit, a specified permission check read the codebase's own rules. If the review is an unverifiable prose opinion from a hosted model, then the quality of the review is the quality of whatever model the vendor happened to route to that day, and you cannot reproduce any of it. That is the model-attributed vs harness-attributed distinction in practice: reviews are only worth benchmarking when you can swap the model, re-run, and get the same finding.
+
+The third axis is the permission boundary, and it matters more the larger the team. An agent with read access to every one of your repos can already see most of your plan. An agent with a connected-account session, or keys routed through a tool, is holding a credential surface you have not really enumerated. On a multi-repo team the blast radius is the whole platform, so the question is not "can it review my code" but "what can it read, write, and act on along the way." Tools that keep the review in a sandbox with no write path beyond the diff thread, and no connected-app sessions in its context, are the ones whose capability surface you can actually pin down.
+
+There is a Reddit question floating around that captures the state of the market: people asking whether AI review tools help once a codebase gets large, since the easy catches are already obvious. That question goes unanswered because the tools that dominate the search results do not publish a cross-repo evaluation. The honest measure for a multi-repo team is to run one yourself: take a real cross-repo change, point each candidate at it, and check three things. Did it find the symbol defined in the other repo? Was the finding reproducible? Did it stay inside its boundaries? Those three answers decide whether the tool scales with your platform or just scales its own marketing.
