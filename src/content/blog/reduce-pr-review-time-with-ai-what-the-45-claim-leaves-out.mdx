@@ -1,0 +1,27 @@
+---
+title: "Reduce PR review time with AI: what the 45% claim leaves out"
+description: "Atlassian says Rovo cut PR cycle time 45%. The number is real but self-attested. Here's how to measure whether AI actually reduces your review time."
+pubDate: 2026-09-14
+category: "guide"
+tags: ["prreview", "codereview", "atlassianrovo", "metrics"]
+---
+
+When a team asks how to cut pull request review time with AI, the answer they get is usually a vendor number. Atlassian says Rovo cut PR cycle time by 45% in their dogfooding. That number is real, but it's self-attested: no harness, no fixed window, no control group, nothing you can reproduce against your own repo.
+
+That doesn't make the claim a lie. It makes it useless as a forecast for your team. The fix isn't a better pitch. It's measuring your own before-and-after with a protocol that doesn't let the mean hide the real story.
+
+Here's the trap most teams fall into. They roll out an AI reviewer, watch average cycle time drop, and call it done. But a mean drops when the tool eats the easy PRs and the hard ones keep sitting. I've seen a 30% drop in mean cycle time that was really the tool clearing the 90-line single-file PRs while the 2,000-line cross-module changes got slower. The aggregate looked great on the dashboard and the regressions lived in the tail the whole time.
+
+So before you adopt anything, fix the measurement.
+
+Pick a fixed slice to compare against itself. Two weeks of PRs from the same team before the tool, then the same two weeks with it. Keep the reviewer pool unchanged across both — swapping staff in the same window muddies the effect. Don't compare a busy team's fall to a different team's spring.
+
+Split the comparison by size and risk, not just total. Separate small low-risk changes from large or boundary-crossing ones. AI review tools are cheap to the point of being free on a one-file bugfix and genuinely slow when context spans modules. If your team lives in the large changes, a tool that only speeds up the small ones hasn't bought you anything.
+
+Measure the tail, not just the mean. Track p90 and p95 cycle time, and review turnaround per change size. When a tool claims it cut time, the honest question is: did it cut the easy set and give up the tail? A mean can improve while the worst PRs get worse.
+
+One more signal that usually goes unflagged: reviewer load. A tool that hands every reviewer forty new inline comments a day hasn't reduced review time, it has moved it from merge latency to reading time. If your reviewers spend more unscrolling AI nitpicks than they used to spend scrolling diffs, the cycle-time number is lying to you.
+
+And keep the attribution clean. Time-to-merge catches everything upstream of the button: the tool, but also the linter, the CI queue, and whether your senior reviewer happens to be on vacation. A drop that lines up with a CI speedup isn't evidence for the AI anything. When you see a delta, ask what changed at the same moment before you credit the tool.
+
+The 45% number is a floor, not a promise. It's what one team saw on their repo, their rules, their context. Yours will be different, and the only way to know by how much is to run the fixed window, split it by size and risk, and read the tail alongside the average. That's the whole discipline, and it's the difference between a team that buys a dashboard number and a team that knows its own.
