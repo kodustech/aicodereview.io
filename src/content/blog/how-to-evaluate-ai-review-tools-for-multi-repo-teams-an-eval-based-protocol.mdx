@@ -1,0 +1,29 @@
+---
+title: "How to evaluate AI review tools for multi-repo teams: an eval-based protocol"
+description: "Stop comparing marketing claims. An eval-based protocol for picking AI code review tools across many repositories: cross-repo context, verification, permission boundaries."
+pubDate: 2026-09-15
+category: "comparison"
+tags: ["multirepo", "aicodereview", "evalprotocol", "crossrepocontext"]
+---
+
+Most "best AI code review tool for large teams" pages are vendor brochures. AugmentCode advertises "400,000+ files analyzed", Greptile says it "learns your codebase", CodeAnt targets monorepos. None of them tell you how to verify any of that in your own setup. If you run a benchmark the way we do, you don't compare those claims against each other. You build a harness and test three specific things.
+
+The three things that actually separate multi-repo review tools:
+
+**1. Cross-repo context fetching.**
+A review tool that can only see the diff of the PR being reviewed reads code the way a new hire reads a ticket. The useful questions are what the tool can reach when the change touches two repos, where a shared type lives in a third, and how far the "codebase-wide" claim actually extends. Test it with a planted cross-repo bug: change a function signature in repo A, call it in repo B, and see whether the reviewer flags it. That single test will tell you more about a tool's context fidelity than any feature bullet.
+
+**2. Verification.**
+The best reviewer output on a multi-repo change is a verification of the claim, not a pronouncement. Does the tool actually fetch the referenced symbol from the other repo, or does it reason from the patch text? Many wrappers pass the diff to a language model that guesses at cross-repo behavior. A tool that runs a check and shows you the evidence is categorically different from one that talks about what it thinks the code does. If there's no way to see what the model actually loaded before it commented, treat the comment as an opinion.
+
+**3. The permission boundary.**
+This is the one nobody benchmarks. A coding agent that reviews across repos holds credentials to read (and sometimes write) each connected repository. Some tools give the model a browser-session login, some hold scoped tokens per repo. Before you adopt a tool, pin down exactly which repos the model can reach, what it can read versus write, and what the blast radius is if the agent is tricked into acting on malicious instructions in a dependency. Reviewing untrusted third-party code with a tool that has write access to your monorepo is a real risk, not a theoretical one.
+
+**The protocol we'd run before picking one:**
+- Pick 3 cross-repo bug scenarios, one touching 2 repos, one touching 3, one touching a repo the PR doesn't touch (to catch over-fetching or wrong-context guessing).
+- Fix the harness: same PR, same repo state, same baseline across every tool. The scaffold matters more than the model.
+- Check whether the tool surfaces what it actually loaded, or just comments from the diff.
+- Enumerate its credential surface: repo read/write scope, connected integrations, whether a sandbox boundary exists.
+- Have a human engineer grade the outputs blind. Don't trust the tool that pats itself on the back.
+
+The tool that wins will not be the one with the biggest marketing number in a blog post. It'll be the one where cross-repo context actually loads, claims get verified, and the credential boundary is small enough that one bad prompt can't reach the whole estate. Vendor claims and self-attested benchmarks are a starting point, not a decision. Build the harness and let the evidence decide.
