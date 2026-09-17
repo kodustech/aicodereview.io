@@ -1,0 +1,41 @@
+---
+title: "AI code review across many repos: what to actually compare"
+description: "Eval-grounded guide to comparing AI code review tools for large multi-repo teams, on context-fetching, verification, and permission boundary."
+pubDate: 2026-09-17
+category: "comparison"
+tags: ["aicodereview", "multirepo", "evaluation", "devtools"]
+---
+
+Large teams live in many repos. One team owns 40, another sprawls across a monorepo with a half-dozen shared packages. When those teams shop for an AI code review tool, the listicle approach stops working: "best overall" rankings are tuned for single-repo shops and tell you nothing about whether a reviewer can cross a repo boundary.
+
+The useful question isn't "which tool is best." It's "on what axis does this tool actually differ?" Most multi-repo tools round up to the same model. So compare the three things that are actually different and measurable: how the tool fetches context across repos, how it verifies what it finds, and where its permission boundary sits.
+
+## Context fetching is the harness, not the model
+
+A reviewer that only sees the diff in the PR it's assigned will miss a breaking change that lives in a dependency repo. The marketing page says "understands your entire codebase." The real, testable question is what context the reviewer is handed on any given review.
+
+Run the same PR through two tools and compare their cross-repo reach: did the reviewer actually pull the shared package's definition, or did it hallucinate from the diff alone? I've seen a tool confidently review a change to a type in repo A while the consuming code in repo B broke, because the reviewer never read repo B. On a single narrow PR, the difference is invisible. On a team whose repos share a published package, it's the whole ballgame.
+
+Pin the harness the way you'd pin model params. Two tools can wrap the same model and get different results purely on how much context they carry and the order they present it in.
+
+## Verification is where multi-repo claims fall apart
+
+The weakest pattern in this whole category is a model reviewing its own output against its own memory of the code. When a reviewer's correctness signal is "did the model agree with itself," you're not measuring consensus, you're measuring one model's opinion counted N times. That's the correlated-judge problem, and it shows up hard across repos where a wrong assumption about a shared API can be self-consistent.
+
+A reviewer should point at an actual artifact: run the tests, resolve the symbol, execute the migration, read the consumer. Watch whether a flagged issue comes with evidence from outside the model's own generation. Cross-repo bugs are usually found by execution, not by pattern matching a diff.
+
+## The permission boundary is the real differentiator
+
+When a reviewer must reach into connected repos, it needs credentials to them. That's where a class of tools that look similar on features diverge completely on risk.
+
+Two kinds of architecture exist here. Some tools wrap an external agent (Claude Code or Codex class) and give it access to your connected apps and sessions. In that shape the review quality is mostly the underlying model, and the wrapper's real job is deciding what the agent can touch. Others push the boundary differently, but the question is the same: which sessions does the reviewer actually hold, and what can each read or write?
+
+For a multi-repo team this isn't hypothetical. A reviewer with write access across shared repos is a surface you are maintaining. Ask for the exact permission map per repo before you trust a number on a benchmark. A "we review your whole org" demo usually glosses over this because it's the one thing the screenshot can't show.
+
+The recent GitHub token exposure at Baseten is the same shape one level up: a service holding a credential derived from crawling its own registry. When your code reviewer holds repo credentials, its left-pad and its login are both part of your threat model.
+
+## How to test before you buy
+
+Pick three to five PRs that genuinely span repos: a change to a shared package, a TypeScript type consumed elsewhere, a config that affects CI. Run each tool on the set and score only three things.
+
+First, did it pull the cross-repo context correctly, or did it infer? Second, when it flagged something, could the claim be verified by execution or a real artifact rather than its own memory? Third, what is the exact permission boundary, stated per repo? A tool that scores on those three, on your real code, beats any ranking that says "best overall."
