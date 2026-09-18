@@ -27,13 +27,15 @@ interface Dimension {
 // Order matters: the first dimension gets the lead slot.
 const DIMENSIONS: Dimension[] = [
   {
-    // Platform breadth is the dimension the platform pages are built around,
-    // and it is the one buyers filter on first. Winner = highest score among
-    // the tools that cover the most platforms.
-    label: 'Widest platform coverage',
-    filter: (t) => t.data.platforms.length >= 5,
+    // Capability, not integration. Four pillars at once: reviews against the
+    // codebase, against rules the team writes, against what the ticket asked
+    // for, and with model spend visible. Exactly one tool documents all four.
+    label: 'Best for reviewing against your own standards',
+    filter: (t) =>
+      ['01-multi-dimensional-context', '02-rule-centric', '04-business-logic', '07-economic-transparency']
+        .every((p) => t.data.standards[p]?.status === 'yes'),
     reason: (t) =>
-      `Documents ${t.data.platforms.length} platforms — ${t.data.platforms.map(platformLabel).join(', ')} — more than anything else here, and scores highest among the tools that cover that many.`,
+      `The only tool here documenting all four at once: reads the wider codebase rather than the diff, enforces rules your team writes, checks the change against what the ticket asked for, and keeps model spend visible instead of bundled. Covers ${t.data.platforms.length} platforms, more than anything else in the directory.`,
   },
   {
     label: 'Best documented coverage',
