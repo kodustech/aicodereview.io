@@ -1,0 +1,130 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ToolDirectory from '../../components/ToolDirectory.astro';
+import ComparisonTable from '../../components/ComparisonTable.astro';
+import { getRankedTools, scoreTool, SELF_HOSTED_LABELS } from '../../lib/tools';
+import { SITE_URL } from '../../lib/blog';
+
+const all = await getRankedTools();
+const oss = all.filter((t) => t.data.openSource);
+const lastVerified = all.map((t) => t.data.lastVerified).sort().at(-1);
+
+// Licence family matters more than the badge: copyleft, permissive, or dual.
+const licenceGroups = oss.reduce((acc, tool) => {
+	const l = tool.data.license.toUpperCase();
+	const family = /AGPL|GPL(?!.*LESSER)/.test(l) ? 'Copyleft' : /MIT|APACHE|BSD|ISC/.test(l) ? 'Permissive' : 'Other / dual';
+	(acc[family] ??= []).push(tool);
+	return acc;
+}, {} as Record<string, typeof oss>);
+
+const ossScores = oss.map((t) => scoreTool(t).score);
+const closedScores = all.filter((t) => !t.data.openSource).map((t) => scoreTool(t).score);
+const ossLow = Math.min(...ossScores);
+const ossHigh = Math.max(...ossScores);
+const closedLow = Math.min(...closedScores);
+const closedHigh = Math.max(...closedScores);
+
+const title = `Open-Source AI Code Review Tools (2026): ${oss.length} Compared | aicodereview.io`;
+const description = `${oss.length} AI code review tools publish their source. Licences, self-hosting, model control and standards scores, side by side — verified ${lastVerified}.`;
+
+const faq = [
+	{
+		q: 'What are the open-source AI code review tools?',
+		a: `${oss.length} of the ${all.length} tools in this directory publish their source: ${oss.map((t) => `${t.data.name} (${t.data.license.split('(')[0].trim()})`).join(', ')}.`,
+	},
+	{
+		q: 'Does open source mean free?',
+		a: 'Not in practice. The review engine may be free to run, but the model calls are not — with an open-source tool you pay the LLM provider directly instead of paying a vendor margin. Some projects are also dual-licensed, with enterprise features under a commercial licence.',
+	},
+	{
+		q: 'What is the difference between AGPL and MIT here?',
+		a: 'AGPL requires you to publish changes if you offer the modified software as a network service; MIT and Apache do not. For a tool you run internally the practical difference is usually small, but it matters to your legal review and it matters if you plan to build a product on top.',
+	},
+	{
+		q: 'Are open-source reviewers as good as commercial ones?',
+		a: `On documented coverage of the 9 standards they are competitive but not automatically ahead: the open-source tools here score between ${ossLow} and ${ossHigh} out of 9, against ${closedLow}–${closedHigh} for the proprietary ones. Read each matrix rather than assuming the licence predicts the quality of findings.`,
+	},
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Tools', url: `${SITE_URL}/#directory` },
+		{ name: 'Open source', url: `${SITE_URL}/tools/open-source/` },
+	]}
+	schemas={[
+		{
+			"@type": "ItemList",
+			"name": "Open-source AI code review tools",
+			"description": description,
+			"numberOfItems": oss.length,
+			"itemListElement": oss.map((tool, i) => ({ "@type": "ListItem", "position": i + 1, "url": `${SITE_URL}/tools/${tool.id}/`, "name": tool.data.name })),
+		},
+		{ "@type": "FAQPage", "mainEntity": faq.map((item) => ({ "@type": "Question", "name": item.q, "acceptedAnswer": { "@type": "Answer", "text": item.a } })) },
+	]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Tools', href: '/#directory' }, { name: 'Open source' }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">Filtered view · Verified {lastVerified}</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			Open-source AI code review tools
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">
+			{oss.length} of the {all.length} tools tracked here publish their source, which means you can read how the review prompt is built, audit what leaves your network, and keep running it if the vendor's terms change.
+		</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Two things the badge does not tell you: whether it is <a href="/tools/self-hosted/" class="underline underline-offset-4 decoration-accent-600 decoration-2">self-hostable</a>, and what the licence obliges you to do. Both are in the table.
+		</p>
+	</section>
+
+	<section class="mb-16">
+		<ComparisonTable tools={oss} caption="Open-source AI code review tools compared" />
+	</section>
+
+	<section class="mb-16">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-6">By licence family</h2>
+		<div class="grid md:grid-cols-3 gap-4 mb-10">
+			{Object.entries(licenceGroups).map(([family, list]) => (
+				<div class="panel p-5">
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-1">{family}</h3>
+					<p class="eyebrow mb-3">{list.length} {list.length === 1 ? 'tool' : 'tools'}</p>
+					<ul class="space-y-1.5">
+						{list.map((tool) => (
+							<li class="text-sm">
+								<a href={`/tools/${tool.id}/`} class="text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4">{tool.data.name}</a>
+								<span class="text-stone-400 dark:text-zinc-600 font-mono text-xs"> · {SELF_HOSTED_LABELS[tool.data.selfHosted]}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			))}
+		</div>
+		<ToolDirectory tools={oss} filters={false} id="oss-grid" />
+	</section>
+
+	<section class="mb-16 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-8">Questions about open-source reviewers</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Need it inside your own network?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Open source and self-hostable overlap, but they are not the same list.</p>
+		</div>
+		<a href="/tools/self-hosted/" class="btn-solid w-full md:w-auto">Self-hosted tools [↗]</a>
+	</div>
+</Layout>

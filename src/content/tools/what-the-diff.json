@@ -9,19 +9,51 @@
   "pricingUrl": "https://whatthediff.ai/pricing",
   "selfHosted": "none",
   "selfHostedNote": "",
-  "platforms": ["github", "gitlab"],
+  "platforms": [
+    "github",
+    "gitlab"
+  ],
   "modelControl": "Fixed vendor model; no BYOK or model choice documented",
   "lastVerified": "2026-08-11",
   "standards": {
-    "01-multi-dimensional-context": {"status": "no", "note": "Explicitly diff-only: analyzes the PR diff to write a description; not a bug-finding reviewer."},
-    "02-rule-centric": {"status": "unknown", "note": "No custom rules or noise controls documented."},
-    "03-dual-workflow": {"status": "no", "note": "PR surface only; no IDE, CLI, or pre-commit mode."},
-    "04-business-logic": {"status": "unknown", "note": "No issue tracker integration documented."},
-    "05-continuous-learning": {"status": "unknown", "note": "No learning from developer feedback documented."},
-    "06-sandbox-validation": {"status": "unknown", "note": "No code execution or test running documented."},
-    "07-economic-transparency": {"status": "partial", "note": "No BYOK, but usage is metered in visible tokens with published per-PR averages (~2,300 tokens/PR)."},
-    "08-actionability": {"status": "partial", "note": "On-demand /wtd comments produce small refactor suggestions in the PR; no review-driven fixes."},
-    "09-measurable-roi": {"status": "no", "note": "Weekly progress report notifications only; no acceptance, DORA, or cost dashboards."}
+    "01-multi-dimensional-context": {
+      "status": "no",
+      "note": "Explicitly diff-only: analyzes the PR diff to write a description; not a bug-finding reviewer."
+    },
+    "02-rule-centric": {
+      "status": "unknown",
+      "note": "No custom rules or noise controls documented."
+    },
+    "03-dual-workflow": {
+      "status": "no",
+      "note": "PR surface only; no IDE, CLI, or pre-commit mode."
+    },
+    "04-business-logic": {
+      "status": "unknown",
+      "note": "No issue tracker integration documented."
+    },
+    "05-continuous-learning": {
+      "status": "unknown",
+      "note": "No learning from developer feedback documented."
+    },
+    "06-sandbox-validation": {
+      "status": "unknown",
+      "note": "No code execution or test running documented."
+    },
+    "07-economic-transparency": {
+      "status": "partial",
+      "note": "No BYOK, but usage is metered in visible tokens with published per-PR averages (~2,300 tokens/PR)."
+    },
+    "08-actionability": {
+      "status": "partial",
+      "note": "On-demand /wtd comments produce small refactor suggestions in the PR; no review-driven fixes."
+    },
+    "09-measurable-roi": {
+      "status": "no",
+      "note": "Weekly progress report notifications only; no acceptance, DORA, or cost dashboards."
+    }
   },
-  "relatedPosts": []
+  "relatedPosts": [],
+  "startingPrice": "$19/mo",
+  "freeTier": "limited"
 }

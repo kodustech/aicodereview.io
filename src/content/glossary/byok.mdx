@@ -1,0 +1,30 @@
+---
+term: "BYOK (bring your own key)"
+definition: "A model where you supply your own LLM provider credentials, so inference is billed directly to your account instead of being resold by the tool vendor."
+category: "ai"
+aliases: ["Bring your own key", "BYO-LLM"]
+related: ["token", "inference-cost", "self-hosting", "model-routing"]
+relatedTools: ["kodus", "entelligence", "sourcery", "pr-agent"]
+relatedPosts: ["self-hosted-ai-code-review", "open-source-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+With BYOK you paste your own OpenAI, Anthropic, Google or self-hosted endpoint credentials into the tool. Reviews run against your account, and you see the usage on your provider bill rather than inside a vendor's pricing abstraction.
+
+## Why teams ask for it
+
+Three reasons, usually in this order. Cost visibility: model spend becomes a line you already track. Data path: your code goes to a provider you already have a data processing agreement with, sometimes in a region you have already approved. Model choice: you can move to a cheaper or stronger model without waiting for the vendor to support it.
+
+## What it does not give you
+
+BYOK is not self-hosting. The tool's orchestration still runs on the vendor's infrastructure in most implementations, which means your code still passes through it on the way to your provider. If the requirement is that source never leaves your network, you need [self-hosting](/glossary/self-hosting/) as well as BYOK, and a model endpoint inside your boundary.
+
+It also does not automatically reduce cost. A vendor with a large committed spend may have better rates than your own account, and a tool tuned for someone else's margin may be generous with context in ways you now pay for directly.
+
+## Common mistakes
+
+- Treating BYOK as a security control on its own.
+- Enabling it without setting a spend limit on the provider account.
+- Assuming it is available on every tier. On several tools it appears only on enterprise plans; the directory records this per tool.

@@ -1,5 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
 import { getPublishedPosts, CATEGORY_LABELS, readingTime, formatDate, SITE_URL } from '../../../lib/blog';
 
 export async function getStaticPaths() {
@@ -7,51 +8,77 @@ export async function getStaticPaths() {
 	const categories = [...new Set(posts.map((p) => p.data.category))];
 	return categories.map((category) => ({
 		params: { category },
-		props: { posts: posts.filter((p) => p.data.category === category) },
+		props: { posts: posts.filter((p) => p.data.category === category), total: posts.length },
 	}));
 }
 
 const { category } = Astro.params;
-const { posts } = Astro.props;
-const label = CATEGORY_LABELS[category!] ?? category;
+const { posts, total } = Astro.props;
+const label = CATEGORY_LABELS[category!] ?? category!;
+
+const BLURBS: Record<string, string> = {
+	'best-of': 'Ranked shortlists, built from the same sourced matrix as the directory rather than from vendor marketing.',
+	'alternatives': 'What to use instead, and why — with the constraint that actually rules the incumbent out named up front.',
+	'comparison': 'Two tools, side by side, on pricing, licensing, hosting and all nine standards.',
+	'guide': 'How to run an evaluation, a trial or a rollout without wasting a quarter on it.',
+	'explainer': 'What the category actually is, in terms an engineer can argue with.',
+	'review': 'One tool, read closely, including the parts the vendor does not lead with.',
+};
 
 const title = `${label} — AI Code Review Blog | aicodereview.io`;
-const description = `${label} for AI code review tools: in-depth, engineer-written posts benchmarked against the 2026 AI Code Review Standard.`;
+const description = `${posts.length} ${label.toLowerCase()} on AI code review tools, benchmarked against the 2026 9-pillar standard. ${BLURBS[category!] ?? ''}`.trim().slice(0, 300);
 ---
 
 <Layout
 	title={title}
 	description={description}
+	width="wide"
 	breadcrumbs={[
 		{ name: 'Home', url: `${SITE_URL}/` },
 		{ name: 'Blog', url: `${SITE_URL}/blog/` },
-		{ name: label!, url: `${SITE_URL}/blog/category/${category}/` }
+		{ name: label, url: `${SITE_URL}/blog/category/${category}/` },
 	]}
+	schemas={[{
+		"@type": "ItemList",
+		"name": `${label} — AI code review`,
+		"numberOfItems": posts.length,
+		"itemListElement": posts.map((post, i) => ({
+			"@type": "ListItem",
+			"position": i + 1,
+			"url": `${SITE_URL}/blog/${post.id}/`,
+			"name": post.data.title,
+		})),
+	}]}
 >
-	<section class="max-w-3xl mb-16">
-		<a href="/blog" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-8">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-			All Posts
-		</a>
-		<h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 leading-none">
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: label }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">Category · {posts.length} of {total} articles</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
 			{label}
 		</h1>
+		{BLURBS[category!] && (
+			<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{BLURBS[category!]}</p>
+		)}
 	</section>
 
-	<section class="space-y-12">
+	<section class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
 		{posts.map((post) => (
-			<article class="border-t border-stone-200 dark:border-zinc-800 pt-10 group">
-				<div class="flex items-center gap-4 mb-3 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
+			<article class="panel panel-hover p-5 group relative flex flex-col">
+				<div class="flex items-center gap-3 mb-3 eyebrow">
 					<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-					<span>{readingTime(post.body)} min read</span>
+					<span>{readingTime(post.body)} min</span>
 				</div>
-				<h2 class="text-2xl md:text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4">
-					<a href={`/blog/${post.id}`}>{post.data.title}</a>
+				<h2 class="text-lg font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 leading-snug">
+					<a href={`/blog/${post.id}/`} class="after:absolute after:inset-0 group-hover:underline decoration-accent-600 decoration-2 underline-offset-4">{post.data.title}</a>
 				</h2>
-				<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
-					{post.data.description}
-				</p>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed line-clamp-4">{post.data.description}</p>
 			</article>
 		))}
 	</section>
+
+	<div class="pt-12 border-t hairline flex flex-wrap gap-3">
+		<a href="/blog/" class="btn-ghost">← All articles</a>
+		<a href="/#directory" class="btn-ghost">Open the directory</a>
+	</div>
 </Layout>

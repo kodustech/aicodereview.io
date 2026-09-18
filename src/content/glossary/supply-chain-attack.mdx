@@ -1,0 +1,30 @@
+---
+term: "Supply chain attack"
+definition: "Compromising software by attacking something it depends on \u2014 a package, a build step, a maintainer account \u2014 rather than the application itself."
+category: "security"
+aliases: []
+related: ["sca", "cve", "secret-scanning", "prompt-injection", "ci-cd"]
+relatedTools: ["aikido", "snyk-code", "semgrep"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "self-hosted-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+The attacker does not need to breach you if they can breach something you install. Typical routes: publishing a malicious package with a name close to a popular one, taking over an abandoned package that thousands of projects still depend on, compromising a maintainer's account, or injecting into a build pipeline so the artefact differs from the source.
+
+## Why code review is a control point
+
+Almost every one of these arrives as a change to a file: a new dependency, a version bump, an added build script, a modified CI workflow. Those are precisely the diffs human reviewers skim — a lockfile with four hundred changed lines gets an approval, not a reading.
+
+Automating attention on exactly those files is one of the highest-value things a review tool can do, and it is a good question to put to a vendor: what does your tool do differently when a pull request changes a lockfile or a workflow definition?
+
+## The tooling angle worth noticing
+
+A code review tool is itself part of your supply chain. It has repository access, it reads every change, and in agentic configurations it can execute code. Its own permissions, hosting and update path deserve the same scrutiny you apply to any dependency — which is part of why self-hosting and open source matter to some teams beyond ideology.
+
+## Common mistakes
+
+- Auto-merging dependency updates because they are "just" version bumps.
+- Granting CI workflows broad, long-lived credentials.
+- Not pinning or verifying third-party GitHub Actions, which run with your repository's permissions.

@@ -66,5 +66,7 @@
     "how-to-evaluate-ai-code-review-tools",
     "ai-code-review-vs-static-analysis",
     "what-is-ai-code-review"
-  ]
+  ],
+  "startingPrice": "$10/dev/mo",
+  "freeTier": "limited"
 }

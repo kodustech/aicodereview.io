@@ -1,7 +1,9 @@
 ---
 import { render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import { getPublishedPosts, relatedPosts, readingTime, formatDate, CATEGORY_LABELS, SITE_URL } from '../../lib/blog';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getPublishedPosts, relatedPosts, readingTime, formatDate, tagLabel, CATEGORY_LABELS, SITE_URL } from '../../lib/blog';
+import { getRankedTools, scoreTool, SPONSOR_SLUG } from '../../lib/tools';
 
 export async function getStaticPaths() {
 	const posts = await getPublishedPosts();
@@ -12,11 +14,19 @@ export async function getStaticPaths() {
 }
 
 const { post, allPosts } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 
 const minutes = readingTime(post.body);
 const related = relatedPosts(post, allPosts);
 const url = `${SITE_URL}/blog/${post.id}/`;
+const toc = headings.filter((h) => h.depth === 2);
+
+// Tools this post is about, matched from its tags — keeps the blog and the
+// directory pointing at each other without hand-maintained link lists.
+const tools = await getRankedTools();
+const taggedTools = tools.filter((t) => post.data.tags.includes(t.id));
+const toolsInPost = taggedTools.length > 0 ? taggedTools : tools.filter((t) => t.data.relatedPosts.includes(post.id)).slice(0, 5);
+const mentionsSponsor = toolsInPost.some((t) => t.id === SPONSOR_SLUG);
 
 const schemas: Record<string, unknown>[] = [
 	{
@@ -26,18 +36,11 @@ const schemas: Record<string, unknown>[] = [
 		"url": url,
 		"datePublished": post.data.pubDate.toISOString(),
 		"dateModified": (post.data.updatedDate ?? post.data.pubDate).toISOString(),
-		"author": {
-			"@type": "Organization",
-			"name": post.data.author,
-			"url": `${SITE_URL}/about/`
-		},
-		"publisher": {
-			"@type": "Organization",
-			"name": "aicodereview.io",
-			"url": `${SITE_URL}/about/`
-		},
+		"author": { "@type": "Organization", "name": post.data.author, "url": `${SITE_URL}/about/` },
+		"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": SITE_URL },
 		"mainEntityOfPage": { "@type": "WebPage", "@id": url },
-		"keywords": post.data.tags.join(', ')
+		"keywords": post.data.tags.join(', '),
+		"wordCount": (post.body ?? '').trim().split(/\s+/).length,
 	},
 ];
 
@@ -47,8 +50,8 @@ if (post.data.faq.length > 0) {
 		"mainEntity": post.data.faq.map((item) => ({
 			"@type": "Question",
 			"name": item.q,
-			"acceptedAnswer": { "@type": "Answer", "text": item.a }
-		}))
+			"acceptedAnswer": { "@type": "Answer", "text": item.a },
+		})),
 	});
 }
 ---
@@ -56,77 +59,133 @@ if (post.data.faq.length > 0) {
 <Layout
 	title={`${post.data.title} | aicodereview.io`}
 	description={post.data.description}
+	width="wide"
 	ogType="article"
 	article={{ pubDate: post.data.pubDate, updatedDate: post.data.updatedDate, tags: post.data.tags }}
 	breadcrumbs={[
 		{ name: 'Home', url: `${SITE_URL}/` },
 		{ name: 'Blog', url: `${SITE_URL}/blog/` },
-		{ name: post.data.title, url }
+		{ name: post.data.title, url },
 	]}
 	schemas={schemas}
 >
-	<div class="mb-12">
-		<a href="/blog" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-10">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-			Back to Blog
-		</a>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: post.data.title }]} />
 
-		<div class="flex flex-wrap items-center gap-4 mb-6 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
-			<a href={`/blog/category/${post.data.category}`} class="hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">[ {CATEGORY_LABELS[post.data.category] ?? post.data.category} ]</a>
-			<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-			{post.data.updatedDate && (
-				<span>Updated {formatDate(post.data.updatedDate)}</span>
+	<div class="grid lg:grid-cols-12 gap-12">
+		<article class="lg:col-span-8">
+			<div class="flex flex-wrap items-center gap-4 mb-5 eyebrow">
+				<a href={`/blog/category/${post.data.category}/`} class="hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">[ {CATEGORY_LABELS[post.data.category] ?? post.data.category} ]</a>
+				<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+				{post.data.updatedDate && <span>Updated {formatDate(post.data.updatedDate)}</span>}
+				<span>{minutes} min read</span>
+			</div>
+
+			<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 leading-none mb-5">
+				{post.data.title}
+			</h1>
+			<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-8">
+				{post.data.description}
+			</p>
+
+			{mentionsSponsor && (
+				<p class="text-xs text-stone-500 dark:text-zinc-500 border-l-2 border-accent-600 dark:border-accent-500 pl-3 py-1 mb-8 text-pretty">
+					Disclosure: Kodus sponsors this site and appears below as one option among others. It is scored with the same rubric as every other tool — <a href="/methodology/" class="underline underline-offset-2">see the methodology</a>.
+				</p>
 			)}
-			<span>{minutes} min read</span>
-		</div>
 
-		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 leading-tight mb-4">
-			{post.data.title}
-		</h1>
-		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
-			{post.data.description}
-		</p>
+			<div class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:decoration-accent-600 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed prose-li:text-pretty prose-table:text-sm prose-th:font-mono prose-th:uppercase prose-th:tracking-wider prose-th:text-xs">
+				<Content />
+			</div>
+
+			{post.data.faq.length > 0 && (
+				<section class="mt-16 pt-10 border-t hairline">
+					<h2 class="eyebrow mb-6">[ FAQ ]</h2>
+					<div class="space-y-7">
+						{post.data.faq.map((item) => (
+							<div>
+								<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+								<p class="text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+							</div>
+						))}
+					</div>
+				</section>
+			)}
+
+			{post.data.tags.length > 0 && (
+				<section class="mt-12 pt-8 border-t hairline">
+					<h2 class="eyebrow mb-4">[ Topics ]</h2>
+					<div class="flex flex-wrap gap-2">
+						{post.data.tags.map((tag) => (
+							<a href={`/blog/tag/${tag}/`} class="chip">{tagLabel(tag)}</a>
+						))}
+					</div>
+				</section>
+			)}
+
+			{related.length > 0 && (
+				<section class="mt-12 pt-8 border-t hairline">
+					<h2 class="eyebrow mb-6">[ Keep reading ]</h2>
+					<div class="grid md:grid-cols-3 gap-6">
+						{related.map((r) => (
+							<a href={`/blog/${r.id}/`} class="block group">
+								<span class="eyebrow block mb-2">{CATEGORY_LABELS[r.data.category] ?? r.data.category}</span>
+								<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">{r.data.title}</span>
+							</a>
+						))}
+					</div>
+				</section>
+			)}
+		</article>
+
+		<aside class="lg:col-span-4 lg:sticky lg:top-24 lg:self-start space-y-8">
+			{toc.length > 2 && (
+				<nav class="panel p-5" aria-label="On this page">
+					<h2 class="eyebrow mb-3">On this page</h2>
+					<ul class="space-y-2">
+						{toc.map((h) => (
+							<li><a href={`#${h.slug}`} class="text-sm text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 text-pretty leading-snug block">{h.text}</a></li>
+						))}
+					</ul>
+				</nav>
+			)}
+
+			{toolsInPost.length > 0 && (
+				<div class="panel p-5">
+					<h2 class="eyebrow mb-3">Tools covered here</h2>
+					<ul class="space-y-2.5">
+						{toolsInPost.map((tool) => (
+							<li class="flex items-baseline justify-between gap-2">
+								<a href={`/tools/${tool.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4">
+									{tool.data.name}
+									{tool.id === SPONSOR_SLUG && <span class="ml-1 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600">sponsor</span>}
+								</a>
+								<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums shrink-0">{scoreTool(tool).score}/9</span>
+							</li>
+						))}
+					</ul>
+					<a href="/#directory" class="eyebrow inline-block mt-4 hover:text-stone-900 dark:hover:text-zinc-100">Full directory →</a>
+				</div>
+			)}
+
+			<div class="panel p-5">
+				<h2 class="eyebrow mb-3">For machines</h2>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-3">
+					This article is also available as raw markdown, and the whole site as an LLM-readable index.
+				</p>
+				<div class="flex flex-wrap gap-2">
+					<a href={`/blog/${post.id}.md`} class="chip">.md</a>
+					<a href="/llms.txt" class="chip">llms.txt</a>
+					<a href="/rss.xml" class="chip">RSS</a>
+				</div>
+			</div>
+		</aside>
 	</div>
 
-	<article class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 hover:prose-a:decoration-stone-500 prose-p:text-pretty prose-p:leading-relaxed prose-table:text-sm prose-th:font-mono prose-th:uppercase prose-th:tracking-wider prose-th:text-xs">
-		<Content />
-	</article>
-
-	{post.data.faq.length > 0 && (
-		<section class="mt-20 pt-12 border-t border-stone-200 dark:border-zinc-800">
-			<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ FAQ ]</h2>
-			<div class="space-y-8">
-				{post.data.faq.map((item) => (
-					<div>
-						<h3 class="text-lg font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
-						<p class="text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
-					</div>
-				))}
-			</div>
-		</section>
-	)}
-
-	{related.length > 0 && (
-		<section class="mt-20 pt-12 border-t border-stone-200 dark:border-zinc-800">
-			<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ Keep Reading ]</h2>
-			<div class="grid md:grid-cols-3 gap-8">
-				{related.map((r) => (
-					<a href={`/blog/${r.id}`} class="block group">
-						<span class="text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 block mb-2">{CATEGORY_LABELS[r.data.category] ?? r.data.category}</span>
-						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">{r.data.title}</span>
-					</a>
-				))}
-			</div>
-		</section>
-	)}
-
-	<div class="mt-24 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+	<div class="mt-20 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
 		<div class="text-center md:text-left">
-			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluate your AI Code Review Readiness</p>
-			<p class="text-sm text-stone-500 dark:text-zinc-400">Score your current setup against the 9 standards of the 2026 baseline.</p>
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Score your setup against the 9 standards</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Ten minutes, same rubric the directory uses on the vendors.</p>
 		</div>
-		<a href="/assessment" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
-			Take the Assessment [↗]
-		</a>
+		<a href="/assessment/" class="btn-solid w-full md:w-auto">Take the assessment [↗]</a>
 	</div>
 </Layout>

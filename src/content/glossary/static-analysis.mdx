@@ -1,0 +1,38 @@
+---
+term: "Static analysis"
+definition: "Analysing source code without running it, using parsers and rules rather than execution \u2014 the deterministic half of automated code review."
+category: "quality"
+aliases: ["SCA (static code analysis)", "Static code analysis"]
+related: ["sast", "linter", "ai-code-review", "false-positive", "cyclomatic-complexity"]
+relatedTools: ["sonarqube", "semgrep", "qodana", "deepsource"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Static analysis parses code into a structured representation — an abstract syntax tree, a control-flow graph — and matches rules against it. Same input, same output, every time. No model, no sampling, no creativity.
+
+## How it differs from AI review
+
+They fail in opposite directions, which is why the sensible answer is to run both.
+
+| | Static analysis | AI review |
+|---|---|---|
+| Determinism | Same result every run | Varies between runs |
+| Rule authoring | Formal patterns, precise but laborious | Plain language, fast but fuzzy |
+| Intent | Cannot read the ticket | Can compare change to stated intent |
+| Novel issues | Only what a rule anticipated | Can flag things nobody wrote a rule for |
+| Explaining itself | Rule ID and docs link | Prose that may be wrong |
+
+A linter will never tell you the change does not match what the ticket asked for. A model will never guarantee it catches every instance of the pattern you banned last quarter.
+
+## Why it matters when you are evaluating
+
+Several products in this directory bundle both, and the bundling matters: findings from a deterministic scanner can be trusted as a gate, while model findings usually should not be. Ask which findings come from which engine, and whether you can gate on one without gating on the other.
+
+## Common mistakes
+
+- Replacing a working static analysis setup with an AI reviewer. You have swapped guarantees for judgement.
+- Running both and letting them report the same issue twice into the same thread.
+- Assuming a tool that lists "40+ linters" has tuned any of them for your codebase.

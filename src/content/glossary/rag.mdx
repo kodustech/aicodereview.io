@@ -1,0 +1,34 @@
+---
+term: "RAG (retrieval-augmented generation)"
+definition: "Fetching relevant material from a repository or knowledge base and putting it into the model's prompt, so the answer is grounded in your code rather than in the model's memory."
+category: "ai"
+aliases: ["Retrieval-augmented generation"]
+related: ["context-window", "embeddings", "ai-code-review", "hallucination"]
+relatedTools: ["greptile", "kodus", "coderabbit"]
+relatedPosts: ["what-is-ai-code-review", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+RAG is the retrieval half of a review tool. Before calling the model, the tool searches your codebase for the material a reviewer would need — the definition of the function being changed, its callers, the tests, similar patterns elsewhere — and includes it in the prompt.
+
+## How it works in a code review tool
+
+Implementations vary more than the acronym suggests. The common approaches:
+
+- **Embedding search.** Files and symbols are converted into vectors and stored; the diff becomes a query. Good at "code that looks related", weak at exact structural relationships.
+- **Graph or index traversal.** The tool parses the repository and follows real references: definitions, imports, call sites. More precise, more work to build, and usually what people mean when they say "understands the codebase".
+- **Convention retrieval.** Pulling in the repository's own rule files and past review decisions so the model reviews against your standards, not generic ones.
+
+The best tools combine them. The weakest ones send the diff and call it context.
+
+## Why it matters when you are evaluating
+
+Retrieval quality is the difference between a reviewer that knows your code and one that guesses about it, and it is almost entirely invisible from marketing material. Test it directly: open a pull request that is only correct or incorrect because of something defined in another file, and see whether the tool notices.
+
+## Common mistakes
+
+- Assuming a large context window removes the need for retrieval.
+- Not checking how the index behaves in a monorepo, or how often it is refreshed after a merge.
+- Ignoring where the index lives — it is a copy of your codebase, and it sits wherever the vendor puts it.

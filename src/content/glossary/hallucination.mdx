@@ -1,0 +1,32 @@
+---
+term: "Hallucination"
+definition: "A model stating something false with the same confidence it states something true \u2014 in code review, typically a bug report about code that does not exist or behaviour the code does not have."
+category: "ai"
+aliases: []
+related: ["false-positive", "ai-code-review", "context-window", "alert-fatigue"]
+relatedTools: ["coderabbit", "greptile", "kodus"]
+relatedPosts: ["what-is-ai-code-review", "ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A hallucination is a fluent, plausible, wrong answer. In a code review context it shows up as a comment describing a function that was never called, a race condition in synchronous code, or a "missing" import that is three lines above the diff hunk the model was shown.
+
+## Why it happens in review specifically
+
+Most review hallucinations are context failures rather than reasoning failures. The model was shown a fragment and asked to reason about a whole. Given only a diff, it has no way to know whether the helper it is worried about is defined elsewhere, so it guesses — and guessing fluently is exactly what these models are built to do.
+
+This is why context depth and hallucination rate are the same conversation. Tools that retrieve the surrounding code, the call graph and the repository's conventions hallucinate measurably less than tools that prompt on a raw diff.
+
+## Why it matters when you are evaluating
+
+Hallucinated findings are more expensive than missed findings, because every one costs a developer the time to disprove it. Two or three in a week and the team starts skimming; after that the tool is decoration.
+
+During a trial, track the ratio directly: of the findings the tool produced this week, how many described the code accurately, whether or not the team agreed with the advice? That number predicts adoption better than any benchmark a vendor will show you.
+
+## Common mistakes
+
+- Treating every wrong comment as a hallucination. A correct description with bad advice is a different problem, with a different fix — rules rather than context.
+- Fixing it with prompt instructions like "do not hallucinate", which does nothing.
+- Not giving the team a one-click way to mark a finding wrong. Without that signal, nothing improves.

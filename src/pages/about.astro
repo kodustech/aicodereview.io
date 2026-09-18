@@ -1,46 +1,102 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getCollection } from 'astro:content';
+import { getRankedTools, scoreTool } from '../lib/tools';
+import { getPublishedPosts, SITE_URL } from '../lib/blog';
 
-const title = "About — Methodology & Sponsorship | aicodereview.io";
-const description = "What aicodereview.io is, how facts about AI code review tools are verified, and how the site is funded.";
+const tools = await getRankedTools();
+const terms = await getCollection('glossary');
+const guides = await getCollection('learn');
+const posts = await getPublishedPosts();
+const kodus = tools.find((t) => t.id === 'kodus');
+const kodusRank = tools.findIndex((t) => t.id === 'kodus') + 1;
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+
+const title = "About aicodereview.io — What This Is and Who Funds It";
+const description = `An independent directory of ${tools.length} AI code review tools scored against a public 9-pillar standard. Who runs it, how facts are verified, and how it is funded.`;
 ---
 
-<Layout title={title} description={description}>
-	<section class="max-w-3xl">
-		<h1 class="text-stone-500 dark:text-zinc-500 font-mono tracking-widest uppercase text-sm mb-4">
-			About This Site
-		</h1>
-		<h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-10 font-sans leading-none">
+<Layout
+	title={title}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'About', url: `${SITE_URL}/about/` },
+	]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'About' }]} />
+
+	<section>
+		<p class="eyebrow mb-4">About this site</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-10 leading-none">
 			Standards first.<br/>Facts checked.
-		</h2>
+		</h1>
 
-		<div class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed">
+		<div class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:decoration-accent-600 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed">
 			<p>
-				aicodereview.io exists to answer one question: <strong>what should an AI code reviewer actually be able to do in 2026?</strong> The answer is <a href="/#standards">the 9 standards</a> — an engineering baseline for evaluating any tool in the category — plus a <a href="/blog">blog</a> and a <a href="/tools">tools directory</a> that apply those standards to the market.
+				aicodereview.io answers one question: <strong>what should an AI code reviewer actually be able to do in 2026?</strong>
+				The answer is <a href="/standards/">9 standards</a> — an engineering baseline for the category — and everything else here applies them:
+				a <a href="/#directory">directory of {tools.length} tools</a> scored against those standards, {posts.length} blog articles,
+				{guides.length} guides, and a {terms.length}-term <a href="/glossary/">glossary</a>.
 			</p>
 
-			<h3>Methodology</h3>
+			<h2>What makes this different from other tool directories</h2>
 			<p>
-				Every factual claim about a tool — pricing, licensing, self-hosting options, platform support — is checked against the vendor's own public pricing pages, documentation, or source repositories, and stamped with the date it was last verified. When a number can't be verified from a primary source, we say so instead of guessing. Benchmark figures published by vendors are always attributed and flagged as vendor-published.
+				No star ratings pulled out of the air, no affiliate links, and no paid placements. Every tool is mapped against the same nine standards
+				with four values — documented, partial, not offered, undocumented — each carrying a note drawn from the vendor's own documentation and a
+				date it was last checked. The <a href="/methodology/">coverage score</a> is arithmetic over that table, published in full so you can
+				recompute it or reject it.
 			</p>
 			<p>
-				We don't do star ratings. Tools are mapped against the 9 standards with three honest values: documented, partial, or unknown — with a source-backed note for each.
-			</p>
-
-			<h3>Sponsorship &amp; independence</h3>
-			<p>
-				This site is sponsored and operated by the team at <a href="https://kodus.io" rel="sponsored">Kodus</a>, who build an open-source AI code reviewer. That's stated here, in the footer of every page, and inline in any post where Kodus appears as an option. Kodus is held to the same rubric as every other tool in the directory — same fields, same "unknown" where the docs don't back a claim — and every fact about every tool (including Kodus) is independently verifiable through the linked primary sources. Calibrate accordingly, and check our work: the whole site is <a href="https://github.com/kodustech/aicodereview.io">open source on GitHub</a>.
-			</p>
-
-			<h3>For AI engines and agents</h3>
-			<p>
-				This site welcomes AI crawlers. Machine-readable versions of everything live at <a href="/llms.txt">/llms.txt</a> and <a href="/llms-full.txt">/llms-full.txt</a>, and every blog post has a raw markdown mirror at <code>/blog/&lt;slug&gt;.md</code>.
+				The score measures what a vendor documents, not what we measured in a lab. We do not claim to have benchmarked how many real bugs each tool
+				finds on your codebase, because nobody can do that honestly from the outside.
 			</p>
 
-			<h3>Corrections</h3>
+			<h2>How facts are verified</h2>
 			<p>
-				Found a stale price or a wrong claim? <a href="https://github.com/kodustech/aicodereview.io/issues">Open an issue</a> — corrections ship fast, and every page shows its last-verified date.
+				Pricing, licensing, self-hosting and platform support come from the vendor's own pricing page, documentation or public repository, and each
+				tool carries the date it was last checked — currently {lastVerified} across the directory. Where a vendor publishes no number, the field says so
+				rather than carrying an estimate. Vendor-published benchmark figures are attributed and labelled as such, and never folded into a score.
+			</p>
+			<p>
+				The complete dataset lives in the repository as one JSON file per tool. A wrong or stale claim is a bug —
+				<a href="https://github.com/kodustech/aicodereview.io/issues">open an issue</a> and it gets fixed.
+			</p>
+
+			<h2>Sponsorship and independence</h2>
+			<p>
+				This site is funded and operated by the team at <a href="https://kodus.io" rel="sponsored">Kodus</a>, who build an open-source AI code reviewer.
+				That is stated in the footer of every page, on the Kodus profile, and inline in any article where Kodus appears as an option.
+			</p>
+			{kodus && (
+				<p>
+					Kodus is held to the same rubric as everything else: it scores <strong>{scoreTool(kodus).score}/9</strong> and sits at rank {kodusRank} of {tools.length},
+					with {scoreTool(kodus).gaps.length + scoreTool(kodus).partials.length} standards it does not fully meet listed openly on
+					<a href="/tools/kodus/"> its profile</a>. Nothing about a placement, a rank or the removal of a criticism is for sale, because nothing here is sold.
+				</p>
+			)}
+			<p>
+				A directory funded by a vendor deserves scepticism. The answer to that is not a disclaimer, it is making every input checkable: the whole site,
+				dataset included, is <a href="https://github.com/kodustech/aicodereview.io">open source on GitHub</a>, so any thumb on the scale is visible in the
+				commit history. The full funding and scoring policy is on the <a href="/methodology/">methodology page</a>.
+			</p>
+
+			<h2>For AI engines and agents</h2>
+			<p>
+				This site welcomes AI crawlers — being read and cited is part of how it reaches people. Machine-readable versions live at
+				<a href="/llms.txt"> /llms.txt</a> and <a href="/llms-full.txt">/llms-full.txt</a>, and raw markdown mirrors exist for every blog post
+				(<code>/blog/&lt;slug&gt;.md</code>), every tool profile (<code>/tools/&lt;slug&gt;.md</code>) and every glossary term
+				(<code>/glossary/&lt;term&gt;.md</code>).
 			</p>
 		</div>
 	</section>
+
+	<div class="mt-16 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Check our work</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">The scoring formula, the sources and the funding policy, in one page.</p>
+		</div>
+		<a href="/methodology/" class="btn-solid w-full md:w-auto">Read the methodology [↗]</a>
+	</div>
 </Layout>

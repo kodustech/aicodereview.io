@@ -1,0 +1,30 @@
+---
+term: "Inference cost"
+definition: "What it costs to run the model behind a review \u2014 the underlying spend that every pricing model in this category is a wrapper around."
+category: "ai"
+aliases: ["Model cost", "Token cost"]
+related: ["token", "byok", "model-routing", "context-window"]
+relatedTools: ["kodus", "qodo", "greptile", "what-the-diff"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "self-hosted-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Every review is one or more model calls, billed by tokens in and tokens out. The cost of a single review is driven by how much context the tool gathered, how many steps it took, and which model it used.
+
+## Why pricing in this category is so hard to compare
+
+Vendors sell seats, credits, reviews, or lines of code — four abstractions over the same meter, with different margins and different failure modes. Seats look predictable until a heavy month; credits look precise until the exchange rate changes; per-review pricing looks fair until you learn that every push re-triggers a review.
+
+The practical consequence: two tools with identical headline prices can differ severalfold in real monthly cost depending on how much context they gather and how often they re-run.
+
+## How to estimate before you commit
+
+Take last month's real numbers: pull requests merged, average pushes per pull request, average diff size. Ask the vendor what a review of that size costs in their unit, and whether pushes re-trigger. Multiply. Then ask what happens when you exceed the bundled allowance, because that is where the surprise lives.
+
+## Common mistakes
+
+- Comparing seat prices without normalising for review volume.
+- Ignoring re-review behaviour, which can double or triple spend on active pull requests.
+- Assuming a cheaper model is cheaper overall — a weaker model that needs more context or more retries can cost more per useful finding.

@@ -1,0 +1,30 @@
+---
+term: "CVE"
+definition: "Common Vulnerabilities and Exposures: a public identifier for a specific known vulnerability in a specific product, in the form CVE-YYYY-NNNNN."
+category: "security"
+aliases: ["Common Vulnerabilities and Exposures"]
+related: ["cwe", "sca", "supply-chain-attack", "owasp-top-10"]
+relatedTools: ["snyk-code", "aikido", "semgrep"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A CVE identifier names one flaw in one product so that a scanner, an advisory and a patch note can all refer to the same thing. It is the common vocabulary the whole dependency-scanning ecosystem is built on.
+
+A CVE usually travels with a severity score — most often CVSS, on a 0 to 10 scale. That score describes the flaw in the abstract, not the risk to you.
+
+## CVE vs CWE
+
+They answer different questions and are frequently confused. A **CVE** is an instance: this vulnerability, in this library, in these versions. A [**CWE**](/glossary/cwe/) is a class: the kind of mistake, such as improper input validation. One CWE covers thousands of CVEs.
+
+## Why severity is not priority
+
+A CVSS 9.8 in a package you import but never invoke is less urgent than a 6.5 on your public login path. Context — reachability, exposure, whether the affected code path is reached at all — decides priority. Tools that rank purely by CVSS generate work that feels urgent and often is not.
+
+## Common mistakes
+
+- Treating "zero criticals" as the goal, which encourages suppressing rather than fixing.
+- Ignoring advisories that have no CVE yet. Ecosystem databases often publish days before an identifier is assigned.
+- Assuming a patched version exists. Sometimes the fix is removing the dependency.

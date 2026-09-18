@@ -1,0 +1,30 @@
+---
+term: "Shift left"
+definition: "Moving quality and security checks earlier in the development process, where problems are cheaper to find and fix."
+category: "delivery"
+aliases: []
+related: ["pre-commit-hook", "sast", "ci-cd", "code-review", "linter"]
+relatedTools: ["snyk-code", "semgrep", "sourcery", "kodus"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "what-is-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Draw the delivery pipeline left to right — write, commit, review, merge, deploy — and "shift left" means moving a check toward the writing end. The reasoning is well established: the cost of fixing a defect rises sharply with how late it is found, mostly because of lost context rather than the fix itself.
+
+## What it looks like in practice
+
+Type checking in the editor, formatting on save, security patterns in the IDE, dependency checks at install, review before merge rather than after release.
+
+## Why it is also the category's favourite euphemism
+
+Vendors use "shift left" to justify adding more checks earlier, which is not the same as moving checks earlier. There is a real limit: a developer's attention is finite, and every check placed in front of them competes with the code they are writing. Shifting left works when it replaces a later check; it backfires when it simply adds one.
+
+The useful version of the idea is about *feedback timing*, not check volume. Give the developer the finding while they still have the problem in their head, and give them fewer findings, not more.
+
+## Common mistakes
+
+- Adding IDE-time checks without removing the equivalent CI check, so violations are reported twice.
+- Shifting security scanning left without shifting the ability to fix it — findings a developer cannot action just relocate the bottleneck.
+- Measuring success by number of checks moved rather than by defects caught earlier.

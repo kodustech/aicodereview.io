@@ -1,0 +1,80 @@
+---
+title: "Security code review: what to check, and what to automate"
+description: "Which vulnerability classes review catches that scanners miss, how to scope security review by risk, and where SAST, dependency scanning and AI review each earn their place."
+order: 5
+updated: "2026-09-17"
+faq: [{"q": "What security issues does code review catch that scanners miss?", "a": "Anything defined by absence or by business meaning. Broken access control is the clearest case: an endpoint missing an ownership check looks identical to one that does not need it, so no pattern detects it. The same applies to business logic flaws, insecure defaults that are syntactically fine, and authorisation that is correct in one service and missing in the gateway in front of it."}, {"q": "Should security findings block a merge?", "a": "A small set should: committed secrets, known-vulnerable dependencies on a reachable path, and findings on paths you have explicitly designated as security-critical. Everything else should be advisory. Blocking on a noisy scanner teaches developers to suppress findings, which is worse than not scanning."}, {"q": "Is SAST enough for secure code review?", "a": "No. SAST is reliable on pattern-shaped vulnerabilities such as injection and unsafe API use, and blind to the categories that depend on intent. It is a necessary layer, not a sufficient one, and a clean scan is not evidence that a change is secure."}, {"q": "Can AI code review find security vulnerabilities?", "a": "It has a genuine advantage on the logic-shaped categories, because it can read the surrounding handlers and notice that this endpoint does not check what its neighbours check. It is not a substitute for a deterministic scanner: its findings vary between runs and cannot be used as a guarantee. Run both, and know which engine produced which finding."}]
+relatedTools: ["semgrep", "snyk-code", "aikido", "sonarqube", "kodus"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+relatedTerms: ["sast", "dast", "sca", "secret-scanning", "owasp-top-10", "cwe", "cve", "supply-chain-attack", "prompt-injection", "blast-radius"]
+---
+
+Security review fails in one of two directions. Either it is a checklist applied uniformly to every change, which exhausts everyone and catches little, or it is delegated entirely to a scanner, which catches the pattern-shaped half and silently misses the rest.
+
+This guide is about doing the human part where it counts, and automating the part that should never have been human.
+
+## What automation catches well
+
+Deterministic tools are genuinely good at a specific set of vulnerability classes, and you should be running all of these before a human looks at anything:
+
+- **Injection.** [SAST](/glossary/sast/) traces attacker-controlled input to dangerous sinks — SQL, shell, template, path. This is the strongest category for static analysis.
+- **Hardcoded credentials.** [Secret scanning](/glossary/secret-scanning/), ideally at the [pre-commit](/glossary/pre-commit-hook/) stage. High precision, low argument.
+- **Known-vulnerable dependencies.** [Dependency scanning](/glossary/sca/) against advisory databases, with reachability analysis if the tool supports it.
+- **Unsafe API use.** Weak cryptography, disabled certificate verification, unsafe deserialisation — all pattern-matchable.
+- **Configuration.** Permissive CORS, missing security headers, over-broad IAM policies.
+
+If your team is spending review attention on any of these, that is a tooling gap, not a diligence gap.
+
+## What automation misses, consistently
+
+The categories below share a property: they are defined by what is *absent* or by what the code *means*, and pattern matching cannot see either.
+
+**Broken access control.** The endpoint checks that you are authenticated and never checks that the invoice belongs to you. There is no suspicious pattern — the check simply is not there. This has topped the [OWASP Top 10](/glossary/owasp-top-10/) for years largely because tools cannot find it and reviewers often do not look for it.
+
+**Business logic flaws.** A refund path that can be called twice. A discount that stacks. A state machine that allows a transition nobody considered. Each requires knowing what the system is supposed to do.
+
+**Insecure design.** A password reset flow that leaks whether an account exists. Rate limiting missing where it matters. Nothing here is a coding error.
+
+**Trust boundary confusion.** Validation performed in one service and assumed by another. The individual services look fine; the composition does not.
+
+**Secrets that are not literals.** A credential assembled at runtime, read from an unexpected source, or logged in a debug statement.
+
+This list is the case for human security review. It is also, not coincidentally, the list where an [AI reviewer](/glossary/ai-code-review/) has something real to contribute — because a model that can see the surrounding handlers can notice that this one does not check what the other five check. Treat that as a strong hint, not a guarantee.
+
+## Scoping: not every change needs this
+
+Uniform security review is how security review dies. Scope it by [blast radius](/glossary/blast-radius/).
+
+**Elevated review** — authentication and session handling, authorisation logic, payment flows, anything touching personal data, file upload and parsing, deserialisation, infrastructure and IAM changes, and the CI configuration itself.
+
+**Standard review** — everything else, with automation running and a reviewer who knows the basics.
+
+Encode this. [CODEOWNERS](/glossary/code-owner/) on sensitive paths puts the right eyes on the change automatically, and path-scoped rules let you run stricter checks where it matters without drowning the rest of the repository.
+
+## Reviewing the changes people skim
+
+Two categories of diff get approved without being read, and both are attractive to attackers.
+
+**Dependency updates.** A lockfile with hundreds of changed lines gets a glance. Require a scan to pass, look at what *new* transitive packages appeared, and be suspicious of a version bump that adds a dependency rather than removing one. This is the main delivery route for [supply chain attacks](/glossary/supply-chain-attack/).
+
+**CI and build configuration.** Workflow files run with your repository's credentials. A change that adds a step fetching a script from an external URL is a full compromise in three lines. Pin third-party actions to a commit SHA, and treat workflow changes as elevated-tier.
+
+## The tool itself is part of the attack surface
+
+Worth stating plainly, because it is new and under-considered: a code review tool has read access to everything, sees every change before it merges, and in agentic configurations can execute code and write to repositories.
+
+Three questions to put to any vendor:
+
+1. **Permissions.** What scopes does it request, and does it need write access for what you are actually using it for?
+2. **Untrusted input.** What does it do with pull requests from forks? Content it reads — descriptions, branch names, files — can carry [prompt injection](/glossary/prompt-injection/), and the risk scales with what the tool is allowed to do.
+3. **Data path and retention.** Where does your code go, how long is it retained, and is an index of your repository stored anywhere? For teams where the answer has to be "nowhere outside our network", that points at [self-hosting](/glossary/self-hosting/) with an in-boundary model endpoint — not just self-hosting.
+
+## A layered setup that works
+
+1. **Pre-commit:** secret scanning, fast lint rules. Cheapest possible stage.
+2. **Pull request:** SAST on changed files, dependency scan with reachability, coverage delta. Deterministic findings, gated where precision is high.
+3. **Pull request, advisory:** AI review for logic-shaped issues — authorisation gaps, business logic, error paths. Never a hard gate.
+4. **Human review:** scoped by risk tier, focused on the categories above that nothing else can see.
+5. **Periodically:** [DAST](/glossary/dast/) against a deployed environment, and a scan of full history for secrets rather than only diffs.
+
+The ordering principle throughout: deterministic checks gate, probabilistic checks advise, and human attention goes to the questions neither can answer.

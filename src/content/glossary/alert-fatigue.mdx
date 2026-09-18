@@ -1,0 +1,30 @@
+---
+term: "Alert fatigue"
+definition: "What happens when a tool produces more findings than a team can process, so the team stops processing any of them \u2014 including the true ones."
+category: "quality"
+aliases: []
+related: ["false-positive", "nitpick", "signal-to-noise", "blocking-comment"]
+relatedTools: ["sonarqube", "coderabbit", "kodus"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Alert fatigue is a human failure mode caused by a tooling decision. Past a certain volume, attention collapses: developers scroll past the bot's comments the way they scroll past a cookie banner. The findings are still there, still sometimes right, and no longer read by anyone.
+
+## How it develops
+
+It rarely arrives at once. A typical sequence: the tool is installed with default settings that are deliberately verbose, because a demo that finds twenty things looks better than one that finds two. The team engages for a week. Then someone resolves twelve style comments on a hotfix PR at 7pm, and the next day the team quietly agrees to ignore the bot on anything urgent. That exception becomes the rule.
+
+## Why it matters when you are evaluating
+
+Default posture is a real product decision, and it is worth asking about explicitly. Some tools ship loud by design and expect you to tune down; others ship quiet and expect you to opt in to more. A quiet default is easier to grow into than a loud default is to recover from, because the first month sets the team's habit.
+
+Look for: severity levels that actually gate what gets posted, a way to suppress a whole class of finding rather than dismissing instances one at a time, and a review profile you can set per repository rather than per organisation.
+
+## Common mistakes
+
+- Turning on every rule category "to see what it finds" on a repository your team ships from daily.
+- Measuring success by findings produced instead of findings acted on.
+- Letting the bot post non-blocking nitpicks in the same visual channel as real defects, so both get the same treatment: none.

@@ -1,0 +1,120 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import PillarGraphic from '../../components/PillarGraphic.astro';
+import { getRankedTools, scoreTool, PILLAR_SHORT } from '../../lib/tools';
+import { SITE_URL } from '../../lib/blog';
+
+const pillars = (await getCollection('pillars')).sort((a, b) => a.data.order - b.data.order);
+const tools = await getRankedTools();
+
+// How the market actually performs on each pillar — the most quotable thing on
+// this page, and it falls straight out of the directory data.
+const coverage = pillars.map((pillar) => {
+	const met = tools.filter((t) => t.data.standards[pillar.id]?.status === 'yes').length;
+	const partial = tools.filter((t) => t.data.standards[pillar.id]?.status === 'partial').length;
+	return { pillar, met, partial, percent: Math.round((met / tools.length) * 100) };
+});
+const weakest = [...coverage].sort((a, b) => a.met - b.met)[0];
+const strongest = [...coverage].sort((a, b) => b.met - a.met)[0];
+
+const title = "The 9 Standards for AI Code Review (2026) | aicodereview.io";
+const description = `The engineering baseline every AI code reviewer should meet in 2026 — 9 standards, why each exists, and how all ${tools.length} tools in the directory actually score against them.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Standards', url: `${SITE_URL}/standards/` },
+	]}
+	schemas={[{
+		"@type": "ItemList",
+		"name": "The 9 Standards for AI Code Review",
+		"description": description,
+		"numberOfItems": pillars.length,
+		"itemListElement": pillars.map((p, i) => ({
+			"@type": "ListItem",
+			"position": i + 1,
+			"url": `${SITE_URL}/standards/${p.id}/`,
+			"name": p.data.title,
+		})),
+	}]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Standards' }]} />
+
+	<section class="max-w-3xl mb-16">
+		<p class="eyebrow mb-4">The 2026 standard for AI code review</p>
+		<h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-6 leading-[0.95]">
+			Diff-reading AI <span class="text-stone-400 dark:text-zinc-600 line-through decoration-accent-600 decoration-4">is dead</span>.
+		</h1>
+		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-8">
+			Most AI code reviewers are expensive wrappers around a prompt. They hallucinate, nitpick style over substance, and have no idea what your codebase or your ticket actually says.
+			These 9 standards are the engineering baseline that separates a reviewer from a wrapper — and the rubric behind every score in <a href="/#directory" class="underline underline-offset-4 decoration-accent-600 decoration-2">the directory</a>.
+		</p>
+		<div class="border-l-4 border-accent-600 dark:border-accent-500 pl-6 py-3 bg-stone-100/60 dark:bg-zinc-900/60">
+			<p class="text-stone-800 dark:text-zinc-200 text-pretty">
+				Across {tools.length} tools, <strong>{strongest.pillar.data.title.toLowerCase()}</strong> is the most widely documented standard ({strongest.met} of {tools.length} tools),
+				and <strong>{weakest.pillar.data.title.toLowerCase()}</strong> the least ({weakest.met} of {tools.length}). That gap is where most evaluations go wrong.
+			</p>
+		</div>
+	</section>
+
+	<section class="mb-20">
+		<h2 class="eyebrow mb-6">[ How the market scores ]</h2>
+		<div class="border-t hairline">
+			{coverage.map(({ pillar, met, partial, percent }) => (
+				<div class="grid grid-cols-[1fr_auto] md:grid-cols-[14rem_1fr_7rem] gap-x-6 gap-y-2 items-center py-3 border-b hairline">
+					<a href={`/standards/${pillar.id}/`} class="font-bold text-sm text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">
+						{PILLAR_SHORT[pillar.id] ?? pillar.data.title}
+					</a>
+					<div class="col-span-2 md:col-span-1 order-last md:order-none h-2 bg-stone-200 dark:bg-zinc-800 w-full">
+						<div class="h-full bg-accent-600 dark:bg-accent-500" style={`width:${percent}%`}></div>
+					</div>
+					<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 tabular-nums text-right whitespace-nowrap">
+						{met} met · {partial} partial
+					</span>
+				</div>
+			))}
+		</div>
+		<p class="text-xs text-stone-500 dark:text-zinc-500 mt-4 font-mono">Counts reflect what each vendor documents publicly, not what we measured in a lab. <a href="/methodology/" class="underline underline-offset-2">Methodology</a>.</p>
+	</section>
+
+	<section class="space-y-24">
+		{pillars.map((pillar) => (
+			<div class="border-t hairline pt-12 group">
+				<h2 class="eyebrow mb-4">[ {pillar.data.order.toString().padStart(2, '0')} ]</h2>
+				<h3 class="text-2xl md:text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-6">
+					<a href={`/standards/${pillar.id}/`} class="group-hover:underline decoration-accent-600 decoration-2 underline-offset-4">{pillar.data.title}</a>
+				</h3>
+				<div class="grid lg:grid-cols-12 gap-10 items-start">
+					<div class="lg:col-span-7 flex flex-col h-full">
+						<p class="text-pretty text-stone-600 dark:text-zinc-400 text-lg leading-relaxed mb-6">{pillar.data.description}</p>
+						<div class="mt-auto flex flex-wrap gap-3">
+							<a href={`/standards/${pillar.id}/`} class="btn-ghost">Read full standard</a>
+							<span class="inline-flex items-center font-mono text-xs text-stone-500 dark:text-zinc-500">
+								{coverage.find((c) => c.pillar.id === pillar.id)!.met}/{tools.length} tools document it
+							</span>
+						</div>
+					</div>
+					<div class="lg:col-span-5">
+						<a href={`/standards/${pillar.id}/`} class="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
+							<PillarGraphic order={pillar.data.order} />
+						</a>
+					</div>
+				</div>
+			</div>
+		))}
+	</section>
+
+	<section class="mt-24 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">See which tools actually clear the bar</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">{tools.length} tools, scored pillar by pillar, every claim sourced.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</section>
+</Layout>

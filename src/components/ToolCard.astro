@@ -1,0 +1,92 @@
+---
+import ScoreMeter from './ScoreMeter.astro';
+import {
+	scoreTool,
+	monogram,
+	monogramHue,
+	priceLabel,
+	platformLabel,
+	TOOL_CATEGORY_LABELS,
+	SELF_HOSTED_SHORT,
+	SPONSOR_SLUG,
+	type Tool,
+} from '../lib/tools';
+
+interface Props {
+	tool: Tool;
+	rank?: number;
+}
+
+const { tool, rank } = Astro.props;
+const d = tool.data;
+const score = scoreTool(tool);
+const hue = monogramHue(tool.id);
+
+// Everything the client-side filters and the inline search box read.
+const search = [d.name, d.tagline, TOOL_CATEGORY_LABELS[d.category], d.license, d.platforms.map(platformLabel).join(' ')]
+	.join(' ')
+	.toLowerCase();
+---
+
+<article
+	class="panel panel-hover group relative flex flex-col p-5"
+	data-tool
+	data-category={d.category}
+	data-selfhosted={d.selfHosted}
+	data-oss={String(d.openSource)}
+	data-freetier={d.freeTier}
+	data-platforms={d.platforms.join(' ')}
+	data-score={score.score}
+	data-rank={rank ?? 0}
+	data-name={d.name.toLowerCase()}
+	data-search={search}
+>
+	<div class="flex items-start gap-3 mb-3">
+		<span
+			class="shrink-0 w-10 h-10 border flex items-center justify-center font-mono text-xs font-bold"
+			style={`border-color: hsl(${hue} 45% 55% / 0.5); background: hsl(${hue} 60% 55% / 0.10); color: hsl(${hue} 45% 38%);`}
+			aria-hidden="true"
+		>{monogram(d.name)}</span>
+
+		<div class="min-w-0 flex-1">
+			<h3 class="font-bold tracking-tight text-stone-900 dark:text-zinc-100 leading-tight">
+				<a href={`/tools/${tool.id}/`} class="after:absolute after:inset-0 group-hover:underline underline-offset-4 decoration-accent-600 dark:decoration-accent-400 decoration-2">
+					{d.name}
+				</a>
+			</h3>
+			<p class="eyebrow mt-1 normal-case tracking-normal">
+				{TOOL_CATEGORY_LABELS[d.category]} · {d.openSource ? d.license.split('(')[0].trim() : 'Proprietary'}
+			</p>
+		</div>
+
+		{rank !== undefined && (
+			<span class="shrink-0 font-mono text-[10px] text-stone-400 dark:text-zinc-600 tabular-nums">#{rank}</span>
+		)}
+	</div>
+
+	<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty mb-4 line-clamp-3">
+		{d.tagline}
+	</p>
+
+	<div class="mt-auto space-y-3">
+		<ScoreMeter score={score} />
+
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-mono text-stone-500 dark:text-zinc-500">
+			<span>{SELF_HOSTED_SHORT[d.selfHosted]}</span>
+			<span aria-hidden="true">·</span>
+			<span>{priceLabel(tool)}</span>
+			{d.openSource && (
+				<>
+					<span aria-hidden="true">·</span>
+					<span class="text-accent-700 dark:text-accent-400">Open source</span>
+				</>
+			)}
+			{tool.id === SPONSOR_SLUG && (
+				<>
+					<span aria-hidden="true">·</span>
+					<span class="uppercase tracking-widest border border-stone-300 dark:border-zinc-700 px-1.5">Sponsor</span>
+				</>
+			)}
+		</div>
+	</div>
+</article>

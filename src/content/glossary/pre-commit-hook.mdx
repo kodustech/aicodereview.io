@@ -1,0 +1,30 @@
+---
+term: "Pre-commit hook"
+definition: "A script that runs on a developer's machine before a commit is created, blocking it if a check fails."
+category: "delivery"
+aliases: []
+related: ["linter", "secret-scanning", "shift-left", "ci-cd", "nitpick"]
+relatedTools: ["sourcery", "coderabbit", "kodus", "semgrep"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Git hooks run at points in the local workflow. The pre-commit hook is the last moment before a change enters history, which makes it the cheapest place to catch the classes of problem that are embarrassing to fix later — formatting, obvious lint violations, and above all [committed secrets](/glossary/secret-scanning/).
+
+## Why it matters for AI review
+
+The [dual-workflow standard](/standards/03-dual-workflow/) argues that review should happen twice, with different behaviour each time: fast and local before the commit, thorough and shared on the pull request. A finding raised locally costs the author thirty seconds. The same finding raised in review costs a context switch, a push, a CI run and a reviewer's attention.
+
+Several tools now ship a CLI or IDE integration for exactly this. The ones that get it right run a different, lighter review locally rather than the full pull request review — speed matters more than depth when you are standing between a developer and their commit.
+
+## Practical constraints
+
+Hooks must be fast, under a couple of seconds, or developers will use `--no-verify` and stop thinking about it. They also cannot be relied on as a control: they are local, optional and bypassable. Treat them as ergonomics, and keep the real enforcement in CI.
+
+## Common mistakes
+
+- Running the full test suite in a hook.
+- Treating hooks as a security boundary.
+- Not committing the hook configuration to the repository, so only some of the team has it.

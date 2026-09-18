@@ -1,0 +1,30 @@
+---
+term: "Defect escape rate"
+definition: "The proportion of defects that reach production instead of being caught by review, tests or staging."
+category: "metrics"
+aliases: []
+related: ["change-failure-rate", "false-positive", "code-review", "review-coverage"]
+relatedTools: ["sonarqube", "kodus", "codacy"]
+relatedPosts: ["ai-code-review-statistics", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Of all the defects eventually found, how many were found by users rather than by you. It is the closest thing to a direct measure of whether your quality gates work.
+
+## Why it is the metric AI review should be judged on, and rarely is
+
+If an automated reviewer is worth its cost, escaped defects should fall. That is the claim in every pitch deck. It is also a slow, noisy measurement: you need enough production defects to have a rate, a stable definition of what counts, and a window long enough to see past seasonality — realistically a quarter or more.
+
+Because that is inconvenient, vendors substitute faster proxies: findings produced, issues flagged, "bugs caught". Those measure activity, not escape. A tool can produce hundreds of findings and change nothing about what reaches users.
+
+## How to measure it without a data team
+
+Tag production incidents and customer-reported bugs with the stage that should have caught them: review, tests, staging, or genuinely unforeseeable. Do it for one quarter before a trial and one after. The category breakdown is more useful than the total — if most escapes are "tests should have caught this", a review tool is not your bottleneck.
+
+## Common mistakes
+
+- Counting only incidents, ignoring the long tail of small bugs users report and tolerate.
+- Comparing rates across teams with different definitions.
+- Expecting a visible change within a two-week trial.

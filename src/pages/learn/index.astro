@@ -1,0 +1,74 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getGuides } from '../../lib/glossary';
+import { getTerms } from '../../lib/glossary';
+import { SITE_URL, formatDate } from '../../lib/blog';
+
+const guides = await getGuides();
+const terms = await getTerms();
+
+const title = "Learn Code Review: Guides for Engineering Teams (2026) | aicodereview.io";
+const description = `${guides.length} practical guides on running code review well — process, checklists, metrics, security and scale — written for teams, independent of which tool you buy.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Learn', url: `${SITE_URL}/learn/` },
+	]}
+	schemas={[{
+		"@type": "ItemList",
+		"name": "Code review guides",
+		"description": description,
+		"numberOfItems": guides.length,
+		"itemListElement": guides.map((g, i) => ({
+			"@type": "ListItem",
+			"position": i + 1,
+			"url": `${SITE_URL}/learn/${g.id}/`,
+			"name": g.data.title,
+		})),
+	}]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Learn' }]} />
+
+	<section class="max-w-3xl mb-14">
+		<p class="eyebrow mb-4">Guides · {guides.length} in the series</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			Code review, done properly
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Buying a reviewer does not fix a broken review process — it automates it. These guides cover the practice itself: how review should work, what to check,
+			what to measure, and where automation genuinely helps. No tool required to read them.
+		</p>
+	</section>
+
+	<section class="grid md:grid-cols-2 gap-4 mb-16">
+		{guides.map((guide, i) => (
+			<a href={`/learn/${guide.id}/`} class="panel panel-hover p-6 group flex flex-col">
+				<span class="eyebrow mb-3">[ {String(i + 1).padStart(2, '0')} ]</span>
+				<h2 class="text-xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-3 text-balance group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">
+					{guide.data.title}
+				</h2>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">{guide.data.description}</p>
+				<span class="eyebrow mt-auto">Updated {formatDate(guide.data.updated)}</span>
+			</a>
+		))}
+	</section>
+
+	<section class="pt-12 border-t hairline grid md:grid-cols-2 gap-4">
+		<a href="/glossary/" class="panel panel-hover p-6 group">
+			<span class="eyebrow block mb-3">Reference</span>
+			<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">The glossary · {terms.length} terms</h2>
+			<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">Short definitions for the vocabulary in the guides, the vendor docs and the pricing pages.</p>
+		</a>
+		<a href="/standards/" class="panel panel-hover p-6 group">
+			<span class="eyebrow block mb-3">The standard</span>
+			<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">The 9 pillars</h2>
+			<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">What an AI reviewer has to do before it earns a place in the process you just designed.</p>
+		</a>
+	</section>
+</Layout>

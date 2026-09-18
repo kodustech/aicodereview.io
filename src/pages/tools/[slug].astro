@@ -1,84 +1,260 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import { getTools, TOOL_CATEGORY_LABELS, SELF_HOSTED_LABELS, STATUS_GLYPHS, STATUS_LABELS, SPONSOR_SLUG } from '../../lib/tools';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ScoreMeter from '../../components/ScoreMeter.astro';
+import {
+	getRankedTools,
+	scoreTool,
+	statusOf,
+	noteOf,
+	prosAndCons,
+	bestFor,
+	similarTools,
+	monogram,
+	monogramHue,
+	platformLabel,
+	priceLabel,
+	TOOL_CATEGORY_LABELS,
+	SELF_HOSTED_LABELS,
+	FREE_TIER_LABELS,
+	STATUS_GLYPHS,
+	STATUS_LABELS,
+	SPONSOR_SLUG,
+} from '../../lib/tools';
+import { buildPairs, pairSlug } from '../../lib/compare';
 import { getPublishedPosts, SITE_URL } from '../../lib/blog';
 
 export async function getStaticPaths() {
-	const tools = await getTools();
-	return tools.map((tool) => ({ params: { slug: tool.id }, props: { tool } }));
+	const tools = await getRankedTools();
+	return tools.map((tool, i) => ({
+		params: { slug: tool.id },
+		props: { tool, rank: i + 1, all: tools },
+	}));
 }
 
-const { tool } = Astro.props;
+const { tool, rank, all } = Astro.props;
+const d = tool.data;
+const score = scoreTool(tool);
+const hue = monogramHue(tool.id);
+
 const pillars = (await getCollection('pillars')).sort((a, b) => a.data.order - b.data.order);
+const pillarTitles = Object.fromEntries(pillars.map((p) => [p.id, p.data.title]));
+const { pros, cons } = prosAndCons(tool, pillarTitles);
+
 const allPosts = await getPublishedPosts();
-const related = allPosts.filter((p) => tool.data.relatedPosts.includes(p.id));
+const related = allPosts.filter((p) => d.relatedPosts.includes(p.id)).slice(0, 4);
+const alternatives = similarTools(tool, all, 4);
+
+// Only a curated set of pairs gets a generated page, so link the comparisons
+// that exist and fall back to the neighbouring profile for the rest.
+const generatedPairs = buildPairs(all, new Set(allPosts.map((p) => p.id)));
+const comparableIds = new Set(
+	generatedPairs
+		.filter((pair) => pair.a.id === tool.id || pair.b.id === tool.id)
+		.map((pair) => (pair.a.id === tool.id ? pair.b.id : pair.a.id))
+);
+const comparisons = all.filter((t) => comparableIds.has(t.id)).slice(0, 4);
+const alternativesWithoutPage = alternatives.filter((t) => !comparableIds.has(t.id)).slice(0, 4);
+const isSponsor = tool.id === SPONSOR_SLUG;
 const url = `${SITE_URL}/tools/${tool.id}/`;
 
-const title = `${tool.data.name} — AI Code Review Tool Profile (2026) | aicodereview.io`;
-const description = `${tool.data.name}: ${tool.data.tagline} Pricing, license, self-hosting, and how it maps to the 9-pillar AI code review standard.`.slice(0, 300);
+const categoryPeers = all.filter((t) => t.data.category === d.category);
+const categoryRank = categoryPeers.findIndex((t) => t.id === tool.id) + 1;
+
+// The score already has its own meter above this list; repeating it here would
+// be the third time it appears in one sidebar.
+const quickFacts = [
+	{ label: 'Licence', value: d.openSource ? d.license : 'Proprietary' },
+	{ label: 'Self-hosting', value: SELF_HOSTED_LABELS[d.selfHosted] },
+	{ label: 'From', value: priceLabel(tool) },
+	{ label: 'Free tier', value: FREE_TIER_LABELS[d.freeTier] },
+	{ label: 'Verified', value: d.lastVerified },
+];
 
 const specRows = [
-	{ label: 'Category', value: TOOL_CATEGORY_LABELS[tool.data.category] ?? tool.data.category },
-	{ label: 'Open source', value: tool.data.openSource ? `Yes (${tool.data.license})` : 'No' },
-	{ label: 'Pricing', value: tool.data.pricing, href: tool.data.pricingUrl.startsWith('http') ? tool.data.pricingUrl : undefined },
-	{ label: 'Self-hosted', value: SELF_HOSTED_LABELS[tool.data.selfHosted] + (tool.data.selfHostedNote ? ` — ${tool.data.selfHostedNote}` : '') },
-	{ label: 'Platforms', value: tool.data.platforms.join(', ') || 'unknown' },
-	{ label: 'Model control', value: tool.data.modelControl },
-	{ label: 'Last verified', value: tool.data.lastVerified },
+	{ label: 'Category', value: TOOL_CATEGORY_LABELS[d.category] ?? d.category, href: `/tools/category/${d.category}/` },
+	{ label: 'Open source', value: d.openSource ? `Yes — ${d.license}` : 'No — proprietary' },
+	{ label: 'Pricing', value: d.pricing, source: d.pricingUrl.startsWith('http') ? d.pricingUrl : undefined },
+	{ label: 'Self-hosted', value: SELF_HOSTED_LABELS[d.selfHosted] + (d.selfHostedNote ? ` — ${d.selfHostedNote}` : '') },
+	{ label: 'Platforms', value: d.platforms.map(platformLabel).join(', ') || 'Not documented' },
+	{ label: 'Model control', value: d.modelControl },
+	{ label: 'Last verified', value: d.lastVerified },
 ];
+
+const faq = [
+	{
+		q: `Is ${d.name} open source?`,
+		a: d.openSource
+			? `Yes. ${d.name} publishes its source under ${d.license}, so you can read it, audit it and fork it.`
+			: `No. ${d.name} is proprietary — you can use it, but you cannot read or fork the review engine.`,
+	},
+	{
+		q: `Can ${d.name} be self-hosted?`,
+		a: `${SELF_HOSTED_LABELS[d.selfHosted]}.${d.selfHostedNote ? ` ${d.selfHostedNote}` : ''} Verified against the vendor's own documentation on ${d.lastVerified}.`,
+	},
+	{
+		q: `How much does ${d.name} cost?`,
+		a: `${d.pricing}. Seat price is only part of the bill: ${d.name} handles models as ${d.modelControl.toLowerCase()}, which is what usually decides the real monthly cost.`,
+	},
+	{
+		q: `How does ${d.name} score against the 9-pillar AI code review standard?`,
+		a: `${score.score} out of 9. It fully documents ${score.strengths.length} ${score.strengths.length === 1 ? 'standard' : 'standards'}, partially documents ${score.partials.length}, does not offer ${score.gaps.length}, and leaves ${score.unknowns.length} undocumented. The score is coverage of documented capability, not a measure of review quality.`,
+	},
+	{
+		q: `What are the alternatives to ${d.name}?`,
+		a: `The closest tools in this directory are ${alternatives.map((t) => t.data.name).join(', ')}. Each is scored against the same 9 standards, so the matrices are directly comparable.`,
+	},
+];
+
+const title = `${d.name} Review (2026): Pricing, Self-Hosting & Standards Score | aicodereview.io`;
+const description = `${d.name} scores ${score.score}/9 against the 2026 AI code review standard. ${SELF_HOSTED_LABELS[d.selfHosted]} for self-hosting, ${d.openSource ? 'open source' : 'proprietary'}, from ${priceLabel(tool)}. Sourced facts, verified ${d.lastVerified}.`.slice(0, 300);
 ---
 
 <Layout
 	title={title}
 	description={description}
+	width="wide"
 	breadcrumbs={[
 		{ name: 'Home', url: `${SITE_URL}/` },
-		{ name: 'Tools', url: `${SITE_URL}/tools/` },
-		{ name: tool.data.name, url }
+		{ name: 'Tools', url: `${SITE_URL}/#directory` },
+		{ name: d.name, url },
 	]}
-	schemas={[{
-		"@type": "SoftwareApplication",
-		"name": tool.data.name,
-		"url": tool.data.website,
-		"applicationCategory": "DeveloperApplication",
-		"description": tool.data.tagline,
-		"operatingSystem": "Web",
-		...(tool.data.openSource ? { "license": tool.data.license } : {})
-	}]}
+	schemas={[
+		{
+			"@type": "SoftwareApplication",
+			"name": d.name,
+			"url": d.website,
+			"applicationCategory": "DeveloperApplication",
+			"applicationSubCategory": TOOL_CATEGORY_LABELS[d.category],
+			"description": d.tagline,
+			"operatingSystem": "Web",
+			"softwareRequirements": d.platforms.map(platformLabel).join(', '),
+			...(d.openSource ? { "license": d.license } : {}),
+			"offers": { "@type": "Offer", "description": d.pricing, "url": d.pricingUrl },
+		},
+		{
+			"@type": "FAQPage",
+			"mainEntity": faq.map((item) => ({
+				"@type": "Question",
+				"name": item.q,
+				"acceptedAnswer": { "@type": "Answer", "text": item.a },
+			})),
+		},
+	]}
 >
-	<div class="mb-12">
-		<a href="/tools" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-10">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-			All Tools
-		</a>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Tools', href: '/#directory' }, { name: d.name }]} />
 
-		<div class="flex flex-wrap items-center gap-3 mb-4">
-			<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-stone-900 dark:text-zinc-50 leading-tight">
-				{tool.data.name}
-			</h1>
-			{tool.id === SPONSOR_SLUG && (
-				<span class="text-[10px] font-mono uppercase tracking-widest px-2 py-1 border border-stone-300 dark:border-zinc-700 text-stone-500 dark:text-zinc-500">Sponsor</span>
+	<div class="grid lg:grid-cols-12 gap-10">
+		<div class="lg:col-span-8">
+			<div class="flex items-start gap-4 mb-5">
+				<span
+					class="shrink-0 w-14 h-14 border flex items-center justify-center font-mono text-base font-bold"
+					style={`border-color: hsl(${hue} 45% 55% / 0.5); background: hsl(${hue} 60% 55% / 0.10); color: hsl(${hue} 45% 38%);`}
+					aria-hidden="true"
+				>{monogram(d.name)}</span>
+				<div>
+					<h1 class="text-3xl md:text-4xl font-extrabold tracking-tighter text-stone-900 dark:text-zinc-50 leading-tight mb-1">
+						{d.name}
+					</h1>
+					<p class="eyebrow">
+						<a href={`/tools/category/${d.category}/`} class="hover:text-stone-900 dark:hover:text-zinc-100">{TOOL_CATEGORY_LABELS[d.category]}</a>
+						· #{categoryRank} of {categoryPeers.length} in category · #{rank} of {all.length} overall
+						{isSponsor && <span class="ml-2 border border-stone-300 dark:border-zinc-700 px-1.5">Sponsor</span>}
+					</p>
+				</div>
+			</div>
+
+			<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-6">{d.tagline}</p>
+
+			{isSponsor && (
+				<p class="text-xs text-stone-500 dark:text-zinc-500 border-l-2 border-accent-600 dark:border-accent-500 pl-3 py-1 mb-6 text-pretty">
+					Kodus funds this site. It is scored with the same rubric, from the same kind of public sources, and ranked wherever that score puts it — <a href="/methodology/" class="underline underline-offset-2">see the methodology</a>.
+				</p>
 			)}
+
+			<div class="flex flex-wrap gap-3">
+				<a href={d.website} target="_blank" rel={isSponsor ? 'noopener sponsored' : 'noopener noreferrer'} class="btn-ghost">Visit {d.name} [↗]</a>
+				<a href="#standards" class="btn-ghost">See the matrix</a>
+			</div>
 		</div>
-		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl mb-6">
-			{tool.data.tagline}
-		</p>
-		<a href={tool.data.website} target="_blank" rel={tool.id === SPONSOR_SLUG ? 'noopener sponsored' : 'noopener noreferrer'} class="inline-flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-zinc-100 bg-white dark:bg-zinc-950 px-5 py-3 border border-stone-300 dark:border-zinc-700 hover:bg-stone-50 dark:hover:bg-zinc-900 transition-colors">
-			Visit Website [↗]
-		</a>
+
+		<aside class="lg:col-span-4">
+			<div class="panel p-5">
+				<p class="eyebrow mb-3">Coverage score</p>
+				<ScoreMeter score={score} size="lg" />
+				<p class="text-xs text-stone-500 dark:text-zinc-400 mt-3 text-pretty leading-relaxed">
+					{score.strengths.length} documented · {score.partials.length} partial · {score.gaps.length} not offered · {score.unknowns.length} undocumented.
+					<a href="/methodology/" class="underline underline-offset-2 ml-1">How this is calculated</a>
+				</p>
+				<dl class="mt-5 pt-4 border-t hairline space-y-2.5">
+					{quickFacts.map((fact) => (
+						<div class="flex justify-between gap-3 text-xs">
+							<dt class="font-mono uppercase tracking-wider text-stone-500 dark:text-zinc-500 shrink-0">{fact.label}</dt>
+							<dd class="text-stone-800 dark:text-zinc-200 text-right text-pretty">{fact.value}</dd>
+						</div>
+					))}
+				</dl>
+			</div>
+		</aside>
 	</div>
 
-	<section class="mb-16">
-		<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-6">[ Facts ]</h2>
-		<dl class="border-t border-stone-200 dark:border-zinc-800">
+	<section class="mt-16">
+		<h2 class="eyebrow mb-3">[ Where it fits ]</h2>
+		<p class="text-lg text-stone-700 dark:text-zinc-300 text-pretty leading-relaxed max-w-3xl">
+			On the documented evidence, {d.name} suits {bestFor(tool)}.
+		</p>
+	</section>
+
+	{(pros.length > 0 || cons.length > 0) && (
+		<section class="mt-14 grid md:grid-cols-2 gap-8">
+			<div>
+				<h2 class="eyebrow mb-4">[ Documented strengths ]</h2>
+				{pros.length === 0 ? (
+					<p class="text-sm text-stone-500 dark:text-zinc-500">No standard is fully documented as met in public sources.</p>
+				) : (
+					<ul class="space-y-3">
+						{pros.map((item) => (
+							<li class="flex gap-3 text-sm">
+								<span class="status-yes font-mono font-bold shrink-0" aria-hidden="true">✓</span>
+								<span class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+									<strong class="text-stone-900 dark:text-zinc-100 font-bold">{item.pillar}.</strong> {item.note}
+								</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+			<div>
+				<h2 class="eyebrow mb-4">[ Documented gaps ]</h2>
+				{cons.length === 0 ? (
+					<p class="text-sm text-stone-500 dark:text-zinc-500">No standard is documented as unavailable — but {score.unknowns.length} are not documented either way.</p>
+				) : (
+					<ul class="space-y-3">
+						{cons.map((item) => (
+							<li class="flex gap-3 text-sm">
+								<span class="status-no font-mono font-bold shrink-0" aria-hidden="true">✗</span>
+								<span class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+									<strong class="text-stone-900 dark:text-zinc-100 font-bold">{item.pillar}.</strong> {item.note}
+								</span>
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+		</section>
+	)}
+
+	<section class="mt-16">
+		<h2 class="eyebrow mb-6">[ Facts ]</h2>
+		<dl class="border-t hairline">
 			{specRows.map((row) => (
-				<div class="grid grid-cols-1 md:grid-cols-4 gap-1 md:gap-6 py-4 border-b border-stone-200 dark:border-zinc-800">
-					<dt class="text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 pt-1">{row.label}</dt>
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-1 md:gap-6 py-4 border-b hairline">
+					<dt class="eyebrow pt-1">{row.label}</dt>
 					<dd class="md:col-span-3 text-stone-800 dark:text-zinc-200 text-pretty">
-						{row.value}
-						{row.href && (
-							<a href={row.href} target="_blank" rel="noopener noreferrer" class="ml-2 text-xs font-mono text-stone-500 dark:text-zinc-500 underline underline-offset-2 hover:text-stone-900 dark:hover:text-zinc-100">source</a>
+						{row.href ? <a href={row.href} class="underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 hover:decoration-accent-600">{row.value}</a> : row.value}
+						{row.source && (
+							<a href={row.source} target="_blank" rel="noopener noreferrer" class="ml-2 text-xs font-mono text-stone-500 dark:text-zinc-500 underline underline-offset-2 hover:text-stone-900 dark:hover:text-zinc-100">source ↗</a>
 						)}
 					</dd>
 				</div>
@@ -86,24 +262,24 @@ const specRows = [
 		</dl>
 	</section>
 
-	<section class="mb-16">
-		<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-3">[ Against the 9 Standards ]</h2>
+	<section id="standards" class="mt-16 scroll-mt-24">
+		<h2 class="eyebrow mb-3">[ Against the 9 standards ]</h2>
 		<p class="text-sm text-stone-500 dark:text-zinc-400 mb-6 max-w-2xl text-pretty">
-			Based on public documentation as of {tool.data.lastVerified}. <span class="font-mono">✓ documented · ~ partial · ✗ not offered · ? unknown</span>. Methodology on the <a href="/about" class="underline underline-offset-2">about page</a>.
+			Based on public documentation as of {d.lastVerified}. <span class="font-mono">✓ documented · ~ partial · ✗ not offered · ? undocumented</span>. Undocumented scores zero — see <a href="/methodology/" class="underline underline-offset-2">the methodology</a>.
 		</p>
-		<div class="border-t border-stone-200 dark:border-zinc-800">
+		<div class="border-t hairline">
 			{pillars.map((pillar) => {
-				const entry = tool.data.standards[pillar.id] ?? { status: 'unknown', note: '' };
+				const status = statusOf(tool, pillar.id);
 				return (
-					<div class="grid grid-cols-[2rem_1fr] md:grid-cols-[2rem_16rem_1fr] gap-x-4 gap-y-1 py-4 border-b border-stone-200 dark:border-zinc-800 items-baseline">
-						<span class={`font-mono font-bold text-lg ${entry.status === 'yes' ? 'text-stone-900 dark:text-zinc-100' : 'text-stone-400 dark:text-zinc-600'}`} title={STATUS_LABELS[entry.status]}>
-							{STATUS_GLYPHS[entry.status]}
+					<div class="grid grid-cols-[2rem_1fr] md:grid-cols-[2rem_16rem_1fr] gap-x-4 gap-y-1 py-4 border-b hairline items-baseline">
+						<span class:list={['font-mono font-bold text-lg', `status-${status}`]} title={STATUS_LABELS[status]}>
+							{STATUS_GLYPHS[status]}
 						</span>
-						<a href={`/standards/${pillar.id}`} class="font-bold text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">
+						<a href={`/standards/${pillar.id}/`} class="font-bold text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">
 							{pillar.data.title}
 						</a>
 						<p class="col-start-2 md:col-start-3 text-sm text-stone-600 dark:text-zinc-400 text-pretty">
-							{entry.note || STATUS_LABELS[entry.status]}
+							{noteOf(tool, pillar.id) || STATUS_LABELS[status]}
 						</p>
 					</div>
 				);
@@ -111,13 +287,47 @@ const specRows = [
 		</div>
 	</section>
 
+	{comparisons.length > 0 && (
+		<section class="mt-16">
+			<h2 class="eyebrow mb-6">[ {d.name} vs the alternatives ]</h2>
+			<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+				{comparisons.map((alt) => (
+					<a href={`/compare/${pairSlug(tool.id, alt.id)}/`} class="panel panel-hover p-4 group">
+						<span class="eyebrow block mb-2">Head to head</span>
+						<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance block">
+							{d.name} <span class="text-stone-400 dark:text-zinc-600 font-normal">vs</span> {alt.data.name}
+						</span>
+						<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 mt-2 block tabular-nums">{score.score}/9 · {scoreTool(alt).score}/9</span>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
+
+	{alternativesWithoutPage.length > 0 && (
+		<section class="mt-16">
+			<h2 class="eyebrow mb-6">[ Closest alternatives ]</h2>
+			<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+				{alternativesWithoutPage.map((alt) => (
+					<a href={`/tools/${alt.id}/`} class="panel panel-hover p-4 group">
+						<span class="eyebrow block mb-2">{TOOL_CATEGORY_LABELS[alt.data.category]}</span>
+						<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance block">
+							{alt.data.name}
+						</span>
+						<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 mt-2 block tabular-nums">{scoreTool(alt).score}/9</span>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
+
 	{related.length > 0 && (
-		<section class="mb-16">
-			<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ In Our Coverage ]</h2>
-			<div class="grid md:grid-cols-2 gap-8">
+		<section class="mt-16">
+			<h2 class="eyebrow mb-6">[ In our coverage ]</h2>
+			<div class="grid md:grid-cols-2 gap-6">
 				{related.map((r) => (
-					<a href={`/blog/${r.id}`} class="block group">
-						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">{r.data.title}</span>
+					<a href={`/blog/${r.id}/`} class="block group">
+						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">{r.data.title}</span>
 						<p class="text-sm text-stone-600 dark:text-zinc-400 mt-1 text-pretty">{r.data.description}</p>
 					</a>
 				))}
@@ -125,13 +335,23 @@ const specRows = [
 		</section>
 	)}
 
-	<div class="mt-24 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
-		<div class="text-center md:text-left">
-			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluating {tool.data.name}?</p>
-			<p class="text-sm text-stone-500 dark:text-zinc-400">Run it through the two-week trial protocol before you commit.</p>
+	<section class="mt-16">
+		<h2 class="eyebrow mb-6">[ FAQ ]</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
 		</div>
-		<a href="/blog/how-to-evaluate-ai-code-review-tools" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
-			Evaluation Guide [↗]
-		</a>
+	</section>
+
+	<div class="mt-20 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluating {d.name}?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Run it through the two-week trial protocol before you commit a team to it.</p>
+		</div>
+		<a href="/blog/how-to-evaluate-ai-code-review-tools/" class="btn-solid w-full md:w-auto">Evaluation guide [↗]</a>
 	</div>
 </Layout>

@@ -1,0 +1,35 @@
+---
+term: "Code review"
+definition: "The practice of having a change read by someone other than its author before it lands, to catch defects, spread knowledge, and hold a shared standard for the codebase."
+category: "review-practice"
+aliases: []
+related: ["pull-request", "ai-code-review", "blocking-comment", "code-owner", "review-latency"]
+relatedTools: ["coderabbit", "graphite", "kodus"]
+relatedPosts: ["what-is-ai-code-review", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Code review is a second pair of eyes on a change, before that change becomes everyone's problem. In most teams it happens on a pull request: the author proposes, one or more reviewers read, discussion happens on the diff, and the change lands when someone approves it.
+
+## What it is actually for
+
+Defect-catching is the reason people give, but it is rarely the biggest return. Research and practice both point the same way: review spreads knowledge of the codebase, enforces conventions that no linter encodes, and creates a moment where someone asks "should we be doing this at all?" — which is the only question that catches architectural mistakes before they cost a quarter.
+
+That matters for tooling decisions. A bot can plausibly take over defect-catching and convention enforcement. It cannot take over the knowledge-spreading, and a team that responds to an AI reviewer by reviewing each other's code less has traded away the part that mattered most.
+
+## Where it goes wrong
+
+- **Latency.** A review that arrives two days later arrives after the author has moved on, and gets a worse response.
+- **Rubber-stamping.** Approval as a formality, usually a symptom of oversized pull requests.
+- **Scope drift.** Reviewers relitigate design decisions that were settled before the branch existed.
+- **Style noise.** Human attention spent on things a formatter should own.
+
+The last two are exactly what automation should absorb, which is the honest case for an AI reviewer: not that it reviews better than your team, but that it clears the floor so your team reviews the things only they can.
+
+## Common mistakes
+
+- Adding a tool before fixing pull request size. Nothing improves review as much as smaller changes.
+- Requiring two approvals on everything, which mostly buys latency.
+- Treating review as a gate rather than a conversation.

@@ -51,6 +51,54 @@ const toolsCollection = defineCollection({
       note: z.string(),
     })),
     relatedPosts: z.array(z.string()).default([]),
+
+    // --- Optional enrichment. Every value here must be readable from the same
+    // primary sources as `pricing`/`selfHostedNote`; unset means "not verified".
+    /** Cheapest paid entry point, as printed by the vendor. e.g. "$24/dev/mo". */
+    startingPrice: z.string().optional(),
+    /** Whether a permanently free tier exists (trial-only counts as `trial`). */
+    freeTier: z.enum(['yes', 'limited', 'trial', 'no', 'unknown']).default('unknown'),
+    /** Languages the vendor documents. Empty = not published as a list. */
+    languages: z.array(z.string()).default([]),
+    /** Public source repository, when the tool has one. */
+    repoUrl: z.string().optional(),
+    /** Documentation root, used for "check our work" source links. */
+    docsUrl: z.string().optional(),
+  }),
+});
+
+export const GLOSSARY_CATEGORIES = ['review-practice', 'ai', 'quality', 'security', 'delivery', 'metrics'] as const;
+
+const glossaryCollection = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/glossary" }),
+  schema: z.object({
+    term: z.string(),
+    /** One or two sentences. Doubles as the meta description and the DefinedTerm description. */
+    definition: z.string(),
+    category: z.enum(GLOSSARY_CATEGORIES),
+    /** Other glossary slugs worth reading next. */
+    related: z.array(z.string()).default([]),
+    /** Tool slugs that implement or relate to the term. */
+    relatedTools: z.array(z.string()).default([]),
+    relatedPosts: z.array(z.string()).default([]),
+    /** Alternate spellings/acronyms — fed to search and to schema `alternateName`. */
+    aliases: z.array(z.string()).default([]),
+    updated: z.string(),
+  }),
+});
+
+const learnCollection = defineCollection({
+  loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/learn" }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    /** Ordering on the /learn hub. */
+    order: z.number(),
+    updated: z.coerce.date(),
+    faq: z.array(z.object({ q: z.string(), a: z.string() })).default([]),
+    relatedTools: z.array(z.string()).default([]),
+    relatedPosts: z.array(z.string()).default([]),
+    relatedTerms: z.array(z.string()).default([]),
   }),
 });
 
@@ -58,4 +106,6 @@ export const collections = {
   pillars: pillarsCollection,
   blog: blogCollection,
   tools: toolsCollection,
+  glossary: glossaryCollection,
+  learn: learnCollection,
 };

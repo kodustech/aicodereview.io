@@ -1,0 +1,28 @@
+---
+term: "Token"
+definition: "The unit language models read, write and bill in \u2014 roughly three-quarters of a word, or a few characters of code."
+category: "ai"
+aliases: []
+related: ["context-window", "byok", "inference-cost", "ai-code-review"]
+relatedTools: ["kodus", "what-the-diff", "qodo"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Models do not read characters or words; they read tokens. A token is a fragment produced by the tokeniser — often a whole short word, sometimes a few characters. For source code the ratio is worse than for prose because punctuation, indentation and identifiers fragment heavily.
+
+A useful rule of thumb: 1,000 tokens is roughly 750 words of English, or roughly 40 lines of code.
+
+## Why it matters when you are evaluating
+
+Tokens are the meter on the whole category. Every review consumes input tokens (the diff plus the context the tool gathered) and output tokens (the findings). Pricing models that look nothing alike — per seat, per review, per credit, per line of code — are all reselling the same underlying token spend, with different amounts of margin and different amounts of visibility.
+
+That is what makes economic transparency one of the [nine standards](/standards/07-economic-transparency/): if you cannot see token usage, you cannot predict what a busy month costs, and you cannot tell how much of your bill is model cost versus vendor margin.
+
+## Common mistakes
+
+- Comparing seat prices without asking what happens in a heavy release week.
+- Forgetting that re-reviews after each push multiply token spend on the same pull request.
+- Assuming a credit is a stable unit. Credits are a vendor abstraction over tokens, and the exchange rate can change.

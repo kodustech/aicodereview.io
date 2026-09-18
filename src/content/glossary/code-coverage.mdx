@@ -1,0 +1,30 @@
+---
+term: "Code coverage"
+definition: "The percentage of code executed by the test suite \u2014 a measure of what is tested, not of how well it is tested."
+category: "metrics"
+aliases: []
+related: ["cyclomatic-complexity", "ci-cd", "defect-escape-rate", "review-coverage"]
+relatedTools: ["codacy", "sonarqube", "deepsource", "qodo"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Instrument the code, run the tests, record which lines or branches executed. Line coverage is the common headline; branch coverage is stricter and more informative.
+
+## Why the number is weaker than it looks
+
+Coverage tells you code ran during a test. It does not tell you the test asserted anything meaningful about it. A suite that executes every line and asserts almost nothing reports high coverage and catches nothing — and this is not hypothetical, it is what happens whenever a coverage threshold becomes a target.
+
+The useful version is directional: coverage on *changed* code, in a pull request. "This change added forty lines and tested none of them" is actionable. "The repository is at 73%" is not.
+
+## Why it appears in review tooling
+
+Several quality platforms post coverage deltas as a pull request check, and it is one of the better automated review signals — objective, relevant to the change at hand, and hard to argue with.
+
+## Common mistakes
+
+- Setting a global percentage target, which produces tests written to touch lines rather than to verify behaviour.
+- Treating coverage as a proxy for quality in a report to stakeholders.
+- Ignoring which code is uncovered. Untested error handling matters more than an untested getter.

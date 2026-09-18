@@ -1,0 +1,30 @@
+---
+term: "SCA (software composition analysis)"
+definition: "Scanning a project's dependencies for known vulnerabilities and licence obligations, by matching the dependency tree against vulnerability databases."
+category: "security"
+aliases: ["Software composition analysis", "Dependency scanning"]
+related: ["cve", "supply-chain-attack", "sast", "secret-scanning"]
+relatedTools: ["snyk-code", "aikido", "semgrep"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Most of the code you ship, you did not write. SCA reads your lockfiles, resolves the full transitive dependency tree, and checks each package version against known advisories — plus, usually, the licences those packages carry.
+
+## Why it is the highest-yield security automation
+
+The findings are precise and actionable in a way most security tooling is not: a specific package, a specific version, a specific advisory, and usually a specific version to upgrade to. There is no judgement call about whether it is real.
+
+The hard part is not detection, it is triage. A large dependency tree will surface dozens of advisories, most in code paths you never call. Reachability analysis — checking whether the vulnerable function is actually invoked from your code — is what separates a useful SCA setup from a noisy one, and not every tool does it.
+
+## How it fits the review loop
+
+SCA belongs on the pull request, because the moment a dependency changes is the moment the decision is cheapest to reverse. A new transitive dependency arriving in a lockfile bump is exactly the change a human reviewer skims past.
+
+## Common mistakes
+
+- Reviewing lockfile diffs by eye.
+- Ignoring licences until a legal review blocks a release.
+- Auto-merging dependency bumps without any scan, which is how [supply-chain attacks](/glossary/supply-chain-attack/) land.

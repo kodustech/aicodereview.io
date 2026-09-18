@@ -1,0 +1,37 @@
+---
+term: "Self-hosting"
+definition: "Running a tool on infrastructure you control, so the code it analyses stays inside your network boundary rather than passing through a vendor's cloud."
+category: "delivery"
+aliases: ["On-premise", "On-prem"]
+related: ["byok", "inference-cost", "open-source", "supply-chain-attack"]
+relatedTools: ["kodus", "pr-agent", "sonarqube", "openreview", "coderabbit"]
+relatedPosts: ["self-hosted-ai-code-review", "open-source-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Self-hosting means the review engine runs on your infrastructure — Docker, a VM, a Kubernetes cluster — instead of a vendor's. It is a deployment question, not a licensing one.
+
+## The distinction that trips everyone up
+
+Four things get conflated, and the differences are what decide whether a tool passes a security review:
+
+- **Open source** — you can read the code. Says nothing about where it runs.
+- **Self-hosted** — you run the orchestration. Says nothing about where the model runs.
+- **[BYOK](/glossary/byok/)** — model calls bill to your provider account. Says nothing about whether the provider is inside your network.
+- **Fully in-boundary** — self-hosted orchestration *and* a model endpoint you control.
+
+A proprietary tool can offer self-hosting. An open-source tool can still route every review through a vendor API. If your requirement is that source code never leaves the network, only the last row satisfies it.
+
+## Why it matters when you are evaluating
+
+Self-hosting is frequently gated: available only on a custom enterprise contract, sometimes with a seat minimum. The directory records this per tool, because it is the row that eliminates candidates fastest for regulated teams.
+
+Count the real cost too. You are taking on deployment, upgrades, backups and the model bill, in exchange for control and usually a lower unit cost at volume.
+
+## Common mistakes
+
+- Accepting "we're SOC 2 certified" as an answer to a data-residency question.
+- Self-hosting the reviewer while pointing it at a public model API, then reporting the requirement as met.
+- Underestimating the upgrade treadmill on a fast-moving tool.

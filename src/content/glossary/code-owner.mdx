@@ -1,0 +1,32 @@
+---
+term: "Code owner"
+definition: "The person or team automatically requested for review on a given path, usually declared in a CODEOWNERS file at the repository root."
+category: "review-practice"
+aliases: ["CODEOWNERS"]
+related: ["code-review", "pull-request", "branch-protection", "review-latency"]
+relatedTools: ["graphite", "codacy", "kodus"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A CODEOWNERS file maps path patterns to reviewers. Touch `infra/terraform/**` and the platform team is added automatically; touch a payments module and the team that owns it gets pulled in whether or not the author thought to ask.
+
+## Why it exists
+
+It encodes the thing that otherwise lives in tribal memory: who has to look at this before it ships. In a growing organisation it is the difference between a change to a shared library being seen by the people who maintain it and being approved by whoever was online.
+
+## How it interacts with AI review
+
+Two ways worth checking in a tool. First, scoping: a good reviewer can apply different rules per path, the same way ownership differs per path — the rules for a payments module should not be the rules for an internal admin script. Second, sequencing: a bot that comments before the owning team is even requested changes the order of the conversation, sometimes usefully, sometimes by anchoring the discussion on nitpicks.
+
+## Why it matters when you are evaluating
+
+If you already run CODEOWNERS, ask whether the tool can inherit that structure or whether its rules are global-only. Per-path rule scoping is one of the clearest dividing lines between tools built for one repository and tools built for an organisation.
+
+## Common mistakes
+
+- Listing individuals rather than teams, which turns holidays into merge blockers.
+- Owning too much: a team assigned to half the repository stops reading carefully.
+- Assuming the bot respects ownership boundaries by default. Most do not unless configured.

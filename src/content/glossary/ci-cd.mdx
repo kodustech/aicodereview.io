@@ -1,0 +1,32 @@
+---
+term: "CI/CD"
+definition: "Continuous integration and continuous delivery: automatically building and testing every change, and keeping it in a state where it can be released."
+category: "delivery"
+aliases: ["Continuous integration", "Continuous delivery", "Pipeline"]
+related: ["continuous-integration", "merge-queue", "branch-protection", "deployment-frequency", "pre-commit-hook"]
+relatedTools: ["sonarqube", "codacy", "semgrep", "kodus"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+CI builds and tests every change as it arrives. CD keeps the result releasable, and in its fuller form releases it automatically. Together they are the machinery that makes small, frequent changes safe.
+
+## Why review tooling lives here
+
+An AI reviewer is usually wired in as a pipeline participant: it reacts to a pull request event and reports a status check. That means it inherits every pipeline concern — latency budget, flakiness, cost per run, and what happens when it fails.
+
+The failure mode people underestimate is latency. If a reviewer takes eight minutes and the rest of CI takes four, you have doubled the wait for feedback on every change, and developers will notice long before they notice the quality of the findings.
+
+## Where to run the review
+
+Three options, with different trade-offs. As a platform app reacting to webhooks: simplest, but the vendor holds the access. As a CI job: you control credentials and can gate on it naturally, but you pay pipeline minutes. As a pre-commit or local step: fastest feedback, no pipeline cost, but no shared record.
+
+Tools that support more than one are easier to fit into an existing pipeline without redesigning it.
+
+## Common mistakes
+
+- Adding a slow review step to the critical path before measuring its p90 latency.
+- Giving the pipeline broader repository permissions than the review actually needs.
+- Letting a flaky review check train the team to re-run until green.

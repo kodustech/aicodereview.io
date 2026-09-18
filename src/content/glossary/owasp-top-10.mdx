@@ -1,0 +1,30 @@
+---
+term: "OWASP Top 10"
+definition: "A periodically updated list of the ten most critical web application security risk categories, published by the Open Worldwide Application Security Project."
+category: "security"
+aliases: ["OWASP"]
+related: ["sast", "cwe", "dast", "sca"]
+relatedTools: ["semgrep", "snyk-code", "aikido", "sonarqube"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+The Top 10 is an awareness document: broad risk categories — broken access control, injection, security misconfiguration, vulnerable components — ranked by prevalence and impact across a large body of real application data.
+
+## Why "we cover the OWASP Top 10" is a weak claim
+
+Some categories are detectable by a scanner and some are not, and vendors rarely distinguish. Injection is pattern-shaped and SAST finds it well. Broken access control is the opposite: the missing authorisation check looks exactly like code that does not need one. No static rule reliably detects an absence of intent.
+
+So a tool can honestly claim Top 10 coverage while being unable to find the category that has ranked first for years. When a vendor makes the claim, ask which categories, detected by which engine, and with what evidence.
+
+## Where AI review has something to add
+
+The logic-shaped categories are the ones where a model has a genuine shot, because it can read the ticket, the surrounding handlers and the conventions the rest of the codebase follows, and notice that this endpoint does not check what its neighbours check. That is a real capability — and it is a judgement, not a guarantee, so it belongs alongside a scanner rather than instead of one.
+
+## Common mistakes
+
+- Treating the Top 10 as a checklist to be completed rather than a set of risk categories to be managed.
+- Assuming coverage of the API Top 10 from coverage of the web Top 10; they are separate lists.
+- Buying on the claim without testing a deliberately broken authorisation path.

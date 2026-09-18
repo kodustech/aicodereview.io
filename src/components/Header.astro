@@ -1,0 +1,75 @@
+---
+const { pathname } = Astro.url;
+const isActive = (href: string) => {
+	// In-page anchors (the directory lives on the home page) light up on home.
+	if (href.startsWith('/#')) return pathname === '/';
+	return href === '/' ? pathname === '/' : pathname.startsWith(href);
+};
+
+const links = [
+	{ href: '/#directory', label: 'Tools' },
+	{ href: '/compare/', label: 'Compare' },
+	{ href: '/blog/', label: 'Blog' },
+	{ href: '/learn/', label: 'Learn' },
+	{ href: '/glossary/', label: 'Glossary' },
+	{ href: '/standards/', label: 'Standards' },
+];
+---
+
+<header class="border-b hairline bg-stone-50/85 dark:bg-zinc-950/85 backdrop-blur-md sticky top-0 z-50">
+	<div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between gap-4">
+		<a href="/" class="font-mono text-sm tracking-tight font-bold text-stone-900 dark:text-zinc-100 uppercase shrink-0">
+			[ aicodereview<span class="text-accent-600 dark:text-accent-400">.io</span> ]
+		</a>
+
+		<nav class="hidden lg:flex items-center gap-6" aria-label="Main">
+			{links.map((link) => (
+				<a
+					href={link.href}
+					aria-current={isActive(link.href) ? 'page' : undefined}
+					class:list={[
+						'text-sm font-medium transition-colors',
+						isActive(link.href)
+							? 'text-stone-900 dark:text-zinc-100 underline decoration-accent-600 dark:decoration-accent-400 decoration-2 underline-offset-8'
+							: 'text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100',
+					]}
+				>{link.label}</a>
+			))}
+		</nav>
+
+		<div class="flex items-center gap-2">
+			<button
+				type="button"
+				data-search-open
+				class="inline-flex items-center gap-2 h-9 pl-3 pr-2 border border-stone-300 dark:border-zinc-700 text-stone-500 dark:text-zinc-400 hover:border-stone-500 dark:hover:border-zinc-500 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors"
+				aria-label="Search tools, posts and glossary"
+			>
+				<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+				<span class="hidden md:inline text-xs font-mono">Search</span>
+				<kbd class="hidden md:inline text-[10px] font-mono border border-stone-300 dark:border-zinc-700 px-1.5 py-0.5">/</kbd>
+			</button>
+
+			<button
+				type="button"
+				data-theme-toggle
+				class="h-9 w-9 inline-flex items-center justify-center border border-stone-300 dark:border-zinc-700 text-stone-500 dark:text-zinc-400 hover:border-stone-500 dark:hover:border-zinc-500 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors"
+				aria-label="Toggle dark mode"
+			>
+				<svg class="dark:hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+				<svg class="hidden dark:block" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+			</button>
+
+			<details class="lg:hidden relative">
+				<summary class="h-9 w-9 inline-flex items-center justify-center border border-stone-300 dark:border-zinc-700 text-stone-600 dark:text-zinc-400 cursor-pointer list-none [&::-webkit-details-marker]:hidden" aria-label="Open menu">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+				</summary>
+				<nav class="absolute right-0 top-11 w-56 panel shadow-lg p-2 flex flex-col" aria-label="Mobile">
+					{links.map((link) => (
+						<a href={link.href} class="px-3 py-2.5 text-sm font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">{link.label}</a>
+					))}
+					<a href="/about/" class="px-3 py-2.5 text-sm font-medium text-stone-700 dark:text-zinc-300 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors">About</a>
+				</nav>
+			</details>
+		</div>
+	</div>
+</header>

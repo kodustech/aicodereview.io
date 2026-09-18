@@ -1,0 +1,30 @@
+---
+term: "Pull request"
+definition: "A proposal to merge one branch into another, with a diff, a description and a discussion thread \u2014 the unit of work most review and AI review tooling operates on."
+category: "review-practice"
+aliases: ["PR", "Merge request", "MR"]
+related: ["code-review", "diff", "merge-queue", "branch-protection", "blocking-comment"]
+relatedTools: ["coderabbit", "graphite", "github-copilot-code-review"]
+relatedPosts: ["what-is-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A pull request (GitLab calls it a merge request) bundles a set of commits, a description of intent, and the conversation about whether it should land. Practically every AI code review tool is triggered by one: the webhook fires, the tool reads the diff, and the findings come back as comments on it.
+
+## Why size dominates everything
+
+The strongest predictor of review quality is not who reviews or what tool is installed — it is how large the change is. Reviewers read a 50-line diff carefully and a 1,500-line diff by scrolling. The same is true of tools, for a different reason: large diffs blow past the context budget, so the model sees less of the surrounding code exactly when it needs more of it.
+
+If your average pull request is enormous, an AI reviewer will underperform in a way that looks like a tool problem and is really a process problem.
+
+## Why it matters when you are evaluating
+
+Check how the tool behaves at the sizes your team actually produces. Specific things to look for: whether large diffs are truncated silently, whether re-reviews on each push cost the same as the first review, and whether the tool reviews incrementally (new commits only) or re-reads the whole change each time. The answer affects both quality and the bill.
+
+## Common mistakes
+
+- Measuring a tool on tidy example pull requests rather than the messy ones from your busiest repository.
+- Ignoring the description. Tools that check a change against its stated intent need that intent to exist.
+- Letting bot comments and human comments share one undifferentiated thread.

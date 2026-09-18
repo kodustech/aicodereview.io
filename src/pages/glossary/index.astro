@@ -1,0 +1,87 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getTerms, groupByLetter, GLOSSARY_CATEGORY_LABELS } from '../../lib/glossary';
+import { SITE_URL } from '../../lib/blog';
+
+const terms = await getTerms();
+const groups = groupByLetter(terms);
+const categories = [...new Set(terms.map((t) => t.data.category))];
+
+const title = `Code Review & AI Glossary: ${terms.length} Terms Defined (2026) | aicodereview.io`;
+const description = `Plain-English definitions for the ${terms.length} terms that come up when you evaluate AI code review tools — from BYOK and cyclomatic complexity to DORA metrics and SAST.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Glossary', url: `${SITE_URL}/glossary/` },
+	]}
+	schemas={[{
+		"@type": "DefinedTermSet",
+		"name": "AI Code Review Glossary",
+		"url": `${SITE_URL}/glossary/`,
+		"description": description,
+		"hasDefinedTerm": terms.map((term) => ({
+			"@type": "DefinedTerm",
+			"name": term.data.term,
+			"description": term.data.definition,
+			"url": `${SITE_URL}/glossary/${term.id}/`,
+		})),
+	}]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Glossary' }]} />
+
+	<section class="max-w-3xl mb-10">
+		<p class="eyebrow mb-4">Reference · {terms.length} terms</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			The code review glossary
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Vendors lean on vocabulary that sounds precise and often isn't. These are plain definitions of the terms that show up in AI code review pitches, docs and pricing pages —
+			each one with what it actually means when you are the buyer.
+		</p>
+	</section>
+
+	<nav aria-label="Jump to letter" class="flex flex-wrap gap-1.5 mb-10 pb-8 border-b hairline">
+		{groups.map((group) => (
+			<a href={`#letter-${group.letter}`} class="w-8 h-8 inline-flex items-center justify-center font-mono text-xs border border-stone-300 dark:border-zinc-700 text-stone-600 dark:text-zinc-400 hover:border-accent-600 hover:text-accent-700 dark:hover:text-accent-400 transition-colors">
+				{group.letter}
+			</a>
+		))}
+	</nav>
+
+	<div class="flex flex-wrap gap-2 mb-12">
+		{categories.map((cat) => (
+			<span class="chip pointer-events-none">
+				{GLOSSARY_CATEGORY_LABELS[cat] ?? cat}
+				<span class="tabular-nums opacity-60">{terms.filter((t) => t.data.category === cat).length}</span>
+			</span>
+		))}
+	</div>
+
+	{groups.map((group) => (
+		<section id={`letter-${group.letter}`} class="mb-12 scroll-mt-24">
+			<h2 class="text-3xl font-extrabold tracking-tighter text-stone-300 dark:text-zinc-700 mb-4">{group.letter}</h2>
+			<div class="grid md:grid-cols-2 gap-x-8">
+				{group.terms.map((term) => (
+					<a href={`/glossary/${term.id}/`} class="block border-b hairline py-3 group">
+						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">{term.data.term}</span>
+						<span class="block text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mt-0.5 line-clamp-2">{term.data.definition}</span>
+					</a>
+				))}
+			</div>
+		</section>
+	))}
+
+	<div class="mt-12 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Know the vocabulary — now check the claims</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Every tool in the directory is scored on what its own docs actually back up.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</div>
+</Layout>

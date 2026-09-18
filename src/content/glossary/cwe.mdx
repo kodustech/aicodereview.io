@@ -1,0 +1,30 @@
+---
+term: "CWE"
+definition: "Common Weakness Enumeration: a catalogue of the categories of software flaw \u2014 the class of mistake, rather than a specific instance of it."
+category: "security"
+aliases: ["Common Weakness Enumeration"]
+related: ["cve", "sast", "owasp-top-10", "static-analysis"]
+relatedTools: ["semgrep", "sonarqube", "snyk-code"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+CWE is a taxonomy: CWE-89 is SQL injection, CWE-79 is cross-site scripting, CWE-798 is use of hardcoded credentials. Static analysis tools map their rules to CWE identifiers so findings from different scanners can be compared.
+
+## Why it is the right unit for code review
+
+A [CVE](/glossary/cve/) tells you a library you depend on is vulnerable; you upgrade and move on. A CWE tells you a class of mistake your own code can make, which is the thing review can actually prevent. When you decide which rules to enforce, you are choosing CWEs.
+
+It is also the sane way to set policy. "No new CWE-89 or CWE-78 findings on this path" is a rule a team can hold. "No high-severity findings" is a rule that changes meaning every time a scanner updates its scoring.
+
+## Why it matters when you are evaluating
+
+Tools that map findings to CWE are easier to compare, easier to dedupe when two scanners flag the same issue, and easier to report on for compliance. Tools that invent their own severity taxonomy make all three harder.
+
+## Common mistakes
+
+- Using CWE and CVE interchangeably in policy documents.
+- Enabling a whole CWE category on a legacy codebase without a baseline, then drowning in existing findings.
+- Assuming coverage of the top CWEs implies coverage of the OWASP Top 10, which includes categories no scanner detects well.

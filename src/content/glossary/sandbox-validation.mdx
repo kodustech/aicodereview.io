@@ -1,0 +1,32 @@
+---
+term: "Sandbox validation"
+definition: "Running or testing a proposed change in an isolated environment to confirm a finding is real, instead of only reasoning about it."
+category: "quality"
+aliases: ["Runtime validation"]
+related: ["agentic-ai", "false-positive", "ci-cd", "hallucination"]
+relatedTools: ["cursor-bugbot", "qodo", "baz"]
+relatedPosts: ["best-ai-code-review-tools", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Instead of asserting that a change breaks something, the tool checks: it spins up an isolated environment, applies the change, runs the relevant tests or a generated reproduction, and reports what actually happened.
+
+## Why it is the most valuable capability in the category
+
+It converts a probabilistic finding into evidence. "This may throw when the input list is empty" is a claim a developer has to evaluate. "This throws when the input list is empty — here is the failing test" is a bug report.
+
+That difference attacks the two things that kill review tools at once: [false positives](/glossary/false-positive/) drop because unverifiable claims get filtered, and trust rises because the findings that survive carry proof.
+
+It is also the least common of the [nine standards](/standards/06-sandbox-validation/) across this directory, because it is genuinely hard — you need isolation, dependencies, fixtures, and a way to run untrusted code safely.
+
+## Why it matters when you are evaluating
+
+Distinguish real execution from claims that sound like it. "Pre-merge checks" often means running your existing CI, which you already had. The question is whether the tool generates and runs something to test its own hypothesis, and where that execution happens.
+
+## Common mistakes
+
+- Reading "runs your tests" as validation of the tool's own findings.
+- Not asking where the sandbox runs and what credentials it holds.
+- Ignoring the cost profile — execution plus multi-step reasoning is several times the price of a single-pass review.

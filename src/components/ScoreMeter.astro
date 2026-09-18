@@ -1,0 +1,28 @@
+---
+import { scoreCells, type ToolScore } from '../lib/score';
+
+interface Props {
+	score: ToolScore;
+	/** `sm` for cards and table rows, `lg` for the tool page header. */
+	size?: 'sm' | 'lg';
+	showLabel?: boolean;
+}
+
+const { score, size = 'sm', showLabel = true } = Astro.props;
+const cells = scoreCells(score);
+const cellSize = size === 'lg' ? 'w-3.5 h-6' : 'w-2 h-3.5';
+---
+
+<div class="flex items-center gap-2" title={`${score.score} of 9 standards documented — ${score.strengths.length} met, ${score.partials.length} partial, ${score.unknowns.length} undocumented`}>
+	<div class="flex gap-0.5" aria-hidden="true">
+		{cells.map((cell) => (
+			<span class:list={['cell', cellSize, `cell-${cell}`]}></span>
+		))}
+	</div>
+	{showLabel && (
+		<span class:list={['font-mono font-bold tabular-nums text-stone-900 dark:text-zinc-100', size === 'lg' ? 'text-xl' : 'text-xs']}>
+			{score.score}<span class="text-stone-400 dark:text-zinc-600 font-normal">/9</span>
+		</span>
+	)}
+	<span class="sr-only">Coverage score {score.score} out of 9</span>
+</div>

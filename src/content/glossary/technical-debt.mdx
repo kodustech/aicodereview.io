@@ -1,0 +1,30 @@
+---
+term: "Technical debt"
+definition: "The future cost of a shortcut taken now \u2014 deliberate or accidental \u2014 expressed as the extra work every later change has to carry."
+category: "quality"
+aliases: []
+related: ["code-smell", "code-churn", "cyclomatic-complexity", "code-duplication"]
+relatedTools: ["sonarqube", "codacy", "codeant", "deepsource"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+The metaphor is about interest, not mess. Debt is a decision to ship sooner in exchange for paying more on every subsequent change to that area. Deliberate debt with a plan to repay it is a legitimate engineering choice; the accidental kind is just a mess with a flattering name.
+
+## Why "technical debt hours" in a dashboard is mostly fiction
+
+Several platforms estimate remediation time by multiplying rule violations by a fixed per-violation cost. That produces a precise-looking number — "142 days of debt" — from an arithmetic exercise that knows nothing about your architecture, your team or which code actually changes.
+
+Use it as a relative signal across modules in the same codebase, if at all. Never present it to a non-engineering stakeholder as a real figure; it will be treated as one.
+
+## What actually correlates with pain
+
+Change frequency crossed with complexity. Code that is both hard to understand and touched constantly is where debt is really being paid, and both halves are measurable. That intersection is a far better refactoring backlog than any debt score.
+
+## Common mistakes
+
+- Reporting debt in currency to executives.
+- Scheduling a "debt sprint" for the highest scores rather than the highest-churn areas.
+- Treating every rule violation as debt, which makes the number meaningless.

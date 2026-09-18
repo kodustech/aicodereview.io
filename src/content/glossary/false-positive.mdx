@@ -1,0 +1,36 @@
+---
+term: "False positive"
+definition: "A finding that is reported but is not a real problem \u2014 the single biggest driver of whether a review tool survives contact with a team."
+category: "quality"
+aliases: []
+related: ["hallucination", "alert-fatigue", "sast", "nitpick", "signal-to-noise"]
+relatedTools: ["semgrep", "sonarqube", "coderabbit", "kodus"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A false positive is the tool crying wolf: a flagged vulnerability that is unreachable, a "bug" that the surrounding code already handles, a style complaint on a file your team deliberately formats differently.
+
+It is worth separating three things that get lumped together, because they have different fixes:
+
+- **Factually wrong** — the tool described the code incorrectly. Fix: better context.
+- **Factually right, irrelevant** — true but not something your team cares about. Fix: rules and configuration.
+- **Factually right, wrong severity** — real but flagged as blocking when it is a nitpick. Fix: severity tuning.
+
+## Why it matters
+
+The economics are brutal and asymmetric. A missed bug costs you once, later. A false positive costs you every time a developer reads it, and a handful of them teaches the whole team to stop reading. Tools do not usually fail because they find too little; they fail because the team stopped looking.
+
+## Why it matters when you are evaluating
+
+Measure it during the trial rather than trusting a published precision figure, which will have been measured on a codebase that is not yours. A workable protocol: for two weeks, tag every finding as acted-on, acknowledged-but-ignored, or wrong. Anything below roughly half acted-on will not survive.
+
+Then ask the follow-up that separates the tools: when you mark something wrong, does the tool learn, or will it say the same thing tomorrow?
+
+## Common mistakes
+
+- Optimising for recall in a trial and discovering the noise cost after rollout.
+- Counting nitpicks as successes because they are technically correct.
+- Letting the tool block merges before you know its false positive rate.

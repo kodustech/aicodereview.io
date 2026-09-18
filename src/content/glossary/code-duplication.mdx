@@ -1,0 +1,30 @@
+---
+term: "Code duplication"
+definition: "The same or near-identical logic existing in more than one place, so a change has to be made more than once to be made correctly."
+category: "quality"
+aliases: []
+related: ["code-smell", "technical-debt", "static-analysis", "linter"]
+relatedTools: ["sonarqube", "codacy", "qodana", "deepsource", "sourcery"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Detectors report it as a percentage of duplicated lines or blocks, usually with a configurable similarity threshold. Exact copies are easy to find; near-duplicates that drifted apart are harder and more dangerous, because they look intentional.
+
+## Why the cost is in the update, not the storage
+
+Duplication is not wasteful because of disk space. It is expensive because the next person to fix a bug will fix one copy, tests will pass, and the other copy will keep the bug — often for years. The failure is silent and shows up far from the change.
+
+## Why the metric needs judgement
+
+Not all duplication should be removed. Two services that happen to validate an email address the same way are not obviously better off sharing a library; coupling them creates a new failure mode to buy a saved function. The classic guidance — prefer duplication to the wrong abstraction — exists because premature deduplication produces code that is harder to change than the copies were.
+
+A duplication percentage cannot tell the difference. A reviewer can, and this is one of the places an AI reviewer with real repository context can genuinely help: it can point at the existing abstraction the author did not know about.
+
+## Common mistakes
+
+- Setting an organisation-wide duplication threshold.
+- Deduplicating test code aggressively, where explicitness usually beats reuse.
+- Ignoring near-duplicates because the detector's threshold was set too strict.

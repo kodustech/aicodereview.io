@@ -1,0 +1,156 @@
+---
+import ToolCard from './ToolCard.astro';
+import { TOOL_CATEGORY_LABELS, platformLabel, type Tool } from '../lib/tools';
+
+interface Props {
+	tools: Tool[];
+	/** Rendered above the grid; omit for pre-filtered category pages. */
+	filters?: boolean;
+	showRank?: boolean;
+	id?: string;
+}
+
+const { tools, filters = true, showRank = true, id = 'directory' } = Astro.props;
+
+const categories = [...new Set(tools.map((t) => t.data.category))];
+const platforms = [...new Set(tools.flatMap((t) => t.data.platforms))].sort();
+---
+
+<section id={id} class="scroll-mt-24">
+	{filters && (
+		<div class="mb-8 space-y-4" data-filters>
+			<div class="flex flex-col sm:flex-row gap-3">
+				<div class="relative flex-1">
+					<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-zinc-600"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+					<input
+						type="search"
+						data-filter-text
+						placeholder={`Filter ${tools.length} tools by name, platform or licence…`}
+						class="w-full pl-9 pr-3 py-2.5 text-sm border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-600 focus:outline-none focus:border-accent-600 dark:focus:border-accent-500"
+					/>
+				</div>
+				<select data-filter-sort class="px-3 py-2.5 text-sm font-mono border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-700 dark:text-zinc-300 focus:outline-none focus:border-accent-600">
+					<option value="score">Sort: coverage score</option>
+					<option value="name">Sort: A–Z</option>
+				</select>
+				<select data-filter-platform class="px-3 py-2.5 text-sm font-mono border border-stone-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-stone-700 dark:text-zinc-300 focus:outline-none focus:border-accent-600">
+					<option value="">All platforms</option>
+					{platforms.map((p) => <option value={p}>{platformLabel(p)}</option>)}
+				</select>
+			</div>
+
+			<div class="flex flex-wrap gap-2">
+				<button type="button" class="chip chip-active" data-filter-cat="">All <span class="tabular-nums opacity-60">{tools.length}</span></button>
+				{categories.map((cat) => (
+					<button type="button" class="chip" data-filter-cat={cat}>
+						{TOOL_CATEGORY_LABELS[cat]} <span class="tabular-nums opacity-60">{tools.filter((t) => t.data.category === cat).length}</span>
+					</button>
+				))}
+				<span class="w-px bg-stone-200 dark:bg-zinc-800 mx-1" aria-hidden="true"></span>
+				<button type="button" class="chip" data-filter-flag="oss">Open source</button>
+				<button type="button" class="chip" data-filter-flag="selfhosted">Self-hostable</button>
+				<button type="button" class="chip" data-filter-flag="freetier">Free tier</button>
+			</div>
+
+			<p class="eyebrow" data-filter-count aria-live="polite">Showing all {tools.length} tools</p>
+		</div>
+	)}
+
+	<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-tool-grid>
+		{tools.map((tool, i) => <ToolCard tool={tool} rank={showRank ? i + 1 : undefined} />)}
+	</div>
+
+	{filters && (
+		<p class="hidden mt-10 text-center text-sm text-stone-500 dark:text-zinc-500 font-mono" data-empty>
+			Nothing matches those filters. <button type="button" data-filter-reset class="underline underline-offset-4 hover:text-stone-900 dark:hover:text-zinc-100">Reset</button>
+		</p>
+	)}
+</section>
+
+<script is:inline>
+	(() => {
+		const root = document.querySelector('[data-filters]');
+		if (!root) return;
+		const grid = document.querySelector('[data-tool-grid]');
+		const cards = [...grid.querySelectorAll('[data-tool]')];
+		const countEl = root.querySelector('[data-filter-count]');
+		const empty = document.querySelector('[data-empty]');
+		const textInput = root.querySelector('[data-filter-text]');
+		const sortSelect = root.querySelector('[data-filter-sort]');
+		const platformSelect = root.querySelector('[data-filter-platform]');
+
+		const state = { text: '', category: '', platform: '', sort: 'score', flags: new Set() };
+
+		// The URL carries filter state so a filtered view can be linked or reloaded.
+		const params = new URLSearchParams(location.search);
+		if (params.get('q')) { state.text = params.get('q').toLowerCase(); textInput.value = params.get('q'); }
+		if (params.get('category')) state.category = params.get('category');
+
+		function matches(card) {
+			const d = card.dataset;
+			if (state.category && d.category !== state.category) return false;
+			if (state.platform && !d.platforms.split(' ').includes(state.platform)) return false;
+			if (state.flags.has('oss') && d.oss !== 'true') return false;
+			if (state.flags.has('selfhosted') && !['full', 'byok'].includes(d.selfhosted)) return false;
+			if (state.flags.has('freetier') && !['yes', 'limited'].includes(d.freetier)) return false;
+			if (state.text && !d.search.includes(state.text)) return false;
+			return true;
+		}
+
+		function apply() {
+			let shown = 0;
+			for (const card of cards) {
+				const ok = matches(card);
+				card.hidden = !ok;
+				if (ok) shown++;
+			}
+
+			// Score order is the rank the server already computed (score, then how
+			// much of the matrix is evidenced, then name) — re-deriving it here
+			// from the score alone would contradict the #rank badges on ties.
+			const sorted = [...cards].sort((a, b) =>
+				state.sort === 'name'
+					? a.dataset.name.localeCompare(b.dataset.name)
+					: Number(a.dataset.rank) - Number(b.dataset.rank)
+			);
+			sorted.forEach((card) => grid.appendChild(card));
+
+			countEl.textContent = shown === cards.length ? `Showing all ${cards.length} tools` : `Showing ${shown} of ${cards.length} tools`;
+			empty?.classList.toggle('hidden', shown > 0);
+		}
+
+		textInput.addEventListener('input', (e) => { state.text = e.target.value.trim().toLowerCase(); apply(); });
+		sortSelect.addEventListener('change', (e) => { state.sort = e.target.value; apply(); });
+		platformSelect.addEventListener('change', (e) => { state.platform = e.target.value; apply(); });
+
+		root.querySelectorAll('[data-filter-cat]').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				state.category = btn.dataset.filterCat;
+				root.querySelectorAll('[data-filter-cat]').forEach((b) => b.classList.toggle('chip-active', b === btn));
+				apply();
+			});
+		});
+
+		root.querySelectorAll('[data-filter-flag]').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const flag = btn.dataset.filterFlag;
+				state.flags.has(flag) ? state.flags.delete(flag) : state.flags.add(flag);
+				btn.classList.toggle('chip-active', state.flags.has(flag));
+				apply();
+			});
+		});
+
+		document.querySelector('[data-filter-reset]')?.addEventListener('click', () => {
+			state.text = ''; state.category = ''; state.platform = ''; state.flags.clear();
+			textInput.value = ''; platformSelect.value = '';
+			root.querySelectorAll('[data-filter-flag]').forEach((b) => b.classList.remove('chip-active'));
+			root.querySelectorAll('[data-filter-cat]').forEach((b) => b.classList.toggle('chip-active', b.dataset.filterCat === ''));
+			apply();
+		});
+
+		if (state.category) {
+			root.querySelectorAll('[data-filter-cat]').forEach((b) => b.classList.toggle('chip-active', b.dataset.filterCat === state.category));
+		}
+		apply();
+	})();
+</script>

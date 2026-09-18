@@ -1,0 +1,30 @@
+---
+term: "Code smell"
+definition: "A surface pattern that suggests a deeper design problem \u2014 not a bug, but a signal worth investigating."
+category: "quality"
+aliases: []
+related: ["technical-debt", "cyclomatic-complexity", "linter", "code-duplication", "nitpick"]
+relatedTools: ["sonarqube", "sourcery", "codacy", "qodana"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Long methods, large classes, long parameter lists, duplicated blocks, feature envy, shotgun surgery. The vocabulary comes from refactoring practice, and the point of it is that these patterns correlate with future pain even though the code works today.
+
+## Why it is a signal and not a verdict
+
+A smell is a hypothesis. A four-hundred-line function in a hot path that nobody has touched in three years is probably fine; the same function in a module that changes weekly is a liability. Whether it matters depends on change frequency, blast radius and who has to maintain it — none of which a static rule can see.
+
+That is why smell counts make poor quality gates and good prioritisation inputs, particularly when combined with [code churn](/glossary/code-churn/): smelly code that changes often is where the money is.
+
+## How AI reviewers change the picture
+
+A model can reason about a smell in context — it can note that this duplication mirrors an existing abstraction three files away, which a pattern matcher cannot. It can also generate an enormous volume of confident design opinions nobody asked for, which is how a reviewer becomes [noise](/glossary/signal-to-noise/).
+
+## Common mistakes
+
+- Treating smell counts as a quality score to drive to zero.
+- Refactoring the smelliest code rather than the most frequently changed.
+- Letting design opinions block merges.

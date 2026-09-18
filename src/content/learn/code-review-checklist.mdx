@@ -1,0 +1,107 @@
+---
+title: "A code review checklist that reviewers actually use"
+description: "What to look for in a review, in priority order \u2014 correctness, security, design, tests, operability \u2014 and which items to hand to automation instead."
+order: 3
+updated: "2026-09-17"
+faq: [{"q": "What should you look for first in a code review?", "a": "Intent, before implementation. Read the description and the ticket, then ask whether the change solves the stated problem and whether that is the right problem. A correct implementation of the wrong thing is the most expensive defect review can catch, and it is invisible if you start by reading the diff line by line."}, {"q": "Should reviewers check formatting and style?", "a": "No. Anything a formatter or linter can decide should be decided by one, automatically, before the change reaches review. Human attention spent on style is attention not spent on correctness, and style comments train authors to skim review feedback."}, {"q": "How do you review a large pull request?", "a": "Ideally you send it back and ask for it to be split, which is the only response that solves the underlying problem. When that is not possible, review it in passes rather than linearly: one pass on intent and structure, one on the highest-risk files, one on tests. Say explicitly in your approval what you did and did not read."}, {"q": "What is the most commonly missed item in code review?", "a": "Error and failure paths. Reviewers follow the happy path because the author wrote it first and described it in the pull request. The bugs that reach production disproportionately live in the branches nobody read: what happens on timeout, on partial write, on empty input, on retry."}]
+relatedTools: ["coderabbit", "semgrep", "kodus", "sonarqube"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "ai-code-review-vs-static-analysis"]
+relatedTerms: ["code-review", "blocking-comment", "nitpick", "sast", "secret-scanning", "code-coverage", "blast-radius"]
+---
+
+Most code review checklists fail for the same reason: they list forty items of equal weight, so reviewers either ignore them or grind through mechanically. A useful checklist is short, ordered by what actually costs you when missed, and explicit about what a human should not be checking at all.
+
+This is that list.
+
+## Before you start: what a machine should have already checked
+
+If a reviewer is spending attention on any of these, the tooling is wrong, not the reviewer:
+
+- Formatting and style — a formatter's job.
+- Lint rules and obvious anti-patterns — a [linter's](/glossary/linter/) job.
+- Committed secrets — a [scanner's](/glossary/secret-scanning/) job, and ideally before the commit exists.
+- Known-vulnerable dependencies — a dependency scanner's job.
+- Whether the tests pass — CI's job.
+- Whether changed code has test coverage — a coverage check's job.
+
+Everything below assumes that layer exists. If it does not, build it before you optimise the human part.
+
+## 1. Intent — is this solving the right problem?
+
+Start here, before reading a single line of the diff.
+
+- Does the description explain what changed and why? If not, ask, and stop.
+- Does the change match the linked ticket or issue?
+- Is the problem worth solving in this way, or is there a smaller change that gets most of the value?
+- Does it do one thing? A change that fixes a bug, renames a module and adds a feature should be three pull requests.
+
+This is the most valuable pass, and the one most often skipped. A correct implementation of the wrong requirement passes every other check on this list.
+
+## 2. Correctness — does it do what it claims?
+
+- **Edge cases.** Empty collections, nulls, zero, negative numbers, very large inputs, the boundary of every range.
+- **Error paths.** What happens when the call fails, times out, or returns partial data? This is where escaped bugs cluster, because reviewers follow the path the author narrated.
+- **Concurrency.** Shared mutable state, assumptions about ordering, non-idempotent operations that will be retried.
+- **Resource handling.** Connections, file handles and locks released on every path, including the error ones.
+- **Off-by-one and boundary logic.** Slower to read than to skim, and worth the slowdown.
+
+## 3. Security — what does this expose?
+
+Scale this section to [blast radius](/glossary/blast-radius/). A change to an internal dashboard does not need what a change to an authentication path needs.
+
+- **Input handling.** Is user-controlled data validated before it reaches a query, a command, a template, a path?
+- **Authorisation.** Does this endpoint check that the caller may act on *this* resource, not merely that they are logged in? Scanners are weak here; reviewers are not.
+- **Secrets and configuration.** Nothing hardcoded, nothing new in logs.
+- **Data exposure.** Does a new response field leak something — an internal ID, another user's data, a stack trace?
+- **Dependencies.** Is a new package justified, maintained, and appropriately licensed?
+
+## 4. Design — will this hold?
+
+- Does it follow the patterns already in this codebase, or introduce a competing one?
+- Is the abstraction earning its keep, or is it indirection added speculatively?
+- Is there [duplication](/glossary/code-duplication/) of something that already exists three files away?
+- Are the interfaces sensible from the caller's side?
+- Is this reversible if it turns out to be wrong?
+
+Design comments are the ones most likely to become unproductive arguments. Two guardrails: say whether it is blocking, and if the disagreement is fundamental, take it out of the pull request and into a conversation.
+
+## 5. Tests — do they prove anything?
+
+- Do the tests fail if the behaviour is wrong? A surprising number do not.
+- Do they cover the error paths, not just the happy one?
+- Are they readable as documentation of intended behaviour?
+- Any flakiness introduced — timing assumptions, shared fixtures, ordering dependencies?
+- For a bug fix: is there a test that fails without the fix?
+
+That last one is the highest-value test question in review, and the easiest to check.
+
+## 6. Operability — what happens at 3am?
+
+The section most checklists omit entirely.
+
+- Will a failure here be visible? Are errors logged with enough context to diagnose, and without leaking data?
+- Are new metrics or alerts needed?
+- Is there a migration? Is it reversible, and does it work while both versions of the code are running?
+- Is the change behind a flag if it is risky?
+- Does anything here change performance characteristics on a hot path?
+
+## 7. Documentation — only where it decays
+
+- Public API changes reflected in the docs.
+- The README updated if setup steps changed.
+- Comments that explain *why*, not *what*. Comments restating the code are noise that goes stale.
+- A changelog entry if you keep one.
+
+## Using it without turning review into a chore
+
+Do not walk the list linearly on every change. Use it as a prioritisation order: always do intent and correctness, scale security and design to risk, and let automation own everything in the first section.
+
+For elevated-tier changes — security paths, shared libraries, migrations — it is worth pasting the relevant sections into the pull request template so the author self-checks first. Author self-review before requesting others is one of the cheapest quality improvements available.
+
+## Where an AI reviewer fits on this list
+
+Automated review is genuinely useful on sections 2, 5 and parts of 7: edge cases, error paths, missing tests, stale documentation. These are pattern-shaped and high-volume, exactly the work that exhausts human reviewers first.
+
+It is weakest on section 1 and most of section 4, because both depend on context that is not in the repository — what the team decided last quarter, what the customer actually asked for, what you are planning to build next.
+
+Which is the useful division of labour: let the tool handle the list, so the reviewer can handle the judgement.

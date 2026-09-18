@@ -13,6 +13,14 @@ export default defineConfig({
   // like /api/posts, become Vercel serverless functions.
   output: 'static',
   adapter: vercel(),
+  // The home page is now the directory itself; /tools kept its authority by
+  // pointing at it rather than serving a second copy of the same list.
+  // /tools is a 301 to the home page, which is now the directory itself.
+  // Astro collapses the trailing-slash spelling into the same route, so the
+  // indexed /tools/ URL is covered by public/tools/index.html instead.
+  redirects: {
+    '/tools': '/',
+  },
   vite: {
     plugins: [tailwindcss()]
   },

@@ -1,0 +1,246 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ScoreMeter from '../../components/ScoreMeter.astro';
+import {
+	getRankedTools,
+	scoreTool,
+	monogram,
+	monogramHue,
+	priceLabel,
+	TOOL_CATEGORY_LABELS,
+	SELF_HOSTED_SHORT,
+	STATUS_GLYPHS,
+	STATUS_LABELS,
+	SPONSOR_SLUG,
+} from '../../lib/tools';
+import { buildPairs, specRows, pillarRows, verdict, compareFaq, pairSlug } from '../../lib/compare';
+import { getPublishedPosts, SITE_URL } from '../../lib/blog';
+
+export async function getStaticPaths() {
+	const tools = await getRankedTools();
+	const posts = await getPublishedPosts();
+	const pairs = buildPairs(tools, new Set(posts.map((p) => p.id)));
+	return pairs.map((pair) => ({
+		params: { pair: pair.slug },
+		props: { a: pair.a, b: pair.b, tools },
+	}));
+}
+
+const { a, b, tools } = Astro.props;
+const pillars = (await getCollection('pillars')).sort((x, y) => x.data.order - y.data.order);
+const pillarTitles = Object.fromEntries(pillars.map((p) => [p.id, p.data.title]));
+
+const sa = scoreTool(a);
+const sb = scoreTool(b);
+const specs = specRows(a, b);
+const rows = pillarRows(a, b);
+const v = verdict(a, b);
+const faq = compareFaq(a, b);
+const lastVerified = [a.data.lastVerified, b.data.lastVerified].sort().at(-1);
+
+const slug = pairSlug(a.id, b.id);
+const url = `${SITE_URL}/compare/${slug}/`;
+
+// Other comparisons involving either tool, for lateral navigation.
+const allPairs = buildPairs(tools, new Set((await getPublishedPosts()).map((p) => p.id)));
+const nearby = allPairs
+	.filter((p) => p.slug !== slug && (p.a.id === a.id || p.b.id === a.id || p.a.id === b.id || p.b.id === b.id))
+	.slice(0, 6);
+
+const title = `${a.data.name} vs ${b.data.name} (2026): Full Comparison | aicodereview.io`;
+const description = `${a.data.name} (${sa.score}/9) vs ${b.data.name} (${sb.score}/9) compared on pricing, licensing, self-hosting, model control and all 9 AI code review standards. Sourced, verified ${lastVerified}.`;
+
+const columns = [
+	{ tool: a, score: sa },
+	{ tool: b, score: sb },
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Compare', url: `${SITE_URL}/compare/` },
+		{ name: `${a.data.name} vs ${b.data.name}`, url },
+	]}
+	schemas={[
+		{
+			"@type": "FAQPage",
+			"mainEntity": faq.map((item) => ({ "@type": "Question", "name": item.q, "acceptedAnswer": { "@type": "Answer", "text": item.a } })),
+		},
+		{
+			"@type": "ItemList",
+			"name": `${a.data.name} vs ${b.data.name}`,
+			"numberOfItems": 2,
+			"itemListElement": columns.map((col, i) => ({
+				"@type": "ListItem",
+				"position": i + 1,
+				"url": `${SITE_URL}/tools/${col.tool.id}/`,
+				"name": col.tool.data.name,
+			})),
+		},
+	]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Compare', href: '/compare/' }, { name: `${a.data.name} vs ${b.data.name}` }]} />
+
+	<section class="mb-10">
+		<p class="eyebrow mb-4">Head to head · Verified {lastVerified}</p>
+		<h1 class="text-3xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			{a.data.name} <span class="text-stone-400 dark:text-zinc-600">vs</span> {b.data.name}
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+			{v.headline} Everything below comes from each vendor's public documentation, mapped against the same
+			<a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2"> 9 standards</a>.
+		</p>
+	</section>
+
+	<section class="grid md:grid-cols-2 gap-4 mb-14">
+		{columns.map(({ tool, score }) => {
+			const hue = monogramHue(tool.id);
+			return (
+				<div class="panel p-5">
+					<div class="flex items-start gap-3 mb-4">
+						<span
+							class="shrink-0 w-11 h-11 border flex items-center justify-center font-mono text-sm font-bold"
+							style={`border-color: hsl(${hue} 45% 55% / 0.5); background: hsl(${hue} 60% 55% / 0.10); color: hsl(${hue} 45% 38%);`}
+							aria-hidden="true"
+						>{monogram(tool.data.name)}</span>
+						<div class="min-w-0">
+							<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 leading-tight">
+								<a href={`/tools/${tool.id}/`} class="hover:underline underline-offset-4 decoration-accent-600 decoration-2">{tool.data.name}</a>
+								{tool.id === SPONSOR_SLUG && <span class="ml-2 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600 border border-stone-300 dark:border-zinc-700 px-1">Sponsor</span>}
+							</h2>
+							<p class="eyebrow mt-0.5 normal-case tracking-normal">{TOOL_CATEGORY_LABELS[tool.data.category]}</p>
+						</div>
+					</div>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">{tool.data.tagline}</p>
+					<ScoreMeter score={score} size="lg" />
+					<dl class="mt-4 pt-4 border-t hairline grid grid-cols-2 gap-y-2 text-xs">
+						<dt class="eyebrow">Licence</dt>
+						<dd class="text-right text-stone-800 dark:text-zinc-200">{tool.data.openSource ? 'Open source' : 'Proprietary'}</dd>
+						<dt class="eyebrow">Self-hosting</dt>
+						<dd class="text-right text-stone-800 dark:text-zinc-200">{SELF_HOSTED_SHORT[tool.data.selfHosted]}</dd>
+						<dt class="eyebrow">From</dt>
+						<dd class="text-right text-stone-800 dark:text-zinc-200">{priceLabel(tool)}</dd>
+					</dl>
+				</div>
+			);
+		})}
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-5">The short answer</h2>
+		<div class="space-y-4 max-w-3xl">
+			{v.paragraphs.map((p) => <p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{p}</p>)}
+		</div>
+		<div class="grid md:grid-cols-2 gap-4 mt-8">
+			<div class="border-l-2 border-accent-600 dark:border-accent-500 pl-5 py-2">
+				<p class="text-stone-800 dark:text-zinc-200 text-pretty leading-relaxed">{v.pickA}</p>
+			</div>
+			<div class="border-l-2 border-stone-300 dark:border-zinc-700 pl-5 py-2">
+				<p class="text-stone-800 dark:text-zinc-200 text-pretty leading-relaxed">{v.pickB}</p>
+			</div>
+		</div>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-5">Side by side</h2>
+		<div class="overflow-x-auto -mx-6 px-6">
+			<table class="w-full min-w-[42rem] text-sm border-collapse">
+				<thead>
+					<tr class="border-b-2 border-stone-900 dark:border-zinc-100">
+						<th scope="col" class="text-left py-3 pr-4 eyebrow w-40">Fact</th>
+						<th scope="col" class="text-left py-3 pr-4 eyebrow">{a.data.name}</th>
+						<th scope="col" class="text-left py-3 eyebrow">{b.data.name}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{specs.map((row) => (
+						<tr class="border-b hairline align-top">
+							<th scope="row" class="py-3 pr-4 text-left eyebrow font-normal whitespace-nowrap">
+								{row.label}
+								{row.differs && <span class="ml-1.5 text-accent-600 dark:text-accent-400" title="These differ" aria-label="These differ">•</span>}
+							</th>
+							<td class="py-3 pr-4 text-stone-700 dark:text-zinc-300 text-pretty">{row.a}</td>
+							<td class="py-3 text-stone-700 dark:text-zinc-300 text-pretty">{row.b}</td>
+						</tr>
+					))}
+				</tbody>
+			</table>
+		</div>
+		<p class="eyebrow mt-3"><span class="text-accent-600 dark:text-accent-400">•</span> marks a row where the two genuinely differ.</p>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">All 9 standards</h2>
+		<p class="text-sm text-stone-500 dark:text-zinc-400 mb-6 max-w-2xl text-pretty">
+			<span class="font-mono">✓ documented · ~ partial · ✗ not offered · ? undocumented</span>. The arrow marks which tool documents more on that standard — it is not a quality judgement, only a coverage one.
+		</p>
+		<div class="border-t hairline">
+			{rows.map((row) => (
+				<div class="py-4 border-b hairline">
+					<div class="flex items-baseline justify-between gap-4 mb-2">
+						<a href={`/standards/${row.id}/`} class="font-bold text-sm text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">
+							{pillarTitles[row.id] ?? row.short}
+						</a>
+						<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 shrink-0">
+							{row.edge === 'tie' ? 'even' : `${row.edge === 'a' ? a.data.name : b.data.name} ↑`}
+						</span>
+					</div>
+					<div class="grid md:grid-cols-2 gap-x-8 gap-y-2">
+						{([['a', a], ['b', b]] as const).map(([key, tool]) => (
+							<div class="flex gap-3">
+								<span class:list={['font-mono font-bold shrink-0', `status-${row[key].status}`]} title={STATUS_LABELS[row[key].status]}>
+									{STATUS_GLYPHS[row[key].status]}
+								</span>
+								<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">
+									<span class="md:hidden font-bold text-stone-900 dark:text-zinc-100">{tool.data.name}: </span>
+									{row[key].note || STATUS_LABELS[row[key].status]}
+								</p>
+							</div>
+						))}
+					</div>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-6">{a.data.name} vs {b.data.name}: FAQ</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	{nearby.length > 0 && (
+		<section class="mb-14 pt-10 border-t hairline">
+			<h2 class="eyebrow mb-5">[ Related comparisons ]</h2>
+			<ul class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
+				{nearby.map((p) => (
+					<li class="border-b hairline py-2">
+						<a href={`/compare/${p.slug}/`} class="text-sm text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600">
+							{p.a.data.name} vs {p.b.data.name}
+						</a>
+					</li>
+				))}
+			</ul>
+		</section>
+	)}
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Neither is an obvious fit?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Filter all {tools.length} tools by the constraint that actually rules candidates out.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</div>
+</Layout>

@@ -1,0 +1,157 @@
+---
+import { render } from 'astro:content';
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getGuides, getTerms } from '../../lib/glossary';
+import { getRankedTools, scoreTool } from '../../lib/tools';
+import { getPublishedPosts, SITE_URL, formatDate, readingTime } from '../../lib/blog';
+
+export async function getStaticPaths() {
+	const guides = await getGuides();
+	return guides.map((guide, i) => ({
+		params: { slug: guide.id },
+		props: { guide, prev: guides[i - 1], next: guides[i + 1] },
+	}));
+}
+
+const { guide, prev, next } = Astro.props;
+const { Content, headings } = await render(guide);
+const d = guide.data;
+
+const terms = (await getTerms()).filter((t) => d.relatedTerms.includes(t.id));
+const tools = (await getRankedTools()).filter((t) => d.relatedTools.includes(t.id));
+const posts = (await getPublishedPosts()).filter((p) => d.relatedPosts.includes(p.id));
+
+const toc = headings.filter((h) => h.depth === 2);
+const url = `${SITE_URL}/learn/${guide.id}/`;
+const title = `${d.title} | aicodereview.io`;
+
+const schemas: Record<string, unknown>[] = [
+	{
+		"@type": "Article",
+		"headline": d.title,
+		"description": d.description,
+		"url": url,
+		"dateModified": d.updated.toISOString(),
+		"datePublished": d.updated.toISOString(),
+		"author": { "@type": "Organization", "name": "aicodereview.io Editorial", "url": `${SITE_URL}/about/` },
+		"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": SITE_URL },
+		"mainEntityOfPage": { "@type": "WebPage", "@id": url },
+	},
+];
+
+if (d.faq.length > 0) {
+	schemas.push({
+		"@type": "FAQPage",
+		"mainEntity": d.faq.map((item) => ({ "@type": "Question", "name": item.q, "acceptedAnswer": { "@type": "Answer", "text": item.a } })),
+	});
+}
+---
+
+<Layout
+	title={title}
+	description={d.description}
+	width="wide"
+	ogType="article"
+	article={{ pubDate: d.updated, updatedDate: d.updated }}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Learn', url: `${SITE_URL}/learn/` },
+		{ name: d.title, url },
+	]}
+	schemas={schemas}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Learn', href: '/learn/' }, { name: d.title }]} />
+
+	<div class="grid lg:grid-cols-12 gap-12">
+		<article class="lg:col-span-8">
+			<p class="eyebrow mb-4">Guide · {readingTime(guide.body)} min read · Updated {formatDate(d.updated)}</p>
+			<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+				{d.title}
+			</h1>
+			<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-12">{d.description}</p>
+
+			<div class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:decoration-accent-600 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed prose-li:text-pretty prose-table:text-sm prose-th:font-mono prose-th:uppercase prose-th:tracking-wider prose-th:text-xs">
+				<Content />
+			</div>
+
+			{d.faq.length > 0 && (
+				<section class="mt-16 pt-10 border-t hairline">
+					<h2 class="eyebrow mb-6">[ FAQ ]</h2>
+					<div class="space-y-7">
+						{d.faq.map((item) => (
+							<div>
+								<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+								<p class="text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+							</div>
+						))}
+					</div>
+				</section>
+			)}
+
+			<nav class="mt-16 pt-10 border-t hairline grid sm:grid-cols-2 gap-4" aria-label="Guide navigation">
+				{prev ? (
+					<a href={`/learn/${prev.id}/`} class="panel panel-hover p-4 group">
+						<span class="eyebrow block mb-1">← Previous</span>
+						<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">{prev.data.title}</span>
+					</a>
+				) : <span></span>}
+				{next && (
+					<a href={`/learn/${next.id}/`} class="panel panel-hover p-4 group sm:text-right">
+						<span class="eyebrow block mb-1">Next →</span>
+						<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">{next.data.title}</span>
+					</a>
+				)}
+			</nav>
+		</article>
+
+		<aside class="lg:col-span-4 lg:sticky lg:top-24 lg:self-start space-y-8">
+			{toc.length > 2 && (
+				<nav class="panel p-5" aria-label="On this page">
+					<h2 class="eyebrow mb-3">On this page</h2>
+					<ul class="space-y-2">
+						{toc.map((h) => (
+							<li>
+								<a href={`#${h.slug}`} class="text-sm text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 text-pretty leading-snug block">{h.text}</a>
+							</li>
+						))}
+					</ul>
+				</nav>
+			)}
+
+			{terms.length > 0 && (
+				<div class="panel p-5">
+					<h2 class="eyebrow mb-3">Terms used here</h2>
+					<div class="flex flex-wrap gap-1.5">
+						{terms.map((t) => <a href={`/glossary/${t.id}/`} class="chip">{t.data.term}</a>)}
+					</div>
+				</div>
+			)}
+
+			{tools.length > 0 && (
+				<div class="panel p-5">
+					<h2 class="eyebrow mb-3">Tools mentioned</h2>
+					<ul class="space-y-2">
+						{tools.map((tool) => (
+							<li class="flex items-baseline justify-between gap-2">
+								<a href={`/tools/${tool.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4">{tool.data.name}</a>
+								<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums">{scoreTool(tool).score}/9</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+
+			{posts.length > 0 && (
+				<div class="panel p-5">
+					<h2 class="eyebrow mb-3">Related reading</h2>
+					<ul class="space-y-2.5">
+						{posts.map((p) => (
+							<li><a href={`/blog/${p.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 text-pretty leading-snug block">{p.data.title}</a></li>
+						))}
+					</ul>
+				</div>
+			)}
+		</aside>
+	</div>
+</Layout>

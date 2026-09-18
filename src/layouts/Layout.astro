@@ -1,5 +1,8 @@
 ---
 import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import SearchOverlay from '../components/SearchOverlay.astro';
 
 interface Props {
 	title: string;
@@ -8,11 +11,34 @@ interface Props {
 	ogType?: 'website' | 'article';
 	article?: { pubDate: Date; updatedDate?: Date; tags?: string[] };
 	schemas?: Record<string, unknown>[];
+	/** `prose` for reading pages, `wide` for the directory and comparison grids. */
+	width?: 'prose' | 'wide';
 }
 
-const canonicalURL = new URL(Astro.url.pathname, 'https://aicodereview.io');
-const { title, description = "The 2026 engineering standard for evaluating AI Code Review tools. 9 pillars every AI code reviewer must meet to ship faster, safer code.", breadcrumbs, ogType = 'website', article, schemas = [] } = Astro.props;
-const ogImage = "https://aicodereview.io/og-image.png";
+const SITE = 'https://aicodereview.io';
+const canonicalURL = new URL(Astro.url.pathname, SITE);
+const {
+	title,
+	description = "Every AI code review tool, mapped against one public 9-pillar standard: pricing, licensing, self-hosting and model control, each with a source and a verification date.",
+	breadcrumbs,
+	ogType = 'website',
+	article,
+	schemas = [],
+	width = 'prose',
+} = Astro.props;
+const ogImage = `${SITE}/og-image.png`;
+const mainWidth = width === 'wide' ? 'max-w-6xl' : 'max-w-4xl';
+
+const publisher = {
+	"@type": "Organization",
+	"@id": `${SITE}/#organization`,
+	"name": "aicodereview.io",
+	"url": SITE,
+	"description": "An independent, sponsor-funded standard and directory for AI code review tools.",
+	"logo": { "@type": "ImageObject", "url": `${SITE}/favicon-192x192.png` },
+	"sameAs": ["https://github.com/kodustech/aicodereview.io"],
+	"funder": { "@type": "Organization", "name": "Kodus", "url": "https://kodus.io" },
+};
 ---
 
 <!doctype html>
@@ -20,6 +46,7 @@ const ogImage = "https://aicodereview.io/og-image.png";
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 		<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -49,15 +76,21 @@ const ogImage = "https://aicodereview.io/og-image.png";
 		<!-- Schema.org JSON-LD -->
 		<script type="application/ld+json" set:html={JSON.stringify({
 			"@context": "https://schema.org",
-			"@type": "WebSite",
-			"name": "AI Code Review Standards",
-			"url": "https://aicodereview.io",
-			"description": "The 2026 engineering standard for evaluating AI Code Review tools. 9 pillars every AI code reviewer must meet to ship faster, safer code.",
-			"publisher": {
-				"@type": "Organization",
-				"name": "aicodereview.io",
-				"url": "https://aicodereview.io/about/"
-			}
+			"@graph": [
+				publisher,
+				{
+					"@type": "WebSite",
+					"@id": `${SITE}/#website`,
+					"name": "aicodereview.io",
+					"url": SITE,
+					"publisher": { "@id": `${SITE}/#organization` },
+					"potentialAction": {
+						"@type": "SearchAction",
+						"target": { "@type": "EntryPoint", "urlTemplate": `${SITE}/tools/?q={search_term_string}` },
+						"query-input": "required name=search_term_string"
+					}
+				}
+			]
 		})} />
 		{breadcrumbs && (
 			<script type="application/ld+json" set:html={JSON.stringify({
@@ -75,12 +108,21 @@ const ogImage = "https://aicodereview.io/og-image.png";
 			<script type="application/ld+json" set:html={JSON.stringify({ "@context": "https://schema.org", ...schema })} />
 		))}
 		<link rel="alternate" type="application/rss+xml" title="aicodereview.io blog" href="/rss.xml" />
-		
+
 		<!-- Fonts: Space Grotesk & JetBrains Mono -->
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-		
+
+		<!-- Theme: resolved before first paint to avoid a flash. -->
+		<script is:inline>
+			(() => {
+				const stored = localStorage.getItem('theme');
+				const dark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+				document.documentElement.classList.toggle('dark', dark);
+			})();
+		</script>
+
 		<!-- Google tag (gtag.js) -->
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-W28X7LDJXQ"></script>
 		<script is:inline>
@@ -91,43 +133,24 @@ const ogImage = "https://aicodereview.io/og-image.png";
 		</script>
 	</head>
 	<body class="min-h-dvh flex flex-col">
-		<header class="border-b border-stone-200 dark:border-zinc-800 bg-stone-50/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
-			<div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-				<a href="/" class="font-mono text-sm tracking-tight font-bold text-stone-900 dark:text-zinc-100 uppercase">
-					[ aicodereview.io ]
-				</a>
-				<nav class="flex items-center gap-5 md:gap-6">
-					<a href="/#standards" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Standards</a>
-					<a href="/blog" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Blog</a>
-					<a href="/assessment" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Assessment</a>
-					<a href="/tools" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Tools</a>
-				</nav>
-			</div>
-		</header>
-		
-		<main class="flex-1 w-full max-w-4xl mx-auto px-6 py-16 md:py-24">
+		<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:z-[110] focus:top-3 focus:left-3 focus:px-4 focus:py-2 focus:bg-stone-900 focus:text-stone-50">Skip to content</a>
+
+		<Header />
+
+		<main id="main" class:list={['flex-1 w-full mx-auto px-6 py-12 md:py-16', mainWidth]}>
 			<slot />
 		</main>
 
-		<footer class="border-t border-stone-200 dark:border-zinc-800 py-12 mt-auto bg-stone-100 dark:bg-zinc-900">
-			<div class="max-w-4xl mx-auto px-6">
-				<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-					<div>
-						<p class="text-sm text-stone-500 dark:text-zinc-400 font-mono">
-							An open engineering standard for AI code review.
-						</p>
-						<p class="text-xs text-stone-400 dark:text-zinc-500 mt-2 text-pretty">
-							Sponsored by <a href="https://kodus.io" target="_blank" rel="noopener sponsored" class="underline underline-offset-2 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors">Kodus</a> · <a href="/about" class="underline underline-offset-2 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors">About this site</a>
-						</p>
-					</div>
-					<div class="flex gap-4">
-						<a href="/blog" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Blog</a>
-						<a href="/tools" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">Tools</a>
-						<a href="/rss.xml" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">RSS</a>
-						<a href="/about" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">About</a>
-					</div>
-				</div>
-			</div>
-		</footer>
+		<Footer />
+		<SearchOverlay />
+
+		<script is:inline>
+			document.querySelectorAll('[data-theme-toggle]').forEach((btn) =>
+				btn.addEventListener('click', () => {
+					const dark = document.documentElement.classList.toggle('dark');
+					localStorage.setItem('theme', dark ? 'dark' : 'light');
+				})
+			);
+		</script>
 	</body>
 </html>

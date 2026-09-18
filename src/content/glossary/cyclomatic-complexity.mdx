@@ -1,0 +1,34 @@
+---
+term: "Cyclomatic complexity"
+definition: "A count of the independent paths through a piece of code \u2014 effectively the number of branch points plus one."
+category: "quality"
+aliases: []
+related: ["cognitive-complexity", "code-smell", "technical-debt", "static-analysis", "code-coverage"]
+relatedTools: ["sonarqube", "codacy", "qodana", "deepsource"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Every `if`, `for`, `case` and boolean operator adds a path. The metric counts them, which makes it a decent proxy for how many test cases full branch coverage would need — its original purpose.
+
+## What it is good for
+
+Finding the outliers. A function scoring 40 in a codebase where the median is 4 is worth looking at, not because the number is bad but because something unusual is happening there. As a sorting mechanism for where to spend refactoring effort, it works.
+
+## What it is bad for
+
+Being a gate. A switch statement mapping twenty enum values scores terribly and is perfectly readable; a deeply nested three-branch function with confusing names scores well and is not. Complexity thresholds enforced in CI mostly teach people to split functions arbitrarily to get under the limit.
+
+[Cognitive complexity](/glossary/cognitive-complexity/) was designed to address exactly this gap, by weighting nesting more heavily and not punishing flat structures.
+
+## Why it matters when you are evaluating
+
+Most code quality platforms report it. Treat it as navigation, not judgement, and be suspicious of any tool that converts it directly into a grade.
+
+## Common mistakes
+
+- Setting a hard threshold and enforcing it across a legacy codebase.
+- Reading a low score as evidence of readable code.
+- Comparing raw scores across languages, where the same construct costs different amounts.

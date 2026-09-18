@@ -1,0 +1,35 @@
+---
+term: "DORA metrics"
+definition: "Four measures of software delivery performance \u2014 deployment frequency, lead time for changes, change failure rate and time to restore service \u2014 from the DevOps Research and Assessment programme."
+category: "metrics"
+aliases: ["Four key metrics", "DORA"]
+related: ["deployment-frequency", "lead-time-for-changes", "change-failure-rate", "mttr", "cycle-time"]
+relatedTools: ["kodus", "codacy", "graphite"]
+relatedPosts: ["ai-code-review-statistics", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What they are
+
+Two speed metrics and two stability metrics, chosen because the research found the pairing matters: teams that improve one at the expense of the other are not improving.
+
+- **[Deployment frequency](/glossary/deployment-frequency/)** — how often you ship to production.
+- **[Lead time for changes](/glossary/lead-time-for-changes/)** — commit to running in production.
+- **[Change failure rate](/glossary/change-failure-rate/)** — share of deployments causing degraded service.
+- **[Time to restore](/glossary/mttr/)** — how long recovery takes.
+
+## Why they show up in AI code review pitches
+
+They are the only widely accepted framing for "did this tooling change make delivery better", and they are hard to game individually without the others exposing it. A reviewer that blocks everything looks great on change failure rate and terrible on lead time.
+
+The honest version of the claim is narrow: review automation can plausibly move lead time, by cutting the wait for first feedback. Claims about change failure rate are much harder to attribute, because the number moves for a dozen reasons at once.
+
+## Why it matters when you are evaluating
+
+Baseline before the trial, from your own platform data, not the vendor's dashboard. Then watch all four — a tool that improves one and quietly degrades another has not helped.
+
+## Common mistakes
+
+- Treating the four as a scorecard to maximise rather than a balance to hold.
+- Comparing your numbers to published elite benchmarks from a different context.
+- Attributing a change to the new tool when a reorganisation or a freeze happened in the same window.

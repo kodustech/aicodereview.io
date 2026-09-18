@@ -1,0 +1,30 @@
+---
+term: "Embeddings"
+definition: "Numeric vectors that represent text or code, so that similar things sit close together \u2014 the mechanism behind most codebase search in review tools."
+category: "ai"
+aliases: ["Vector embeddings"]
+related: ["rag", "context-window", "ai-code-review", "monorepo"]
+relatedTools: ["greptile", "kodus", "coderabbit"]
+relatedPosts: ["what-is-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+An embedding model converts a chunk of code into a list of numbers. Chunks that mean similar things land near each other in that space, so "find code related to this diff" becomes a distance query rather than a text search.
+
+## What it is good and bad at
+
+Good at semantic similarity: finding the other place your team implemented retry logic, even though the identifiers differ. Bad at exact structure: embeddings do not know that this function definitively calls that one. For structural questions, parsing and following real references beats vector search.
+
+Strong [retrieval](/glossary/rag/) usually combines both — vectors to cast a wide net, a code graph to be precise.
+
+## The question most people forget to ask
+
+An embedding index is a derived copy of your source code, and it lives somewhere. For a hosted tool, that is the vendor's infrastructure. How long it is retained, whether it is encrypted at rest, and whether it is deleted when you disconnect a repository are all reasonable questions, and they come up in security review more often than teams expect.
+
+## Common mistakes
+
+- Assuming the index refreshes instantly. Stale indexes produce confidently outdated review comments.
+- Overlooking indexing cost and time on a large monorepo during a trial.
+- Treating semantic search results as proof the tool understands your architecture.

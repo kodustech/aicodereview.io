@@ -46,3 +46,35 @@ export function relatedPosts(post: BlogPost, all: BlogPost[], limit = 3): BlogPo
     .slice(0, limit)
     .map(({ p }) => p);
 }
+
+/** Tag -> posts, for the indexable /blog/tag/<tag> pages. */
+export async function getTagMap(): Promise<Map<string, BlogPost[]>> {
+  const posts = await getPublishedPosts();
+  const map = new Map<string, BlogPost[]>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) {
+      map.set(tag, [...(map.get(tag) ?? []), post]);
+    }
+  }
+  return map;
+}
+
+/** Tags rendered as-is unless they are a known product name with its own casing. */
+const TAG_LABEL_OVERRIDES: Record<string, string> = {
+  'coderabbit': 'CodeRabbit',
+  'github-copilot': 'GitHub Copilot',
+  'cursor-bugbot': 'Cursor BugBot',
+  'pr-agent': 'PR-Agent',
+  'sonarqube': 'SonarQube',
+  'ci-cd': 'CI/CD',
+  'sast': 'SAST',
+  'byok': 'BYOK',
+  'llm': 'LLM',
+  'ai-code-review': 'AI code review',
+  'open-source': 'Open source',
+  'self-hosted': 'Self-hosted',
+};
+
+export function tagLabel(tag: string): string {
+  return TAG_LABEL_OVERRIDES[tag] ?? tag.replace(/-/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}

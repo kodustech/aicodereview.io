@@ -1,13 +1,114 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Dark mode is class-driven so the header toggle can override the OS setting.
+   The inline script in Layout.astro sets .dark before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Space Grotesk", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* One accent, used for interaction and for "met" states in the coverage
+     matrix. Everything else stays monochrome so the directory reads as a
+     document, not a dashboard. */
+  --color-accent-50: #fff4ed;
+  --color-accent-100: #ffe3d0;
+  --color-accent-200: #ffc5a3;
+  --color-accent-300: #ff9f6b;
+  --color-accent-400: #fb7a3c;
+  --color-accent-500: #ef6820;
+  --color-accent-600: #d9480f;
+  --color-accent-700: #b33a0f;
+  --color-accent-800: #8f3010;
+  --color-accent-900: #742a11;
 }
 
 @layer base {
   body {
-    @apply antialiased bg-stone-50 text-stone-900 selection:bg-stone-300 selection:text-stone-900 dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-zinc-800 dark:selection:text-zinc-100;
+    @apply antialiased bg-stone-50 text-stone-900 selection:bg-accent-200 selection:text-stone-900 dark:bg-zinc-950 dark:text-zinc-100 dark:selection:bg-accent-800 dark:selection:text-zinc-50;
+  }
+
+  /* Anchor targets sit below the sticky header. */
+  :target {
+    scroll-margin-top: 6rem;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent-600 dark:outline-accent-400;
+  }
+}
+
+@layer components {
+  /* A bordered block. The directory is built almost entirely out of these. */
+  .panel {
+    @apply border border-stone-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/40;
+  }
+
+  .panel-hover {
+    @apply transition-colors hover:border-stone-400 dark:hover:border-zinc-600 hover:bg-stone-50 dark:hover:bg-zinc-900;
+  }
+
+  .hairline {
+    @apply border-stone-200 dark:border-zinc-800;
+  }
+
+  .eyebrow {
+    @apply text-xs font-mono tracking-widest uppercase text-stone-500 dark:text-zinc-500;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-widest px-3 py-1.5 border border-stone-300 dark:border-zinc-700 text-stone-600 dark:text-zinc-400 transition-colors hover:border-stone-500 dark:hover:border-zinc-500 hover:text-stone-900 dark:hover:text-zinc-100;
+  }
+
+  .chip-active {
+    @apply border-accent-600 dark:border-accent-500 bg-accent-600 dark:bg-accent-500 text-white dark:text-zinc-950 hover:border-accent-700 hover:text-white;
+  }
+
+  /* Tailwind v4 cannot @apply one component class inside another, so the shared
+     button base is repeated rather than composed. */
+  .btn,
+  .btn-ghost,
+  .btn-solid {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-medium border transition-colors;
+  }
+
+  .btn-ghost {
+    @apply border-stone-300 dark:border-zinc-700 text-stone-900 dark:text-zinc-100 bg-white dark:bg-zinc-950 hover:bg-stone-100 dark:hover:bg-zinc-900;
+  }
+
+  .btn-solid {
+    @apply border-stone-900 dark:border-zinc-100 bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold uppercase tracking-widest text-xs hover:bg-accent-600 hover:border-accent-600 dark:hover:bg-accent-500 dark:hover:border-accent-500 hover:text-white dark:hover:text-zinc-950;
+  }
+
+  /* Coverage meter cells: filled = documented, half = partial, empty = not
+     offered or undocumented. */
+  .cell {
+    @apply inline-block w-2.5 h-4 border border-stone-300 dark:border-zinc-700;
+  }
+  .cell-full {
+    @apply bg-accent-600 border-accent-600 dark:bg-accent-500 dark:border-accent-500;
+  }
+  .cell-half {
+    @apply border-accent-600 dark:border-accent-500;
+    background: linear-gradient(to top, var(--color-accent-600) 50%, transparent 50%);
+  }
+  .dark .cell-half {
+    background: linear-gradient(to top, var(--color-accent-500) 50%, transparent 50%);
+  }
+  .cell-empty {
+    @apply bg-transparent;
+  }
+
+  /* Status glyph colours, shared by tool pages and comparison tables. */
+  .status-yes {
+    @apply text-accent-600 dark:text-accent-400;
+  }
+  .status-partial {
+    @apply text-stone-500 dark:text-zinc-400;
+  }
+  .status-no,
+  .status-unknown {
+    @apply text-stone-400 dark:text-zinc-600;
   }
 }

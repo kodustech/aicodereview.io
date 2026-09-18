@@ -9,19 +9,51 @@
   "pricingUrl": "https://entelligence.ai/pricing",
   "selfHosted": "full",
   "selfHostedNote": "Documented AWS Marketplace self-host into your own AWS account/VPC via CloudFormation; plan availability not stated.",
-  "platforms": ["github", "gitlab", "bitbucket"],
+  "platforms": [
+    "github",
+    "gitlab",
+    "bitbucket"
+  ],
   "modelControl": "BYOK documented for Model Router (AWS Bedrock, OpenRouter); model choice for Code Review itself not documented",
   "lastVerified": "2026-08-11",
   "standards": {
-    "01-multi-dimensional-context": {"status": "yes", "note": "Docs: reviews each PR with the codebase, team guidance, prior feedback, and connected context in view."},
-    "02-rule-centric": {"status": "yes", "note": "Guidelines per repo/language/path, generated from review history; confidence thresholds and comment limits."},
-    "03-dual-workflow": {"status": "yes", "note": "CLI runs the review engine on local diffs before the PR opens; documented IDE extension page is unverified."},
-    "04-business-logic": {"status": "partial", "note": "Jira/Linear/Notion/Confluence connectors and MCP documented; ticket-vs-PR validation not explicit for review."},
-    "05-continuous-learning": {"status": "yes", "note": "Learnings capture team-confirmed exceptions; prior feedback is a documented input to future reviews."},
-    "06-sandbox-validation": {"status": "unknown", "note": "No documented sandbox execution or test-run validation."},
-    "07-economic-transparency": {"status": "partial", "note": "Markets BYOK, self-hosted, no token markup; BYOK documented only for Model Router; no published pricing."},
-    "08-actionability": {"status": "partial", "note": "Findings ship a ready-made fix prompt for Claude Code/Cursor; no one-click committable suggestions documented."},
-    "09-measurable-roi": {"status": "yes", "note": "Documented metrics: comment acceptance, cycle time, and DORA (deploy frequency, lead time, CFR, MTTR)."}
+    "01-multi-dimensional-context": {
+      "status": "yes",
+      "note": "Docs: reviews each PR with the codebase, team guidance, prior feedback, and connected context in view."
+    },
+    "02-rule-centric": {
+      "status": "yes",
+      "note": "Guidelines per repo/language/path, generated from review history; confidence thresholds and comment limits."
+    },
+    "03-dual-workflow": {
+      "status": "yes",
+      "note": "CLI runs the review engine on local diffs before the PR opens; documented IDE extension page is unverified."
+    },
+    "04-business-logic": {
+      "status": "partial",
+      "note": "Jira/Linear/Notion/Confluence connectors and MCP documented; ticket-vs-PR validation not explicit for review."
+    },
+    "05-continuous-learning": {
+      "status": "yes",
+      "note": "Learnings capture team-confirmed exceptions; prior feedback is a documented input to future reviews."
+    },
+    "06-sandbox-validation": {
+      "status": "unknown",
+      "note": "No documented sandbox execution or test-run validation."
+    },
+    "07-economic-transparency": {
+      "status": "partial",
+      "note": "Markets BYOK, self-hosted, no token markup; BYOK documented only for Model Router; no published pricing."
+    },
+    "08-actionability": {
+      "status": "partial",
+      "note": "Findings ship a ready-made fix prompt for Claude Code/Cursor; no one-click committable suggestions documented."
+    },
+    "09-measurable-roi": {
+      "status": "yes",
+      "note": "Documented metrics: comment acceptance, cycle time, and DORA (deploy frequency, lead time, CFR, MTTR)."
+    }
   },
-  "relatedPosts": []
+  "relatedPosts": [],
+  "freeTier": "unknown"
 }

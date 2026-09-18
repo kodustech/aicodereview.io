@@ -1,0 +1,31 @@
+---
+term: "Diff"
+definition: "The line-by-line difference between two versions of a file \u2014 what a reviewer sees, and the minimum context most AI review tools work from."
+category: "review-practice"
+aliases: ["Unified diff", "Changeset"]
+related: ["pull-request", "context-window", "ai-code-review", "blast-radius"]
+relatedTools: ["what-the-diff", "coderabbit", "greptile"]
+relatedPosts: ["what-is-ai-code-review", "ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A diff shows added, removed and surrounding lines — usually three lines of context either side of each change. It is a compact way to see what moved, and a famously incomplete way to understand what it means.
+
+## Why diff-only review fails
+
+A diff tells you a line changed. It does not tell you who calls that function, what invariant the removed check protected, or whether the new parameter breaks three callers in another package. Human reviewers fill that in from memory of the codebase. A model given only the diff cannot: it has no memory of your repository at all, so it fills the gap by guessing — which is where most confident, wrong review comments come from.
+
+This is the reasoning behind the first of the [nine standards](/standards/01-multi-dimensional-context/): context has to extend past the diff before the review is worth reading.
+
+## Why it matters when you are evaluating
+
+"Reads the diff" is the baseline, not a feature. The useful question is what else reaches the model: the full files touched, the definitions of symbols referenced, related files across the repository, linked repositories, the ticket, the team's conventions, and prior review decisions on similar code.
+
+Vendors rarely state this plainly. The fastest test is empirical — open a change that is only wrong because of something outside the diff, and see whether the tool notices.
+
+## Common mistakes
+
+- Assuming a larger diff context setting (say, twenty lines instead of three) solves the problem. It does not; the missing information is usually in another file.
+- Comparing tools on a single-file change, which is the one case where diff-only works fine.

@@ -1,67 +1,184 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import PillarGraphic from '../../components/PillarGraphic.astro';
-import { getPublishedPosts, CATEGORY_LABELS } from '../../lib/blog';
+import { getRankedTools, scoreTool, statusOf, noteOf, STATUS_GLYPHS, STATUS_LABELS, SPONSOR_SLUG } from '../../lib/tools';
+import { getPublishedPosts, CATEGORY_LABELS, SITE_URL } from '../../lib/blog';
 
 export async function getStaticPaths() {
-  const pillars = await getCollection('pillars');
-  return pillars.map((pillar: any) => ({
-    params: { slug: pillar.id },
-    props: { pillar },
-  }));
+	const pillars = (await getCollection('pillars')).sort((a, b) => a.data.order - b.data.order);
+	return pillars.map((pillar, i) => ({
+		params: { slug: pillar.id },
+		props: { pillar, prev: pillars[i - 1], next: pillars[i + 1] },
+	}));
 }
 
-const { pillar } = Astro.props;
+const { pillar, prev, next } = Astro.props;
 const { Content } = await render(pillar);
+
+const tools = await getRankedTools();
+const met = tools.filter((t) => statusOf(t, pillar.id) === 'yes');
+const partial = tools.filter((t) => statusOf(t, pillar.id) === 'partial');
+const missing = tools.filter((t) => ['no', 'unknown'].includes(statusOf(t, pillar.id)));
+
 const latestPosts = (await getPublishedPosts()).slice(0, 3);
+const url = `${SITE_URL}/standards/${pillar.id}/`;
+
+const title = `${pillar.data.title} — AI Code Review Standard ${String(pillar.data.order).padStart(2, '0')}/09 | aicodereview.io`;
+const description = `${pillar.data.description} ${met.length} of ${tools.length} AI code review tools document this standard.`.slice(0, 300);
 ---
 
 <Layout
-  title={`${pillar.data.title} — AI Code Review Standard | aicodereview.io`}
-  description={pillar.data.description}
-  breadcrumbs={[
-    { name: 'Home', url: 'https://aicodereview.io/' },
-    { name: 'Standards', url: 'https://aicodereview.io/#standards' },
-    { name: pillar.data.title, url: `https://aicodereview.io/standards/${pillar.id}/` }
-  ]}
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Standards', url: `${SITE_URL}/standards/` },
+		{ name: pillar.data.title, url },
+	]}
+	schemas={[{
+		"@type": "Article",
+		"headline": pillar.data.title,
+		"description": pillar.data.description,
+		"url": url,
+		"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": SITE_URL },
+		"mainEntityOfPage": { "@type": "WebPage", "@id": url },
+	}]}
 >
-  <div class="mb-12">
-    <a href="/#standards" class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase hover:text-stone-900 dark:hover:text-zinc-100 transition-colors inline-flex items-center gap-2 mb-8">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-      Back to Standards
-    </a>
-    
-    <div class="w-full max-w-none mb-12">
-      <PillarGraphic order={pillar.data.order} />
-    </div>
-  </div>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Standards', href: '/standards/' }, { name: pillar.data.title }]} />
 
-  <article class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-h1:text-4xl md:prose-h1:text-5xl prose-h1:tracking-tight prose-h1:text-balance prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:underline-offset-4 hover:prose-a:decoration-stone-500 prose-p:text-pretty prose-p:leading-relaxed">
-    <Content />
-  </article>
+	<div class="grid lg:grid-cols-12 gap-12">
+		<div class="lg:col-span-8">
+			<p class="eyebrow mb-4">Standard {String(pillar.data.order).padStart(2, '0')} of 09</p>
+			<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+				{pillar.data.title}
+			</h1>
+			<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-10">
+				{pillar.data.description}
+			</p>
 
-  {latestPosts.length > 0 && (
-    <section class="mt-24 pt-12 border-t border-stone-200 dark:border-zinc-800">
-      <h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-8">[ Related Reading ]</h2>
-      <div class="grid md:grid-cols-3 gap-8">
-        {latestPosts.map((post) => (
-          <a href={`/blog/${post.id}`} class="block group">
-            <span class="text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 block mb-2">{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
-            <span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-stone-300 dark:decoration-zinc-700 text-balance">{post.data.title}</span>
-          </a>
-        ))}
-      </div>
-    </section>
-  )}
+			<div class="mb-12">
+				<PillarGraphic order={pillar.data.order} />
+			</div>
 
-  <div class="mt-32 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
-    <div class="text-center md:text-left">
-      <p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Evaluate your AI Code Review Readiness</p>
-      <p class="text-sm text-stone-500 dark:text-zinc-400">See how your current setup scores against the 2026 baseline.</p>
-    </div>
-    <a href="/assessment" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-6 py-4 uppercase tracking-widest text-xs hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors text-center w-full md:w-auto">
-      Take the Assessment [↗]
-    </a>
-  </div>
+			<article class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:decoration-accent-600 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed">
+				<Content />
+			</article>
+
+			<section class="mt-16 pt-10 border-t hairline">
+				<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">Who meets this standard</h2>
+				<p class="text-sm text-stone-500 dark:text-zinc-400 mb-8 text-pretty max-w-2xl">
+					Of the {tools.length} tools in the directory, {met.length} document this fully and {partial.length} partially, as of their last verification. Every note below is drawn from the vendor's own documentation.
+				</p>
+
+				{met.length > 0 && (
+					<div class="mb-10">
+						<h3 class="eyebrow mb-4"><span class="status-yes">✓</span> Documented — {met.length}</h3>
+						<div class="border-t hairline">
+							{met.map((tool) => (
+								<div class="grid md:grid-cols-[11rem_1fr] gap-x-6 gap-y-1 py-3 border-b hairline items-baseline">
+									<a href={`/tools/${tool.id}/`} class="font-bold text-sm text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2">
+										{tool.data.name}
+										{tool.id === SPONSOR_SLUG && <span class="ml-1.5 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600">sponsor</span>}
+									</a>
+									<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">{noteOf(tool, pillar.id)}</p>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
+				{partial.length > 0 && (
+					<div class="mb-10">
+						<h3 class="eyebrow mb-4"><span class="status-partial">~</span> Partial — {partial.length}</h3>
+						<div class="border-t hairline">
+							{partial.map((tool) => (
+								<div class="grid md:grid-cols-[11rem_1fr] gap-x-6 gap-y-1 py-3 border-b hairline items-baseline">
+									<a href={`/tools/${tool.id}/`} class="font-bold text-sm text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2">{tool.data.name}</a>
+									<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">{noteOf(tool, pillar.id)}</p>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
+
+				{missing.length > 0 && (
+					<div>
+						<h3 class="eyebrow mb-4"><span class="status-no">✗</span> Not offered or undocumented — {missing.length}</h3>
+						<div class="flex flex-wrap gap-2">
+							{missing.map((tool) => (
+								<a href={`/tools/${tool.id}/`} class="chip" title={STATUS_LABELS[statusOf(tool, pillar.id)]}>
+									{STATUS_GLYPHS[statusOf(tool, pillar.id)]} {tool.data.name}
+								</a>
+							))}
+						</div>
+					</div>
+				)}
+			</section>
+
+			<nav class="mt-16 pt-10 border-t hairline grid sm:grid-cols-2 gap-4" aria-label="Standards navigation">
+				{prev ? (
+					<a href={`/standards/${prev.id}/`} class="panel panel-hover p-4 group">
+						<span class="eyebrow block mb-1">← Standard {String(prev.data.order).padStart(2, '0')}</span>
+						<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">{prev.data.title}</span>
+					</a>
+				) : <span></span>}
+				{next && (
+					<a href={`/standards/${next.id}/`} class="panel panel-hover p-4 group sm:text-right">
+						<span class="eyebrow block mb-1">Standard {String(next.data.order).padStart(2, '0')} →</span>
+						<span class="font-bold text-sm text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance">{next.data.title}</span>
+					</a>
+				)}
+			</nav>
+		</div>
+
+		<aside class="lg:col-span-4 lg:sticky lg:top-24 lg:self-start space-y-8">
+			<div class="panel p-5">
+				<h2 class="eyebrow mb-4">Market coverage</h2>
+				<div class="h-2 bg-stone-200 dark:bg-zinc-800 w-full mb-3">
+					<div class="h-full bg-accent-600 dark:bg-accent-500" style={`width:${Math.round((met.length / tools.length) * 100)}%`}></div>
+				</div>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">
+					<strong class="text-stone-900 dark:text-zinc-100">{met.length} of {tools.length}</strong> tools document this standard fully; {partial.length} partially.
+				</p>
+				<a href="/methodology/" class="eyebrow inline-block mt-3 hover:text-stone-900 dark:hover:text-zinc-100">How this is scored →</a>
+			</div>
+
+			<div class="panel p-5">
+				<h2 class="eyebrow mb-3">Best on this standard</h2>
+				<ul class="space-y-2">
+					{met.slice(0, 5).map((tool) => (
+						<li class="flex items-baseline justify-between gap-2">
+							<a href={`/tools/${tool.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4">{tool.data.name}</a>
+							<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums">{scoreTool(tool).score}/9</span>
+						</li>
+					))}
+				</ul>
+			</div>
+
+			{latestPosts.length > 0 && (
+				<div class="panel p-5">
+					<h2 class="eyebrow mb-3">Related reading</h2>
+					<ul class="space-y-2.5">
+						{latestPosts.map((post) => (
+							<li>
+								<a href={`/blog/${post.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 text-pretty leading-snug block">{post.data.title}</a>
+								<span class="eyebrow">{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+		</aside>
+	</div>
+
+	<div class="mt-20 pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Score your own setup against all nine</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">A ten-minute readiness assessment, same rubric as the directory.</p>
+		</div>
+		<a href="/assessment/" class="btn-solid w-full md:w-auto">Take the assessment [↗]</a>
+	</div>
 </Layout>

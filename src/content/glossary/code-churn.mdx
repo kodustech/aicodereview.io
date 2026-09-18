@@ -1,0 +1,30 @@
+---
+term: "Code churn"
+definition: "How often a piece of code is rewritten shortly after being written \u2014 a signal of unstable requirements or unclear design, not of productivity."
+category: "metrics"
+aliases: []
+related: ["technical-debt", "code-smell", "cycle-time", "blast-radius"]
+relatedTools: ["sonarqube", "codacy", "kodus"]
+relatedPosts: ["ai-code-review-statistics"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Churn measures lines changed again soon after they were first committed — commonly within two to four weeks. High churn on a file means the team keeps revisiting the same decision.
+
+## Why it is one of the more honest signals
+
+Unlike lines of code or commit counts, churn is hard to game in a way that looks good: rewriting your own code repeatedly does not flatter anyone. And it points at real causes — ambiguous requirements, a design that did not survive contact, or an area nobody fully understands.
+
+Crossed with complexity, it is the best refactoring prioritiser available: complex code that nobody touches can be left alone; complex code that churns is where every change is expensive.
+
+## Where it misleads
+
+Some churn is healthy. Active development on a new feature, a deliberate refactor, or a module being iterated with users all produce high churn for good reasons. Churn is a question — why does this keep changing — not an answer.
+
+## Common mistakes
+
+- Using churn as an individual productivity metric. It is a property of code and requirements, not of people, and measuring people with it produces exactly the behaviour you would expect.
+- Comparing churn across repositories at different lifecycle stages.
+- Ignoring churn in configuration and infrastructure files, which is often the most revealing.

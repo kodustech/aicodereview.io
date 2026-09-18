@@ -1,0 +1,89 @@
+---
+title: "What is code review? A practical guide for engineering teams"
+description: "What code review is actually for, the forms it takes, what the research says it catches, and how to tell whether yours is working \u2014 before you spend anything on tooling."
+order: 1
+updated: "2026-09-17"
+faq: [{"q": "What is the main purpose of code review?", "a": "Catching defects is the reason usually given, but the larger returns are knowledge sharing and consistency: review is how a team keeps more than one person able to work in a given part of the codebase, and how conventions that no linter encodes get enforced. A team that optimises review purely for defect detection tends to automate away the part that mattered most."}, {"q": "How long should a code review take?", "a": "Reviewing more than roughly 200-400 lines in one sitting produces sharply worse results, and attention drops after about an hour. In practice that means the constraint is on the author: keep changes small enough to be read properly in under an hour, rather than expecting reviewers to concentrate for longer."}, {"q": "Should every change be reviewed?", "a": "Every change to production code, yes \u2014 but not identically. Scale the depth to the blast radius: a config tweak to an internal tool and a change to an authentication path both need a second pair of eyes, and only one of them needs two reviewers and a security read."}, {"q": "Does AI code review replace human review?", "a": "No. It can take over the mechanical layer \u2014 convention checks, obvious defects, missing tests \u2014 which frees human attention for design, intent and the questions only someone with context can ask. A team that responds to automation by reviewing each other's code less has made things worse, not better."}]
+relatedTools: ["coderabbit", "kodus", "graphite"]
+relatedPosts: ["what-is-ai-code-review", "ai-code-review-vs-static-analysis"]
+relatedTerms: ["code-review", "pull-request", "blocking-comment", "nitpick", "review-latency", "code-owner", "signal-to-noise"]
+---
+
+Every engineering team does code review. Very few can say what theirs is for, which is why so many review processes drift into a formality: an approval button pressed to unblock someone, on a diff nobody read.
+
+This guide covers what review is actually good at, where it reliably fails, and how to tell whether yours is working — the groundwork worth doing before you evaluate any tool, automated or otherwise.
+
+## What code review is
+
+Code review is the practice of having someone other than the author read a change before it lands. In most teams it happens on a [pull request](/glossary/pull-request/): the author proposes a change, one or more reviewers read the diff, discussion happens inline, and the change merges when someone approves.
+
+That is the mechanism. The purpose is broader, and worth being specific about because it determines what you should measure and what you can safely automate.
+
+### The four things review actually delivers
+
+**Defect detection.** The obvious one, and real — but review catches a particular kind of defect. It is good at logic errors, missed edge cases, misuse of an internal API, and changes that do not match their stated intent. It is poor at concurrency bugs, performance regressions, and anything that only appears under production load.
+
+**Knowledge distribution.** This is the return most teams undervalue until someone leaves. Review is the main mechanism by which more than one person understands any given part of the system. A team where every module has exactly one person who can safely change it has a staffing risk disguised as an efficiency.
+
+**Convention enforcement.** Not formatting — a formatter should own that — but the conventions that are genuinely contextual: how errors are handled here, which abstraction to reach for, what gets logged. These live in reviewers' heads and get transmitted through review or not at all.
+
+**A moment to ask "should we?"** The only stage where someone can say the change solves the wrong problem. This is where review catches the expensive mistakes, and it is the first thing lost when review becomes a rubber stamp.
+
+## The forms review takes
+
+Most discussion assumes pull request review, but it is one option among several, and the others are underused.
+
+**Asynchronous pull request review.** The default. Scales across time zones, produces a written record, and introduces the single largest cost: [latency](/glossary/review-latency/). A review that arrives a day later arrives after the author has moved on.
+
+**Pair programming.** Review compressed to zero latency. Excellent for complex or unfamiliar work and for onboarding; expensive to apply uniformly, and it produces no artefact.
+
+**Design review before code.** The highest-leverage form and the most frequently skipped. Catching an architectural mistake in a design document costs a conversation. Catching it in a 2,000-line pull request costs a fortnight and a difficult conversation.
+
+**Automated review.** Linters, static analysis and now [AI reviewers](/glossary/ai-code-review/), running before a human looks. The useful framing is that automation handles the layer that does not require judgement, so human attention lands on the layer that does.
+
+These compose. A team doing design review before implementation and pairing on the hard parts needs far less from pull request review than a team doing neither.
+
+## What the evidence says
+
+A few findings are consistent enough across studies and industry data to plan around:
+
+- **Size dominates.** Defect detection falls off sharply above a few hundred lines. This is the single most actionable finding in the field, and it is about author behaviour, not reviewer skill.
+- **Speed matters more than thoroughness beyond a point.** Reviews that take days cost more in context-switching and stalled work than the extra defects they catch.
+- **The first reviewer finds most of what will be found.** A second reviewer adds much less than the first; a third adds almost nothing. Mandatory multi-approval policies mostly buy latency.
+- **Author preparation changes outcomes.** A clear description of intent, a self-review pass before requesting others, and a change scoped to one thing produce measurably better reviews.
+
+## Where review reliably fails
+
+**Oversized pull requests.** The reviewer scrolls, approves, and the process produces nothing but a timestamp. Everything else on this list is downstream of this one.
+
+**Latency spirals.** Slow reviews encourage large batches, which are slower to review, which encourages larger batches.
+
+**[Nitpick](/glossary/nitpick/) saturation.** When most comments concern naming and formatting, the substantive comment is indistinguishable from the trivial one, so both get the same treatment.
+
+**Reviewer overload.** A small number of people review everything. They burn out or start skimming, and nobody notices because [review coverage](/glossary/review-coverage/) looks fine — approvals are being granted.
+
+**Relitigating settled decisions.** Review is not the place to reopen architecture agreed a month ago. When it becomes that, authors start avoiding reviewers.
+
+## How to tell whether yours is working
+
+Approval rate tells you nothing; a rubber stamp is an approval. These signals are harder to fake:
+
+| Signal | What to look at | What bad looks like |
+|---|---|---|
+| Change size | Median lines changed per pull request | Median above ~400 |
+| Time to first response | Median and 90th percentile | p90 over a day |
+| Engagement | Comments per pull request, excluding bots | Median of zero |
+| Distribution | Share of reviews done by the top 3 reviewers | Above ~60% |
+| Escaped defects | Production issues tagged "review should have caught" | Rising, or never tracked |
+
+Track these for a month before changing anything. Most teams discover their problem is change size or reviewer concentration — neither of which a tool purchase fixes.
+
+## Where automation genuinely helps
+
+Once you know what your review process is for, the automation question gets easier to answer. Automation is well suited to work that is mechanical, high-volume and low-judgement: formatting, lint rules, dependency and secret scanning, coverage deltas on changed code, and — increasingly — the first pass at obvious defects and missing tests.
+
+It is poorly suited to the parts that require context nobody wrote down: whether this is the right approach, whether the abstraction will hold, whether the team wants to own this dependency for the next three years.
+
+The honest case for an [AI reviewer](/glossary/ai-code-review/) is not that it reviews better than your team. It is that it clears the floor, so the human read starts from a change that is already formatted, already scanned, and already checked against the conventions your team wrote down — and the reviewer's attention goes to the questions only they can answer.
+
+If your review process is failing because pull requests are too large and reviews take three days, no tool will fix that. Fix the process first. Then automate the layer that never needed a human.

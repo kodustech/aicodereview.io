@@ -1,0 +1,32 @@
+---
+term: "Review latency"
+definition: "The time between a pull request being ready and a reviewer responding to it \u2014 usually the largest single component of cycle time."
+category: "metrics"
+aliases: ["Time to first review", "Review turnaround"]
+related: ["cycle-time", "code-review", "dora-metrics", "pull-request"]
+relatedTools: ["graphite", "codacy", "kodus"]
+relatedPosts: ["ai-code-review-statistics", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Review latency measures waiting, not working. A change sits ready while its author context-switches to something else, and the cost compounds: by the time feedback arrives, the author has to reload the whole problem into their head before they can respond to it.
+
+Measure time to *first* response separately from time to approval. They have different causes and different fixes — the first is about attention and routing, the second is usually about pull request size.
+
+## Why it is the metric AI review most plausibly improves
+
+An automated reviewer responds in minutes, at three in the morning, on a Friday. That does not replace human review, but it does change what the author is waiting for: obvious problems surface while the change is still fresh, and the human reviewer arrives to a cleaner change.
+
+This is also the most honest ROI story for the category. Claims about bugs caught are hard to verify; a drop in time-to-first-feedback is measurable in your own platform data, before and after.
+
+## Why it matters when you are evaluating
+
+Baseline it before the trial and measure the same window after. If a vendor offers analytics, check whether they report time to first *human* response as well as bot response — a tool that comments instantly while humans take just as long has moved a number without moving the outcome.
+
+## Common mistakes
+
+- Celebrating faster bot response while human review latency is unchanged.
+- Measuring the mean. Latency distributions have long tails, and the tail is what people remember; use the median and the 90th percentile.
+- Ignoring the weekend effect, which can dominate a weekly average.

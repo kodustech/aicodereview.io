@@ -1,0 +1,30 @@
+---
+term: "Cognitive complexity"
+definition: "A measure of how hard code is for a human to follow, weighting nesting and interrupted flow more heavily than raw branch count."
+category: "quality"
+aliases: []
+related: ["cyclomatic-complexity", "code-smell", "technical-debt", "static-analysis"]
+relatedTools: ["sonarqube", "codacy", "qodana"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Proposed as a correction to [cyclomatic complexity](/glossary/cyclomatic-complexity/), which counts paths regardless of how legible they are. Cognitive complexity adds a penalty for each level of nesting, forgives shorthand that reads linearly, and charges for things that break the reader's flow — jumps, recursion, mixed boolean operators.
+
+The result correlates better with what reviewers actually complain about: not "too many branches" but "I had to hold four conditions in my head at once".
+
+## Why it is the more useful of the two in review
+
+It flags the code that costs reviewer attention, which is the scarce resource review is spending. A function with high cognitive complexity is one where a reviewer is likely to miss something — which makes it a reasonable input to how much scrutiny a change deserves.
+
+## The limits
+
+It is still a syntax-level heuristic. It cannot see that names are misleading, that an abstraction is wrong, or that the function does three unrelated things with a low score. No metric substitutes for reading.
+
+## Common mistakes
+
+- Swapping one hard threshold for another.
+- Refactoring to lower the score rather than to make the code clearer — they usually coincide, but not always.
+- Assuming a tool reporting "complexity" means this one; most mean cyclomatic.

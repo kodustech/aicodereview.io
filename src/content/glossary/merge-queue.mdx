@@ -1,0 +1,28 @@
+---
+term: "Merge queue"
+definition: "A system that serialises merges, testing each change against the current tip of the main branch before it lands, so green pull requests cannot break the branch on arrival."
+category: "delivery"
+aliases: ["Merge train"]
+related: ["branch-protection", "ci-cd", "pull-request", "continuous-integration"]
+relatedTools: ["graphite", "sonarqube"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Two pull requests can each pass CI against an older main branch and still break it when both land. A merge queue removes that class of failure by rebasing and testing changes in order, merging only what actually passes against the real target.
+
+## Why it shows up in code review tooling
+
+Merge queues and review automation compete for the same moment in the workflow — the gap between approval and merge — and they interact. If a review tool posts a required status check, that check has to pass in the queue as well as on the branch, which means a slow or flaky reviewer becomes a throughput problem for the whole team.
+
+## Why it matters when you are evaluating
+
+If you already run a queue, ask how the tool's checks behave inside it: does the review re-run on the rebased commit, does it re-bill you for that run, and what happens to a finding the author already resolved? Tools designed around a single PR event sometimes behave oddly here.
+
+## Common mistakes
+
+- Adding a blocking AI check to a merge queue before knowing its p90 latency.
+- Paying twice for the same review because the queue triggers a fresh run per rebase.
+- Using a queue to compensate for a slow test suite rather than fixing the suite.

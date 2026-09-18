@@ -1,0 +1,102 @@
+---
+title: "Designing a code review process that survives a growing team"
+description: "How to define scope, routing, response times and escalation so review stays useful past twenty engineers \u2014 and which parts to automate as you grow."
+order: 2
+updated: "2026-09-17"
+faq: [{"q": "How many reviewers should a pull request need?", "a": "One, for most changes. Evidence consistently shows the first reviewer finds the majority of what will be found, and each additional reviewer adds much less while adding latency and diffusing responsibility. Reserve two for changes with genuinely large blast radius \u2014 security paths, shared libraries, data migrations \u2014 and say so explicitly in policy rather than requiring it everywhere."}, {"q": "What is a reasonable review response time?", "a": "A working target is first response within four working hours, with a hard expectation of one working day. What matters more than the number is that it is explicit and measured at the 90th percentile, because the tail is what people actually experience."}, {"q": "Should reviewers be assigned automatically?", "a": "Yes, for routing \u2014 a CODEOWNERS file or round-robin removes the daily question of who to ask and stops the same three people absorbing everything. Keep a manual override, because the author often knows who has the context."}, {"q": "How do you stop review from becoming a bottleneck?", "a": "In order of impact: reduce change size, set and measure a response time target, spread reviewer load, and automate everything mechanical so human review is short. Adding reviewers or approval requirements makes it worse, not better."}]
+relatedTools: ["graphite", "kodus", "coderabbit", "codacy"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "what-is-ai-code-review"]
+relatedTerms: ["code-review", "code-owner", "pull-request", "review-latency", "blocking-comment", "branch-protection", "merge-queue"]
+---
+
+A review process that works for six engineers usually breaks somewhere around twenty-five. Nothing dramatic happens — it degrades. Reviews take longer, the same three people do most of them, pull requests get bigger because feedback is slow, and the whole thing becomes the stage everyone complains about.
+
+This guide is about designing the process deliberately, so it degrades gracefully instead.
+
+## Start by writing down what it is for
+
+Most review processes are inherited rather than designed. Before changing anything, write down — literally, in a document your team can disagree with — what review is supposed to deliver here. Defect detection? Knowledge spread? Compliance evidence? A gate on a regulated path?
+
+The answer changes the design. If it is primarily knowledge distribution, reviewer rotation matters more than reviewer expertise. If it is compliance, the audit trail matters more than the conversation. If it is defect detection, you should be measuring [escaped defects](/glossary/defect-escape-rate/) and probably automating far more than you do.
+
+Teams that skip this step end up with a process optimised for nothing in particular, enforced by a branch protection rule nobody remembers setting.
+
+## Scope: what gets reviewed, and how hard
+
+"Everything gets reviewed" is a good rule. "Everything gets reviewed the same way" is not — it means either over-reviewing low-risk changes or under-reviewing dangerous ones, and in practice it means both.
+
+Tier by [blast radius](/glossary/blast-radius/) rather than by diff size:
+
+- **Standard.** One reviewer, normal turnaround. The large majority of changes.
+- **Elevated.** Shared libraries, authentication and authorisation, payments, data migrations, infrastructure. Two reviewers, one of whom owns the area.
+- **Fast path.** Documentation, comments, copy, dependency patch bumps that a scanner has already cleared. One approval, no ceremony, or post-merge review.
+
+Write the tiers down and encode what you can — [CODEOWNERS](/glossary/code-owner/) for routing, path-scoped rules for automated checks. A tiering that lives only in convention decays as the team grows.
+
+## Routing: who reviews what
+
+Reviewer assignment is where load imbalance creeps in. The failure mode is predictable: a few people are known to be good and fast, so they get asked, so they become slower, so they get asked anyway.
+
+Three mechanisms, best used together:
+
+**Ownership routing.** CODEOWNERS maps paths to teams. This guarantees the right area sees the change and is the single highest-value piece of automation in the process.
+
+**Load balancing.** Round-robin within the owning team, skipping people who are out. Most platforms support this natively.
+
+**Author override.** Keep it. The author frequently knows that one person has the context for this particular change, and forcing them around the routing wastes everyone's time.
+
+Track review distribution monthly. If your top three reviewers do more than about 60% of reviews, you have a resilience problem that will surface the week one of them is on holiday.
+
+## Response time: the number that decides everything else
+
+[Latency](/glossary/review-latency/) is the load-bearing metric of a review process, because everything else follows from it. Slow reviews cause context loss, encourage larger batches, and push people toward working around the process.
+
+Set an explicit target — first response within four working hours is achievable for most teams — and measure the 90th percentile, not the mean. Means hide exactly the reviews people complain about.
+
+Practical mechanisms that work:
+
+- A short review slot in the day, protected. Two twenty-minute windows beat "when I get a chance".
+- A shared queue view, so unclaimed pull requests are visible rather than sitting in individual notification feeds.
+- An escalation path: anything unreviewed after a day goes to a channel, not to a nag.
+- Automation that answers the mechanical questions before a human opens the change, so the human read is genuinely short.
+
+## Comment norms
+
+The quality of review conversation is mostly a convention problem, and conventions can be written down.
+
+**Label severity.** Adopt a prefix convention: `blocking:` must be addressed, `question:` needs an answer, `nit:` is a preference the author may ignore. This one change does more for review culture than any tool, because it makes the author's job unambiguous.
+
+**Ask rather than assert.** "What happens if this is empty?" invites a real answer. "This will break on empty input" invites a defensive one, and is embarrassing when the reviewer is wrong.
+
+**Explain the why.** A comment that cites a reason teaches; one that cites a preference just wins.
+
+**Keep opinions out of the blocking lane.** If it is not correctness, security, or an agreed standard, it should not stop the merge. [Blocking on nitpicks](/glossary/blocking-comment/) is how teams learn to resent review.
+
+## Enforcement: branch protection without ceremony
+
+Encode the minimum, then stop:
+
+- Required approvals matching your tier policy — usually one.
+- Required status checks: tests, lint, and the scanners you trust to be deterministic.
+- No direct pushes to protected branches, with a documented break-glass path.
+- Dismiss stale approvals when new commits arrive, on elevated-tier paths at least.
+
+Resist adding more. Every additional required check is latency on every change, and the failure mode of an over-protected branch is that people batch work to pay the cost less often — which produces exactly the oversized pull requests the process was supposed to prevent.
+
+## What to automate, and in what order
+
+Automate in the order that buys the most human attention back:
+
+1. **Formatting.** A formatter on save and in CI. Zero review comments about style, forever.
+2. **Linting.** Deterministic rules, enforced before the pull request via a [pre-commit hook](/glossary/pre-commit-hook/).
+3. **Secret and dependency scanning.** Cheap, high-value, and among the few findings worth blocking on.
+4. **Coverage on changed code.** Not a global percentage — a delta on what this change touched.
+5. **[AI review](/glossary/ai-code-review/).** Last, and only once the layers above are in place. A model asked to review a codebase with no formatter will spend its output budget on formatting.
+
+That order matters. Teams that install an AI reviewer first get a tool doing an expensive, non-deterministic impression of a linter.
+
+## Reviewing the process itself
+
+Once a quarter, look at four numbers: median change size, p90 time to first response, share of reviews done by the top three reviewers, and escaped defects tagged as review-catchable. Then change one thing.
+
+Processes fail slowly and get fixed in bursts. A quarterly look at four numbers catches the drift while it is still cheap to correct.

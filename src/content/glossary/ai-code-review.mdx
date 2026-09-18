@@ -1,0 +1,34 @@
+---
+term: "AI code review"
+definition: "Using a large language model to read a proposed code change and leave findings on it, the way a human reviewer would \u2014 as a complement to human review, not a replacement for it."
+category: "ai"
+aliases: ["LLM code review", "automated PR review"]
+related: ["pull-request", "code-review", "false-positive", "context-window", "static-analysis"]
+relatedTools: ["coderabbit", "kodus", "greptile", "qodo"]
+relatedPosts: ["what-is-ai-code-review", "best-ai-code-review-tools", "ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+AI code review is a tool reading a pull request with a language model and commenting on what it finds: a bug, a missing null check, a change that contradicts the ticket, a pattern your team has already agreed not to use. The output lands where human review already happens — inline on the diff, as a summary, or as a blocking check in CI.
+
+It is not the same thing as a linter, and it is not the same thing as a coding assistant. A linter matches rules against an abstract syntax tree; an assistant writes code for you. An AI reviewer reads a change that already exists and argues about whether it should land.
+
+## How it works
+
+Most implementations follow the same shape. The tool receives a webhook when a pull request opens, gathers context — at minimum the diff, ideally the surrounding files, the repository's conventions, and the linked ticket — assembles a prompt, calls a model, and posts the structured result back to the platform.
+
+Almost all of the practical difference between tools lives in the context step. A reviewer that sees only the diff will confidently flag a function as unused when it is called from a file it never loaded. A reviewer that pulls the repository graph and the linked ticket can tell you the change compiles fine but does not do what the ticket asked for.
+
+## Why it matters when you are evaluating
+
+The category is wide enough that two products described as "AI code review" can behave completely differently. The questions that actually separate them: how much context reaches the model, whether you can encode your team's rules, whether it runs before the pull request as well as on it, and whether the cost of running it is visible to you or hidden inside a seat price.
+
+Those are four of the [nine standards](/standards/) this directory scores against, and they are the ones vendors are least precise about in marketing copy.
+
+## Common mistakes
+
+- Judging a tool by the volume of comments it leaves. A verbose reviewer is easy to build and expensive to live with; teams mute it within a month.
+- Assuming it will catch security bugs a SAST scanner would catch. Some tools run a scanner alongside the model; most do not.
+- Rolling it out on every repository at once. Start on one, tune the rules, then expand — the first week decides whether your team trusts it.

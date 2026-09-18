@@ -1,0 +1,34 @@
+---
+term: "Signal-to-noise ratio"
+definition: "The proportion of a tool's findings that a team acts on \u2014 the practical measure of whether a code review tool is worth keeping."
+category: "metrics"
+aliases: []
+related: ["false-positive", "alert-fatigue", "nitpick", "review-coverage"]
+relatedTools: ["coderabbit", "kodus", "sonarqube"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "ai-code-review-statistics"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Signal-to-noise is the ratio of useful findings to total findings. It is the number that determines whether developers read the bot's comments in month three, and it is almost never the number a vendor leads with.
+
+## How to measure it honestly
+
+Precision and recall figures published by vendors are measured on datasets you cannot see. Measure your own instead, on your own repositories, over a fixed window:
+
+1. Pick two weeks and two or three representative repositories.
+2. Tag every finding the tool produces as **acted on**, **acknowledged but ignored**, or **wrong**.
+3. Report acted-on over total.
+
+Teams that stick with a tool usually land above roughly half. Below a third, adoption tends to collapse regardless of how impressive the occasional catch is.
+
+## Why the ratio beats the count
+
+A tool that finds nine real issues and forty-one irrelevant ones is worse than one that finds five real issues and five irrelevant ones, even though it caught more. The first costs fifty readings; the second costs ten. Attention is the scarce resource, and every finding spends some of it.
+
+## Common mistakes
+
+- Comparing tools on findings-per-PR.
+- Measuring during a trial where everyone is paying unusual attention, then assuming the ratio holds at steady state.
+- Not recording *why* something was ignored — that record is what tells you whether the fix is configuration or context.

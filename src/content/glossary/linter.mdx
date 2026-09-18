@@ -1,0 +1,32 @@
+---
+term: "Linter"
+definition: "A tool that checks source code against a fixed set of rules \u2014 style, correctness patterns, suspicious constructs \u2014 deterministically and fast."
+category: "quality"
+aliases: []
+related: ["static-analysis", "nitpick", "code-smell", "pre-commit-hook", "sast"]
+relatedTools: ["sonarqube", "qodana", "sourcery", "deepsource"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Linters run in seconds, produce the same output every time, and are configured by a file in your repository. Most modern ones can fix a large share of what they find automatically.
+
+## Why linters belong before the pull request
+
+Every rule a linter can enforce is a rule that should never reach human review. Formatting arguments in a pull request are pure waste: the rule is objective, the fix is mechanical, and a machine can apply it on save.
+
+The correct place for that is the developer's editor, then a [pre-commit hook](/glossary/pre-commit-hook/), then CI as a backstop. By the time a change is under review, style should be a solved problem, not a topic.
+
+## How this shapes the AI review question
+
+If your linter setup is weak, an AI reviewer will fill the gap with style comments — and it will do so expensively, non-deterministically, and in the middle of substantive review. Fixing the linter is cheaper than paying a model to approximate one.
+
+Several tools in this directory bundle linters alongside the model precisely so those findings come from the deterministic engine instead. When they do, ask which findings came from which, because the two deserve different trust.
+
+## Common mistakes
+
+- Running a linter in CI only, so developers discover violations after pushing.
+- Enabling a huge rule set on a legacy codebase without baselining existing violations.
+- Letting an AI reviewer and a linter both comment on the same issue.

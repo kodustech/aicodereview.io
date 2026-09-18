@@ -1,0 +1,34 @@
+---
+term: "SAST"
+definition: "Static application security testing: scanning source code for vulnerability patterns \u2014 injection, unsafe deserialisation, hardcoded credentials \u2014 without running the application."
+category: "security"
+aliases: ["Static application security testing"]
+related: ["dast", "sca", "static-analysis", "cwe", "owasp-top-10", "false-positive"]
+relatedTools: ["semgrep", "snyk-code", "sonarqube", "aikido"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+SAST is static analysis pointed at security. It traces data from sources an attacker controls (a request parameter, a file upload) to sinks where that data becomes dangerous (a SQL string, a shell command, a template), and reports the paths that are not sanitised in between.
+
+## Where it is strong and where it is not
+
+Strong: injection classes, known-dangerous API usage, secrets in source, unsafe configuration. These are pattern-shaped problems, and patterns are what SAST does well.
+
+Weak: anything that depends on business meaning. SAST cannot tell you that a user can read another tenant's invoices, because nothing in the code looks wrong — the authorisation check is simply missing, and no pattern describes an absence. Broken access control has sat at the top of the OWASP Top 10 for years largely for this reason.
+
+## How it relates to AI review
+
+This is the clearest complementary pairing in the category. SAST reliably catches the pattern-shaped vulnerabilities; a model has at least a chance at the logic-shaped ones, because it can read the ticket, the surrounding code and the intent. Neither substitutes for the other, and a vendor claiming their reviewer replaces SAST is overselling.
+
+## Why it matters when you are evaluating
+
+Check whether a tool runs real SAST or asks a model about security. The difference shows up in reproducibility: run the same scan twice and see whether you get the same findings.
+
+## Common mistakes
+
+- Turning on every rule pack at once and drowning in [false positives](/glossary/false-positive/).
+- Scanning only changed files, which misses vulnerabilities introduced by how a change interacts with untouched code.
+- Treating a clean SAST run as evidence that a change is secure.

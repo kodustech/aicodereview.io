@@ -1,0 +1,32 @@
+---
+term: "Branch protection"
+definition: "Rules on a branch that constrain how changes land \u2014 required reviews, required status checks, restrictions on force-push and direct commits."
+category: "delivery"
+aliases: ["Protected branch", "Ruleset"]
+related: ["merge-queue", "blocking-comment", "code-owner", "ci-cd"]
+relatedTools: ["codacy", "sonarqube", "kodus"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Branch protection is where review policy becomes enforcement. It is the setting that turns "we review everything" into something the platform actually guarantees: approvals required, checks that must be green, no pushing straight to main.
+
+## How AI review plugs into it
+
+A review tool typically reports a status check. Whether that check is *required* is the decision that determines how much power the tool has over your release process, and it deserves more thought than it usually gets during a trial.
+
+A staged approach works better than a switch. Run the check as advisory for a few weeks while measuring its [false positive](/glossary/false-positive/) rate. Then, if you make it required, scope it: require it for the finding categories you trust, on the paths where the cost of a miss is high, rather than everywhere at once.
+
+## Why it matters when you are evaluating
+
+Check whether the tool can emit more than one check, or a check whose severity you control. All-or-nothing checks force you to choose between blocking on nitpicks and blocking on nothing.
+
+Also check the bypass path. There will be an incident where you need to merge past the bot, and you want that to be a documented override, not an emergency settings change.
+
+## Common mistakes
+
+- Making the bot's check required on day one.
+- Protecting main but leaving release branches open.
+- Granting the tool admin permissions when a status-check permission would do.

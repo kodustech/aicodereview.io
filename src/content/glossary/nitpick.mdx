@@ -1,0 +1,32 @@
+---
+term: "Nitpick"
+definition: "A review comment about something trivial \u2014 naming, formatting, ordering \u2014 that is technically valid and rarely worth the author's attention."
+category: "review-practice"
+aliases: ["Nit"]
+related: ["alert-fatigue", "blocking-comment", "signal-to-noise", "linter", "false-positive"]
+relatedTools: ["coderabbit", "sourcery", "kodus"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+The convention of prefixing a comment with "nit:" exists because reviewers know the difference between a preference and a problem. The prefix is a promise: this is not worth blocking on.
+
+## Why AI reviewers produce so many
+
+Nitpicks are the easiest findings to generate. They need no understanding of intent, no knowledge of the wider codebase, and they are almost never wrong in a way anyone can point at. A tool trying to look useful in its first week will produce them by the dozen, and a vendor demo full of them looks thorough.
+
+The cost lands later. Nitpicks are indistinguishable from real findings at a glance, so they teach the team to skim — which is [alert fatigue](/glossary/alert-fatigue/), arriving by the most avoidable route.
+
+## Where they belong
+
+Almost every nitpick is a job for a formatter or a linter, running before the pull request exists. If a rule can be checked deterministically, it should be enforced deterministically and silently, not raised as an opinion by a model in the middle of review.
+
+That division of labour is what the [default-quiet standard](/standards/02-rule-centric/) argues for: the reviewer should be arguing about behaviour, not whitespace.
+
+## Common mistakes
+
+- Enabling style categories in an AI reviewer while also running a formatter, so the same issue is raised twice.
+- Judging a trial by comment volume.
+- Letting nitpicks block, which is how teams learn to ignore the bot entirely.

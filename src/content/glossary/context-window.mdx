@@ -1,0 +1,30 @@
+---
+term: "Context window"
+definition: "The maximum amount of text \u2014 code, instructions, conversation \u2014 a model can consider in a single request, measured in tokens."
+category: "ai"
+aliases: ["Context length"]
+related: ["token", "ai-code-review", "rag", "monorepo"]
+relatedTools: ["greptile", "kodus", "coderabbit"]
+relatedPosts: ["what-is-ai-code-review", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A model does not remember your codebase. Every request carries everything it is allowed to know, and the context window is the ceiling on how much that can be. Anything beyond it is truncated or has to be summarised away.
+
+## Why it matters for code review
+
+A pull request touching four files is small. The context that makes reviewing it useful is not: the callers of the changed function, the interface it implements, the test file, the migration it depends on, the ticket that asked for it. Large windows made it possible to send more of that, but they did not make it free or automatic.
+
+This is why "we use a model with a one-million-token window" is a weak answer to a context question. What matters is the retrieval decision — what the tool chooses to put in the window — not the size of the window itself. A tool that fills a huge window with irrelevant files produces worse reviews than one that fills a small window precisely.
+
+## Why it matters when you are evaluating
+
+Ask where the boundary sits in practice. Common limits that vendors document: how many linked repositories are analysed, how large a diff can be before the review degrades, and whether monorepo paths are indexed or scanned per pull request. These caps are often tier-dependent and are the single most common reason a tool that demoed well disappoints on a real codebase.
+
+## Common mistakes
+
+- Treating context window size as a proxy for review quality.
+- Testing on a small repository, buying for a monorepo.
+- Ignoring the cost side: everything you put in the window is billed, on every review.

@@ -1,0 +1,73 @@
+---
+import { getRankedTools, TOOL_CATEGORY_LABELS } from '../lib/tools';
+
+// Built from the data rather than the enum: a category with no tools has no page.
+const tools = await getRankedTools();
+const categories = [...new Set(tools.map((t) => t.data.category))];
+
+const columns = [
+	{
+		heading: 'Directory',
+		links: [
+			{ href: '/#directory', label: 'All tools' },
+			...categories.map((slug) => ({ href: `/tools/category/${slug}/`, label: TOOL_CATEGORY_LABELS[slug] ?? slug })),
+		],
+	},
+	{
+		heading: 'Filters',
+		links: [
+			{ href: '/tools/self-hosted/', label: 'Self-hosted tools' },
+			{ href: '/tools/open-source/', label: 'Open-source tools' },
+			{ href: '/compare/', label: 'Head-to-head comparisons' },
+			{ href: '/assessment/', label: 'Readiness assessment' },
+		],
+	},
+	{
+		heading: 'Learn',
+		links: [
+			{ href: '/learn/', label: 'Guides' },
+			{ href: '/glossary/', label: 'Glossary' },
+			{ href: '/standards/', label: 'The 9 standards' },
+			{ href: '/blog/', label: 'Blog' },
+		],
+	},
+	{
+		heading: 'This site',
+		links: [
+			{ href: '/about/', label: 'About' },
+			{ href: '/methodology/', label: 'Methodology & scoring' },
+			{ href: '/rss.xml', label: 'RSS' },
+			{ href: '/llms.txt', label: 'llms.txt' },
+		],
+	},
+];
+---
+
+<footer class="border-t hairline mt-auto bg-stone-100 dark:bg-zinc-900">
+	<div class="max-w-6xl mx-auto px-6 py-14">
+		<div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+			{columns.map((col) => (
+				<div>
+					<h2 class="eyebrow mb-4">{col.heading}</h2>
+					<ul class="space-y-2.5">
+						{col.links.map((link) => (
+							<li>
+								<a href={link.href} class="text-sm text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">{link.label}</a>
+							</li>
+						))}
+					</ul>
+				</div>
+			))}
+		</div>
+
+		<div class="border-t hairline pt-8 flex flex-col md:flex-row justify-between items-start gap-4">
+			<p class="text-sm text-stone-500 dark:text-zinc-400 font-mono max-w-md text-pretty">
+				An open engineering standard for AI code review. Every fact carries a source and a verification date.
+			</p>
+			<p class="text-xs text-stone-400 dark:text-zinc-500 text-pretty md:text-right">
+				Sponsored by <a href="https://kodus.io" target="_blank" rel="noopener sponsored" class="underline underline-offset-2 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors">Kodus</a>, who are ranked by the same rubric as everyone else.<br class="hidden md:inline" />
+				<a href="/methodology/" class="underline underline-offset-2 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors">How we score</a> · <a href="/about/" class="underline underline-offset-2 hover:text-stone-600 dark:hover:text-zinc-300 transition-colors">About this site</a>
+			</p>
+		</div>
+	</div>
+</footer>

@@ -1,0 +1,28 @@
+---
+term: "Cycle time"
+definition: "How long a change takes to get from started to shipped \u2014 usually first commit to production, and the number most teams feel most directly."
+category: "metrics"
+aliases: []
+related: ["lead-time-for-changes", "review-latency", "dora-metrics", "deployment-frequency"]
+relatedTools: ["graphite", "codacy", "kodus"]
+relatedPosts: ["ai-code-review-statistics"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Cycle time measures elapsed time, and definitions vary — first commit to merge, ready-for-review to deploy, ticket started to released. The definition matters less than keeping it stable, because the value is in the trend.
+
+## Why it is mostly waiting
+
+Break cycle time into stages and the result is consistent across teams: coding is a minority of it. The bulk is queueing — waiting for review, waiting for CI, waiting for a release window. That is why [review latency](/glossary/review-latency/) is usually the largest single lever, and why it is the one review automation plausibly touches.
+
+## How to use it when evaluating tooling
+
+Measure the stages, not the total. A tool that cuts time-to-first-feedback from six hours to six minutes may not move the total at all if the change then sits three days waiting for a release. Knowing that in advance saves you from buying the wrong fix.
+
+## Common mistakes
+
+- Reporting the mean on a long-tailed distribution. Use the median and the 90th percentile.
+- Changing the definition mid-measurement, which erases the trend.
+- Optimising cycle time by merging with less scrutiny, then paying for it in [change failure rate](/glossary/change-failure-rate/).

@@ -1,0 +1,151 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { getRankedTools, scoreTool, STATUS_GLYPHS } from '../lib/tools';
+import { STATUS_WEIGHTS } from '../lib/score';
+import { SITE_URL } from '../lib/blog';
+
+const tools = await getRankedTools();
+const pillars = (await getCollection('pillars')).sort((a, b) => a.data.order - b.data.order);
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+const example = tools.find((t) => t.id === 'coderabbit') ?? tools[0];
+const exampleScore = scoreTool(example);
+
+const scale = [
+	{ status: 'yes', label: 'Documented', meaning: 'The vendor documents the capability, with enough detail to tell what it actually does.' },
+	{ status: 'partial', label: 'Partial', meaning: 'Documented but limited — gated behind a higher tier, capped, or only part of what the standard asks for.' },
+	{ status: 'no', label: 'Not offered', meaning: 'The vendor documents that it does not do this, or the docs make clear it is out of scope.' },
+	{ status: 'unknown', label: 'Undocumented', meaning: 'Nothing public either way. Scores zero — a capability a buyer cannot verify is one they cannot count on.' },
+];
+
+const title = "Methodology: How We Score AI Code Review Tools | aicodereview.io";
+const description = `The exact rubric behind every score in the directory: four statuses, nine standards, one formula, ${tools.length} tools. Plus how the site is funded and how to correct it.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Methodology', url: `${SITE_URL}/methodology/` },
+	]}
+	schemas={[{
+		"@type": "Article",
+		"headline": "How aicodereview.io scores AI code review tools",
+		"description": description,
+		"url": `${SITE_URL}/methodology/`,
+		"dateModified": lastVerified,
+		"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": SITE_URL },
+	}]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Methodology' }]} />
+
+	<section class="mb-14">
+		<p class="eyebrow mb-4">Methodology · Last data refresh {lastVerified}</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			How the scores are calculated
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Every number on this site comes out of one table, one formula and one set of public sources. It is designed so you can disagree with it precisely —
+			recompute it yourself, weight the pillars differently, or throw out the score and read the matrix.
+		</p>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-4">The four statuses</h2>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-6 max-w-3xl">
+			Each tool is mapped against each of the <a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2">9 standards</a> with one of four values, plus a note quoting what the documentation says.
+		</p>
+		<dl class="border-t hairline">
+			{scale.map((row) => (
+				<div class="grid grid-cols-[2rem_8rem_1fr] gap-x-4 py-4 border-b hairline items-baseline">
+					<dt class:list={['font-mono font-bold text-lg', `status-${row.status}`]}>{STATUS_GLYPHS[row.status]}</dt>
+					<dd class="font-bold text-sm text-stone-900 dark:text-zinc-100">{row.label}</dd>
+					<dd class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">
+						{row.meaning}
+						<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 ml-2">= {STATUS_WEIGHTS[row.status as keyof typeof STATUS_WEIGHTS]} point{STATUS_WEIGHTS[row.status as keyof typeof STATUS_WEIGHTS] === 1 ? '' : 's'}</span>
+					</dd>
+				</div>
+			))}
+		</dl>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-4">The formula</h2>
+		<pre class="panel p-5 font-mono text-sm overflow-x-auto text-stone-800 dark:text-zinc-200 mb-6">score = Σ weight(status of each of the 9 standards)
+weight: documented = 1 · partial = 0.5 · not offered = 0 · undocumented = 0</pre>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4 max-w-3xl">
+			All nine standards carry equal weight. That is a deliberate simplification: your team's weighting is almost certainly different, which is why every
+			profile shows the full matrix rather than only the total. Worked example — {example.data.name} scores
+			<strong class="text-stone-900 dark:text-zinc-100">{exampleScore.score}/9</strong>: {exampleScore.strengths.length} documented, {exampleScore.partials.length} partial,
+			{exampleScore.gaps.length} not offered, {exampleScore.unknowns.length} undocumented.
+		</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+			Undocumented scoring zero is the most contestable choice here, so it is worth being explicit: it means a tool can be penalised for poor documentation rather than
+			poor capability. We think that is the right bias for a buyer — you cannot put an undocumented promise in a procurement review — but each profile shows how many
+			pillars are undocumented, so you can see when a low score is really a documentation problem.
+		</p>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-4">What the score is not</h2>
+		<ul class="space-y-3 max-w-3xl">
+			{[
+				'It is not a benchmark. We do not claim to have measured how many real bugs each tool finds on your codebase; nobody can do that honestly from the outside.',
+				'It is not a quality rating. A tool can document all nine standards and still produce noisy reviews.',
+				'It is not editorial preference. The order of the directory is the arithmetic above, nothing else.',
+				'It is not permanent. Vendors ship. Every row carries a verification date and gets re-checked; stale rows are a bug, so report them.',
+			].map((item) => (
+				<li class="flex gap-3">
+					<span class="font-mono text-stone-400 dark:text-zinc-600 shrink-0">—</span>
+					<span class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{item}</span>
+				</li>
+			))}
+		</ul>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-4">Where the facts come from</h2>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4 max-w-3xl">
+			Pricing, licensing, self-hosting and platform support are read from the vendor's own pricing page, documentation or public repository, and stamped with the date
+			they were checked. Where a vendor does not publish a number, the field says so instead of carrying an estimate. Vendor-published benchmark figures are attributed
+			and labelled as vendor-published — they are never folded into a score.
+		</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+			The full dataset is in the repository as one JSON file per tool. If a claim looks wrong, the fastest fix is an issue or a pull request against that file.
+		</p>
+	</section>
+
+	<section class="mb-14">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-4">Funding and independence</h2>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4 max-w-3xl">
+			This site is funded by <a href="https://kodus.io" rel="sponsored" class="underline underline-offset-4 decoration-accent-600 decoration-2">Kodus</a>, who build one of the tools in the directory.
+			That is disclosed in the footer of every page, on the Kodus profile, and inline in any post where Kodus appears as an option.
+		</p>
+		<ul class="space-y-3 max-w-3xl mb-4">
+			{[
+				'Kodus is scored with the same rubric, from the same kind of public sources, including the standards it does not meet.',
+				'No placement, ranking or removal of a criticism is for sale, because nothing on this site is sold.',
+				'There are no affiliate links. Outbound vendor links are plain links; the sponsor link is marked rel="sponsored".',
+				'The whole site, data included, is open source — so any thumb on the scale is visible in the commit history.',
+			].map((item) => (
+				<li class="flex gap-3">
+					<span class="font-mono text-accent-600 dark:text-accent-400 shrink-0">✓</span>
+					<span class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{item}</span>
+				</li>
+			))}
+		</ul>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
+			Calibrate accordingly. A directory funded by a vendor deserves scepticism; the answer to that is not a disclaimer, it is making every input checkable.
+		</p>
+	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Found something wrong?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Stale prices and wrong claims are bugs. Open an issue and it gets fixed.</p>
+		</div>
+		<a href="https://github.com/kodustech/aicodereview.io/issues" target="_blank" rel="noopener" class="btn-solid w-full md:w-auto">Report a correction [↗]</a>
+	</div>
+</Layout>

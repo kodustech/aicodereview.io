@@ -1,0 +1,33 @@
+---
+term: "Blocking comment"
+definition: "A review comment that must be resolved before a change can merge, as opposed to a suggestion the author can acknowledge and move past."
+category: "review-practice"
+aliases: ["Request changes"]
+related: ["nitpick", "alert-fatigue", "code-review", "branch-protection", "signal-to-noise"]
+relatedTools: ["coderabbit", "sonarqube", "kodus"]
+relatedPosts: ["ai-code-review-vs-static-analysis", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Most platforms distinguish a comment from a change request. The first is a note; the second stops the merge. The distinction is what makes review a usable process rather than an argument about every line.
+
+## Why it matters more once a bot is involved
+
+A human reviewer applies judgement about what deserves to block. A tool applies whatever severity mapping it was configured with — and the default mapping was chosen by a vendor optimising for a demo, not for your release cadence.
+
+Get this wrong in either direction and the tool fails. Block on style and the team routes around it within a fortnight. Block on nothing and the genuinely dangerous findings sit in the same visual noise as the suggestions about variable naming.
+
+## A workable policy
+
+Teams that make this work tend to converge on something like: the bot never blocks on its own; it labels severity, and only a small, explicitly agreed set of categories — introduced secrets, known-vulnerable dependencies, changes to a security-critical path — is wired to a required status check. Everything else is advisory, and the team's own reviewers decide.
+
+## Why it matters when you are evaluating
+
+Ask whether severity is configurable per category and per path, whether the tool can post advisory findings without failing a check, and whether resolving a finding once teaches it not to raise the same one again.
+
+## Common mistakes
+
+- Turning on required checks during the trial, before the false positive rate is known.
+- Having no path to override a wrong block, which turns one bad finding into an escalation.

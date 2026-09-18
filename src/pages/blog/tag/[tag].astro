@@ -1,0 +1,79 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import { getTagMap, tagLabel, CATEGORY_LABELS, readingTime, formatDate, SITE_URL } from '../../../lib/blog';
+import { getRankedTools, scoreTool } from '../../../lib/tools';
+
+export async function getStaticPaths() {
+	const tagMap = await getTagMap();
+	return [...tagMap.entries()].map(([tag, posts]) => ({ params: { tag }, props: { posts } }));
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+const label = tagLabel(tag!);
+
+// A tag often names a tool we already track — link the two surfaces together.
+const tools = await getRankedTools();
+const matchingTool = tools.find((t) => t.id === tag || t.data.name.toLowerCase().replace(/\s+/g, '-') === tag);
+
+const title = `${label} — AI Code Review Articles | aicodereview.io`;
+const description = `${posts.length} ${posts.length === 1 ? 'article' : 'articles'} on ${label} and AI code review: comparisons, alternatives and evaluation guides benchmarked against the 9-pillar standard.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Blog', url: `${SITE_URL}/blog/` },
+		{ name: label, url: `${SITE_URL}/blog/tag/${tag}/` },
+	]}
+	schemas={[{
+		"@type": "ItemList",
+		"name": `${label} articles`,
+		"numberOfItems": posts.length,
+		"itemListElement": posts.map((post, i) => ({
+			"@type": "ListItem",
+			"position": i + 1,
+			"url": `${SITE_URL}/blog/${post.id}/`,
+			"name": post.data.title,
+		})),
+	}]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Blog', href: '/blog/' }, { name: label }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">Topic · {posts.length} {posts.length === 1 ? 'article' : 'articles'}</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			{label}
+		</h1>
+		{matchingTool && (
+			<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+				{matchingTool.data.name} scores <strong class="text-stone-900 dark:text-zinc-100">{scoreTool(matchingTool).score}/9</strong> in the directory.
+				<a href={`/tools/${matchingTool.id}/`} class="underline underline-offset-4 decoration-accent-600 decoration-2 ml-1">See the full sourced profile →</a>
+			</p>
+		)}
+	</section>
+
+	<section class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
+		{posts.map((post) => (
+			<article class="panel panel-hover p-5 group relative flex flex-col">
+				<div class="flex items-center gap-3 mb-3 eyebrow">
+					<span>{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
+					<span>{readingTime(post.body)} min</span>
+				</div>
+				<h2 class="text-lg font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 leading-snug">
+					<a href={`/blog/${post.id}/`} class="after:absolute after:inset-0 group-hover:underline decoration-accent-600 decoration-2 underline-offset-4">{post.data.title}</a>
+				</h2>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed line-clamp-4 mb-4">{post.data.description}</p>
+				<time datetime={post.data.pubDate.toISOString()} class="eyebrow mt-auto">{formatDate(post.data.pubDate)}</time>
+			</article>
+		))}
+	</section>
+
+	<div class="pt-12 border-t hairline">
+		<a href="/blog/" class="btn-ghost">← All articles</a>
+	</div>
+</Layout>

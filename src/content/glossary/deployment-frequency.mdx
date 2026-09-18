@@ -1,0 +1,30 @@
+---
+term: "Deployment frequency"
+definition: "How often a team successfully releases to production \u2014 a DORA metric, and a proxy for how small and safe its changes are."
+category: "metrics"
+aliases: []
+related: ["dora-metrics", "change-failure-rate", "ci-cd", "merge-queue"]
+relatedTools: ["graphite", "kodus"]
+relatedPosts: ["ai-code-review-statistics"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Deployments per day, week or month. Taken alone it is close to meaningless; taken with [change failure rate](/glossary/change-failure-rate/) it is one of the better indicators of engineering health, because shipping often *and* safely requires most of the underlying practices to be working.
+
+## Why frequency and batch size are the same conversation
+
+Teams that deploy rarely deploy large batches, and large batches fail in ways that are hard to diagnose — when forty changes ship together, finding which one broke production is archaeology. Frequent small deployments make the culprit obvious and rollback cheap.
+
+That connects to review directly: small pull requests are reviewed better, merged faster and deployed sooner. A review process that encourages large batches suppresses deployment frequency no matter what the pipeline can do.
+
+## Why it matters when you are evaluating
+
+It is a poor headline metric for a review tool — nobody deploys more often because a bot commented on their diff. It is a useful guardrail: if frequency drops after you add a blocking check, the check is costing more than it returns.
+
+## Common mistakes
+
+- Counting deployments of anything, including config-only no-ops, to inflate the number.
+- Chasing frequency without watching stability.
+- Comparing across teams with different service architectures.

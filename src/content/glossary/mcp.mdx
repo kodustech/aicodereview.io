@@ -1,0 +1,32 @@
+---
+term: "MCP (Model Context Protocol)"
+definition: "An open protocol for connecting models to external tools and data sources through a common interface, instead of a bespoke integration per system."
+category: "ai"
+aliases: ["Model Context Protocol"]
+related: ["agentic-ai", "rag", "prompt-injection", "ai-code-review"]
+relatedTools: ["kodus", "qodo", "cursor-bugbot"]
+relatedPosts: ["what-is-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+MCP standardises how a model-driven application discovers and calls external capabilities — reading a file, querying an issue tracker, running a search. A server exposes tools; a client consumes them; the wiring is the same regardless of who wrote either side.
+
+## Why it shows up in code review
+
+Review quality depends on context that lives outside the repository: the ticket, the design document, the incident that motivated the change. Before a common protocol, every one of those was a bespoke integration a vendor had to build and maintain. With one, a team can connect its own internal system without waiting for a roadmap.
+
+That flexibility is the upside. It is worth pairing with the downside.
+
+## The security consideration
+
+Every connected server widens what the model can read and do, and content pulled from those systems is untrusted input. A ticket description is user-generated text; if the model treats it as instructions, you have [prompt injection](/glossary/prompt-injection/) with a wider blast radius than before.
+
+Ask which servers a tool connects by default, whether you can restrict them, and whether tool calls require confirmation for anything that writes.
+
+## Common mistakes
+
+- Treating protocol support as a capability. It says how a tool connects, not what it does well.
+- Connecting a broad internal server because it was easy, without scoping its permissions.
+- Assuming all connected sources are trusted because they are internal.

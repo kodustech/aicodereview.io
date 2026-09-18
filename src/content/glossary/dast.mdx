@@ -1,0 +1,30 @@
+---
+term: "DAST"
+definition: "Dynamic application security testing: probing a running application from the outside with crafted requests, to find vulnerabilities that only appear at runtime."
+category: "security"
+aliases: ["Dynamic application security testing"]
+related: ["sast", "sca", "owasp-top-10", "cve"]
+relatedTools: ["aikido", "snyk-code"]
+relatedPosts: ["ai-code-review-vs-static-analysis"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Where SAST reads the code, DAST attacks the deployment. It sends malformed input, replays requests with altered identifiers, and watches what the application returns — no source access required.
+
+## Why both exist
+
+They see different things because they look from different sides. DAST finds issues that only exist in the assembled, configured, deployed system: a misconfigured header, an endpoint left exposed, an authorisation check that works in one service and not in the gateway in front of it. SAST finds the flaw in the line of code that caused it, which is the form a developer can actually fix.
+
+DAST's weakness is coverage — it only tests what it can reach, so an unlinked endpoint or a path behind an unusual auth flow goes unprobed. Its strength is that a finding is a demonstration, not a hypothesis.
+
+## Why it appears in a code review glossary
+
+It usually does not belong in the pull request loop: DAST runs against an environment, takes minutes to hours, and needs a deployed target. Vendors that market a single "AI security platform" sometimes blur the two, so it is worth knowing which engine produced a given finding and at which stage it ran.
+
+## Common mistakes
+
+- Expecting DAST results inside a pull request check.
+- Running it only against staging with unrealistic data, which hides whole classes of issue.
+- Treating a clean DAST run as coverage of the code paths it never reached.

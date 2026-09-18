@@ -1,0 +1,88 @@
+---
+title: "Code review at scale: monorepos, many teams, and thousands of pull requests"
+description: "What breaks when review grows past one team \u2014 routing, latency, ownership, tooling cost \u2014 and the structural fixes that hold at a few hundred engineers."
+order: 6
+updated: "2026-09-17"
+faq: [{"q": "How do you keep code review fast with hundreds of engineers?", "a": "Reduce what each review has to decide. Ownership routing so the right team is asked automatically, tiered policy so low-risk changes do not carry high-risk ceremony, automation absorbing everything mechanical, and a hard limit on change size. Adding reviewers or approval requirements makes latency worse at every scale."}, {"q": "Does a monorepo make code review harder?", "a": "It makes tooling harder, not review itself. Indexing cost, retrieval precision, per-path configuration and pricing models all behave differently at monorepo scale \u2014 and a tool that demos well on a service repository can be unusable on a two-million-line one. Trial on the monorepo, not on something smaller."}, {"q": "How should review policy differ between teams?", "a": "Policy should differ by risk, not by team. Tie stricter requirements to paths \u2014 security-critical, shared libraries, migrations \u2014 so the rule follows the code rather than the org chart, which changes more often than the codebase does."}, {"q": "What does AI code review cost at scale?", "a": "It depends on review volume, average diff size, and whether every push re-triggers a review, far more than on the headline seat price. Estimate from last month's real pull request numbers, ask what happens past the bundled allowance, and check re-review behaviour \u2014 that is usually where a budget goes."}]
+relatedTools: ["graphite", "greptile", "sonarqube", "kodus", "coderabbit"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "self-hosted-ai-code-review"]
+relatedTerms: ["monorepo", "code-owner", "review-latency", "merge-queue", "branch-protection", "blast-radius", "review-coverage", "inference-cost"]
+---
+
+Review practices that work for one team fail at ten for structural reasons, not cultural ones. The queue gets longer, ownership gets ambiguous, tooling that indexed a repository in thirty seconds now takes an hour, and the cost of every check is multiplied by a much larger number of changes.
+
+This guide covers what actually breaks and what holds.
+
+## What breaks first
+
+**Routing.** With one team, everyone knows who should look at a change. With ten, the author does not know who owns the module they just touched, so they ask whoever they know — and load concentrates on the visible, helpful people until they burn out.
+
+**Latency variance.** The median stays acceptable while the tail gets ugly. A change that waits four days because it crossed a team boundary is the one people remember, and the one that teaches them to batch work.
+
+**Ownership gaps.** Every large codebase develops areas nobody owns: the shared utility library, the build tooling, the service whose team reorganised twice. Changes there either sit unreviewed or get approved by someone with no context.
+
+**Tooling assumptions.** Most review tools are built and demoed around a single repository of moderate size. At scale, indexing time, [retrieval](/glossary/rag/) precision, configuration granularity and pricing all behave differently — usually worse.
+
+**Cost.** Anything per-review or per-token multiplies by volume. A tool that costs a rounding error on 200 pull requests a month is a budget line at 8,000.
+
+## Structural fixes that hold
+
+### Ownership as code, maintained
+
+[CODEOWNERS](/glossary/code-owner/) stops being a nicety and becomes the routing layer. Two rules make it survive:
+
+- **Own with teams, never individuals.** Individual ownership turns holidays into merge blockers.
+- **Audit for gaps and for sprawl.** Run a check that every top-level path has an owner, and that no team owns so much that it cannot review carefully. Both failure modes are invisible until someone measures.
+
+### Policy tied to paths, not teams
+
+Team-based policy decays because org charts change faster than codebases. Tie requirements to what the code does:
+
+- Security-critical paths: two approvals, one from the owning team, stricter automated checks.
+- Shared libraries: owning team approval mandatory, because the [blast radius](/glossary/blast-radius/) crosses every consumer.
+- Everything else: one approval, standard checks.
+
+When a team reorganises, the path rules keep working.
+
+### A hard constraint on change size
+
+At scale, this is worth enforcing rather than encouraging. A warning above 400 changed lines and a required justification above 1,000 is unpopular for a fortnight and then simply how the team works. Nothing else you can do improves review quality as much.
+
+### Queue visibility over notifications
+
+Individual notification feeds do not scale — they become noise and get filtered. A shared, filterable queue of unclaimed reviews, with age visible, turns review from an interruption into a task people pick up. Sort it by age, not priority, so nothing rots at the bottom.
+
+## Monorepo-specific considerations
+
+If you run a [monorepo](/glossary/monorepo/), most of your tooling evaluation should happen there rather than on a representative service repository.
+
+**Indexing.** How long does the first index take, what does it cost, and how is it kept current after every merge? A tool that reindexes on each pull request in a large repository is unusable.
+
+**Retrieval precision.** Semantic similarity degrades as the corpus grows — "related code" in two million lines returns plausible noise unless the tool follows real structural references.
+
+**Configuration granularity.** One rule set cannot serve a payments service and a documentation site. If rules are global-only, the tool will either be too strict everywhere or useless everywhere.
+
+**Pricing shape.** Per-repository pricing is meaningless here. Per-line-of-code pricing can be brutal. Ask exactly how the meter reads a monorepo before you get to a contract.
+
+**Ownership depth.** CODEOWNERS files in a monorepo need nesting and careful ordering, and the last matching rule usually wins. Test the file rather than assuming it.
+
+## Making automation pay at volume
+
+Automation economics invert at scale, in both directions.
+
+The good direction: the fixed cost of configuring rules, tuning severity and building a good [pre-commit](/glossary/pre-commit-hook/) layer is amortised across far more reviews. Work that is not worth doing for 200 pull requests a month is obviously worth doing for 8,000.
+
+The bad direction: every noisy finding is multiplied too. A [false positive](/glossary/false-positive/) rate that was mildly annoying at one team becomes thousands of wasted developer-minutes a month, and the team-wide habit of ignoring the bot forms much faster.
+
+Practical consequences:
+
+- **Roll out per repository, not organisation-wide.** Tune on two or three, then expand. An organisation-wide enablement with default settings is the most reliable way to lose the team's trust in one week.
+- **Scope rules by path from day one.** Global rules do not survive contact with a large codebase.
+- **Watch [cost](/glossary/inference-cost/) per merged pull request, not per seat.** That is the number that scales, and re-review behaviour on every push is usually what makes it move.
+- **Measure adoption per team.** A tool with 80% engagement in two teams and 5% in eight is not an 40% success; it is two successes and eight failures, and the reasons are usually configuration.
+
+## The thing that does not scale, and should not
+
+Human review of high-risk changes. As the codebase grows, the proportion of changes that genuinely need a careful human read falls, but the absolute cost of getting one of those wrong rises.
+
+The goal of everything above — routing, tiering, automation, size limits — is to protect that capacity. If your senior engineers are spending their review time on dependency bumps and formatting, scale has already beaten you, and no amount of additional tooling fixes it until the mechanical layer is genuinely automated away.

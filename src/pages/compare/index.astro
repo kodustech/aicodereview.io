@@ -1,0 +1,132 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getRankedTools, scoreTool, TOOL_CATEGORY_LABELS } from '../../lib/tools';
+import { buildPairs } from '../../lib/compare';
+import { getPublishedPosts, SITE_URL } from '../../lib/blog';
+
+const tools = await getRankedTools();
+const posts = await getPublishedPosts();
+const postSlugs = new Set(posts.map((p) => p.id));
+const pairs = buildPairs(tools, postSlugs);
+
+// Pairs that already have a hand-written article keep the article as the
+// canonical page for that keyword; they are linked here rather than generated.
+const writtenUps = posts.filter((p) => p.id.includes('-vs-'));
+
+const byTool = new Map<string, typeof pairs>();
+for (const pair of pairs) {
+	for (const tool of [pair.a, pair.b]) {
+		const list = byTool.get(tool.id) ?? [];
+		list.push(pair);
+		byTool.set(tool.id, list);
+	}
+}
+const anchors = [...byTool.entries()]
+	.sort((a, b) => b[1].length - a[1].length)
+	.slice(0, 6)
+	.map(([id, list]) => ({ tool: tools.find((t) => t.id === id)!, list }));
+
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+const title = `Compare AI Code Review Tools Head to Head (2026) | aicodereview.io`;
+const description = `${pairs.length + writtenUps.length} side-by-side comparisons of AI code review tools — pricing, licensing, self-hosting and all 9 standards, from the same sourced data. Verified ${lastVerified}.`;
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Compare', url: `${SITE_URL}/compare/` },
+	]}
+	schemas={[{
+		"@type": "ItemList",
+		"name": "AI code review tool comparisons",
+		"description": description,
+		"numberOfItems": pairs.length,
+		"itemListElement": pairs.map((pair, i) => ({
+			"@type": "ListItem",
+			"position": i + 1,
+			"url": `${SITE_URL}/compare/${pair.slug}/`,
+			"name": `${pair.a.data.name} vs ${pair.b.data.name}`,
+		})),
+	}]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Compare' }]} />
+
+	<section class="max-w-3xl mb-14">
+		<p class="eyebrow mb-4">Head to head · {pairs.length + writtenUps.length} comparisons</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			Compare two AI code reviewers on the same data
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Every comparison is built from the same sourced matrix as the tool profiles — licence, self-hosting, model control, and all
+			<a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2">9 standards</a>, side by side.
+			No sponsored ordering, no winner declared where the data does not support one.
+		</p>
+	</section>
+
+	{writtenUps.length > 0 && (
+		<section class="mb-16">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-6">Written up in full</h2>
+			<div class="grid md:grid-cols-2 gap-4">
+				{writtenUps.map((post) => (
+					<a href={`/blog/${post.id}/`} class="panel panel-hover p-5 group">
+						<span class="eyebrow block mb-2">In-depth article</span>
+						<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance block mb-2">{post.data.title}</span>
+						<span class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed block">{post.data.description}</span>
+					</a>
+				))}
+			</div>
+		</section>
+	)}
+
+	{anchors.map(({ tool, list }) => (
+		<section class="mb-14">
+			<div class="flex flex-wrap items-baseline justify-between gap-3 mb-5">
+				<h2 class="text-xl font-bold tracking-tight text-stone-900 dark:text-zinc-100">
+					{tool.data.name} compared
+					<span class="ml-2 font-mono text-xs font-normal text-stone-500 dark:text-zinc-500 tabular-nums">{scoreTool(tool).score}/9 · {TOOL_CATEGORY_LABELS[tool.data.category]}</span>
+				</h2>
+				<a href={`/tools/${tool.id}/`} class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100">Full profile →</a>
+			</div>
+			<ul class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+				{list.map((pair) => {
+					const other = pair.a.id === tool.id ? pair.b : pair.a;
+					return (
+						<li class="border-b hairline py-2">
+							<a href={`/compare/${pair.slug}/`} class="flex items-baseline justify-between gap-3 group">
+								<span class="text-sm text-stone-700 dark:text-zinc-300 group-hover:text-stone-900 dark:group-hover:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 truncate">
+									vs {other.data.name}
+								</span>
+								<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums shrink-0">{scoreTool(other).score}/9</span>
+							</a>
+						</li>
+					);
+				})}
+			</ul>
+		</section>
+	))}
+
+	<section class="mb-16 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-6">All comparisons</h2>
+		<ul class="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-1">
+			{pairs.map((pair) => (
+				<li class="border-b hairline py-2">
+					<a href={`/compare/${pair.slug}/`} class="text-sm text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600">
+						{pair.a.data.name} vs {pair.b.data.name}
+					</a>
+				</li>
+			))}
+		</ul>
+	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Comparing more than two?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">The directory filters all {tools.length} tools by licence, hosting and platform at once.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</div>
+</Layout>

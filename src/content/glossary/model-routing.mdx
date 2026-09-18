@@ -1,0 +1,30 @@
+---
+term: "Model routing"
+definition: "Choosing which model handles which part of a review \u2014 a cheap fast model for triage, a stronger one for deep reasoning \u2014 instead of sending everything to one model."
+category: "ai"
+aliases: []
+related: ["inference-cost", "byok", "token", "agentic-ai"]
+relatedTools: ["kodus", "qodo", "entelligence", "sourcery"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Not every step of a review needs the same capability. Classifying which files matter, summarising a diff and writing a final finding have very different difficulty. Routing assigns each step to an appropriate model, which is where most of the cost efficiency in a well-built reviewer comes from.
+
+## Why it matters to you as a buyer
+
+Routing is usually invisible, and that is the point: two products at the same price can have completely different margins and quality profiles depending on what they route where. When a vendor cuts cost, routing is the first place they do it — quietly moving a step to a smaller model.
+
+Tools that let you choose models put that decision in your hands. Tools that fix the model reserve it for themselves, which is fine as long as you understand that the thing you are buying can change under you without a price change.
+
+## Why it matters when you are evaluating
+
+Questions worth asking: can I choose the model, per step or at all; what happens when my chosen provider is rate-limited or down; and is there a documented fallback. The answers map directly onto the [economic transparency standard](/standards/07-economic-transparency/).
+
+## Common mistakes
+
+- Assuming "powered by the latest model" describes the whole pipeline. Usually it describes one step.
+- Choosing the largest available model for everything, then paying for reasoning you did not need.
+- Not checking failure behaviour — a tool that silently degrades to a weaker model is worse than one that fails loudly.

@@ -1,116 +1,246 @@
 ---
 import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
-import PillarGraphic from '../components/PillarGraphic.astro';
-import { getPublishedPosts, CATEGORY_LABELS, formatDate } from '../lib/blog';
-import { getTools } from '../lib/tools';
+import ToolDirectory from '../components/ToolDirectory.astro';
+import ComparisonTable from '../components/ComparisonTable.astro';
+import { getRankedTools, TOOL_CATEGORY_LABELS, TOOL_CATEGORY_BLURBS, scoreTool } from '../lib/tools';
+import { buildPairs } from '../lib/compare';
+import { getPublishedPosts, CATEGORY_LABELS, formatDate, SITE_URL } from '../lib/blog';
 
-const pillars = await getCollection('pillars');
-// Sort by the 'order' field defined in the frontmatter
-const sortedPillars = pillars.sort((a, b) => a.data.order - b.data.order);
-const latestPosts = (await getPublishedPosts()).slice(0, 4);
-const toolCount = (await getTools()).length;
+const tools = await getRankedTools();
+const posts = (await getPublishedPosts()).slice(0, 4);
+const pillars = (await getCollection('pillars')).sort((a, b) => a.data.order - b.data.order);
+const glossary = await getCollection('glossary');
+const guides = (await getCollection('learn')).sort((a, b) => a.data.order - b.data.order);
 
-const title = "AI Code Review: Standards, Tools & Guides (2026) | aicodereview.io";
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+const categories = [...new Set(tools.map((t) => t.data.category))];
+const topTools = tools.slice(0, 12);
+
+const postSlugs = new Set((await getPublishedPosts()).map((p) => p.id));
+const featuredPairs = buildPairs(tools, postSlugs).slice(0, 8);
+
+const selfHostable = tools.filter((t) => t.data.selfHosted === 'full').length;
+const openSource = tools.filter((t) => t.data.openSource).length;
+
+const title = "AI Code Review Tools (2026) — Directory, Scores & Comparisons | aicodereview.io";
+const description = `All ${tools.length} AI code review tools, scored against one public 9-pillar standard. Pricing, licensing, self-hosting and model control — every fact sourced and dated. Last verified ${lastVerified}.`;
+
+const faq = [
+	{
+		q: 'What is the best AI code review tool in 2026?',
+		a: `There is no single best one — it depends on which of the 9 standards your team actually needs. This directory ranks ${tools.length} tools by how much of that baseline each vendor's own documentation backs up, and shows the full matrix so you can re-rank on the pillars that matter to you. As of ${lastVerified}, ${tools[0].data.name} leads on documented coverage at ${scoreTool(tools[0]).score}/9.`,
+	},
+	{
+		q: 'How is the coverage score calculated?',
+		a: 'Each tool is mapped against 9 standards with four values: documented (1 point), partial (0.5), not offered (0) and undocumented (0). The sum is the score out of 9. Undocumented counts as zero on purpose — a capability nobody can find in the docs is one a buyer cannot rely on. The full formula and the sources are public.',
+	},
+	{
+		q: 'Which AI code review tools can be self-hosted?',
+		a: `${selfHostable} of the ${tools.length} tools in this directory document full self-hosting on their standard plans; several more offer it only on an enterprise contract. If code cannot leave your network, filter the directory by self-hosting before you compare anything else.`,
+	},
+	{
+		q: 'Are there open-source AI code review tools?',
+		a: `Yes — ${openSource} of the ${tools.length} tools here publish their source. Open source and self-hostable are not the same thing, and the licence matters: some are permissive, some copyleft, some dual-licensed with commercial-only files.`,
+	},
+	{
+		q: 'Who runs this directory and how is it funded?',
+		a: 'It is funded by Kodus, who build one of the tools listed. Kodus is scored with the same rubric, from the same kind of public sources, and sits in the ranking wherever that score puts it. Every claim on every tool page carries a source link and a verification date so the work can be checked.',
+	},
+];
 ---
 
-<Layout title={title}>
-	<section class="max-w-3xl mb-24 lg:mb-32">
-		<h1 class="text-stone-500 dark:text-zinc-500 font-mono tracking-widest uppercase text-sm mb-4">
-			The 2026 Standard for AI Code Review
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	schemas={[
+		{
+			"@type": "ItemList",
+			"name": "AI Code Review Tools Directory 2026",
+			"description": description,
+			"numberOfItems": tools.length,
+			"itemListOrder": "https://schema.org/ItemListOrderDescending",
+			"itemListElement": tools.map((tool, i) => ({
+				"@type": "ListItem",
+				"position": i + 1,
+				"url": `${SITE_URL}/tools/${tool.id}/`,
+				"name": tool.data.name,
+			})),
+		},
+		{
+			"@type": "FAQPage",
+			"mainEntity": faq.map((item) => ({
+				"@type": "Question",
+				"name": item.q,
+				"acceptedAnswer": { "@type": "Answer", "text": item.a },
+			})),
+		},
+	]}
+>
+	<section class="mb-12">
+		<p class="eyebrow mb-4">The AI Code Review Directory · Updated {lastVerified}</p>
+		<h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 leading-[0.95] mb-6 max-w-4xl">
+			Every AI code review tool, measured against <span class="text-accent-600 dark:text-accent-400">one public standard</span>.
 		</h1>
-		<h2 class="text-5xl md:text-7xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-6 font-sans leading-none">
-			Diff-reading AI <br/>
-			<span class="text-stone-400 dark:text-zinc-600 line-through decoration-stone-900 dark:decoration-zinc-100 decoration-4">is dead</span>.
-		</h2>
-		<p class="text-xl md:text-2xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-12">
-			Most AI code reviewers are just expensive wrappers around a GPT prompt. They hallucinate, nitpick style over substance, and lack the context of your codebase and business logic.
+		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl mb-8">
+			No star ratings and no affiliate rankings. {tools.length} tools mapped against <a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2">9 engineering standards</a> —
+			pricing, licence, self-hosting, model control — each with the source it came from and the date we checked it.
 		</p>
-		
-		<div class="border-l-4 border-stone-900 dark:border-zinc-100 pl-6 py-2 bg-stone-100/50 dark:bg-zinc-900/50">
-			<p class="text-lg font-medium text-stone-800 dark:text-zinc-200 text-pretty">
-				Here is the <span class="font-bold underline decoration-2 underline-offset-4">engineering baseline</span> for evaluating and implementing an AI Code Reviewer that actually ships faster, safer code.
+
+		<div class="flex flex-wrap items-center gap-3 mb-10">
+			<button type="button" data-search-open class="btn-solid">
+				Search the directory
+				<kbd class="font-mono border border-current/40 px-1.5 py-0.5 text-[10px]">/</kbd>
+			</button>
+			<a href="/compare/" class="btn-ghost">Compare two tools</a>
+			<a href="/methodology/" class="btn-ghost">How we score</a>
+		</div>
+
+		<dl class="grid grid-cols-2 md:grid-cols-4 border-t border-b hairline divide-x divide-stone-200 dark:divide-zinc-800">
+			{[
+				{ k: 'Tools tracked', v: tools.length },
+				{ k: 'Standards scored', v: 9 },
+				{ k: 'Self-hostable', v: selfHostable },
+				{ k: 'Open source', v: openSource },
+			].map((stat) => (
+				<div class="py-5 px-4 first:pl-0">
+					<dd class="text-3xl font-extrabold tracking-tighter text-stone-900 dark:text-zinc-100 tabular-nums">{stat.v}</dd>
+					<dt class="eyebrow mt-1">{stat.k}</dt>
+				</div>
+			))}
+		</dl>
+	</section>
+
+	<section class="mb-20">
+		<div class="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100">The directory</h2>
+			<p class="text-sm text-stone-500 dark:text-zinc-500 text-pretty max-w-xl">
+				Ranked by documented coverage of the 9 standards. Filter it, then open any tool for the sourced matrix behind its score.
 			</p>
+		</div>
+		<ToolDirectory tools={tools} />
+	</section>
+
+	<section class="mb-20 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">Top {topTools.length} at a glance</h2>
+		<p class="text-sm text-stone-500 dark:text-zinc-400 mb-8 max-w-2xl text-pretty">
+			The same data as the cards above, in one scannable table. Coverage is capability documented by the vendor, not review quality — read <a href="/methodology/" class="underline underline-offset-4">the methodology</a> before treating it as a verdict.
+		</p>
+		<ComparisonTable tools={topTools} caption={`Top ${topTools.length} AI code review tools by documented coverage`} />
+	</section>
+
+	<section class="mb-20 pt-12 border-t hairline">
+		<div class="flex flex-wrap items-baseline justify-between gap-3 mb-8">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100">Head to head</h2>
+			<a href="/compare/" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100">All comparisons →</a>
+		</div>
+		<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+			{featuredPairs.map((pair) => (
+				<a href={`/compare/${pair.slug}/`} class="panel panel-hover p-4 group">
+					<span class="eyebrow block mb-2">Comparison</span>
+					<span class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2 text-balance block">
+						{pair.a.data.name} <span class="text-stone-400 dark:text-zinc-600 font-normal">vs</span> {pair.b.data.name}
+					</span>
+					<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 mt-2 block tabular-nums">
+						{scoreTool(pair.a).score}/9 · {scoreTool(pair.b).score}/9
+					</span>
+				</a>
+			))}
 		</div>
 	</section>
 
-	<section id="standards" class="space-y-32">
-		{sortedPillars.map((pillar) => (
-			<div class="border-t border-stone-200 dark:border-zinc-800 pt-16 group">
-				<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-4">
-					[ {pillar.data.order.toString().padStart(2, '0')} ]
-				</h2>
-				<h3 class="text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-8 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4 transition-all">
-					<a href={`/standards/${pillar.id}`}>{pillar.data.title}</a>
-				</h3>
-				<div class="grid lg:grid-cols-12 gap-12 items-start">
-					<div class="lg:col-span-7 flex flex-col justify-between h-full">
-						<p class="text-pretty text-stone-600 dark:text-zinc-400 text-lg leading-relaxed mb-8">
-							{pillar.data.description}
-						</p>
-						<div class="mt-auto">
-							<a href={`/standards/${pillar.id}`} class="inline-flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-zinc-100 bg-white dark:bg-zinc-950 px-5 py-3 border border-stone-300 dark:border-zinc-700 hover:bg-stone-50 dark:hover:bg-zinc-900 transition-colors">
-								Read Full Standard
-								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-							</a>
+	<section class="mb-20 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-8">Browse by category</h2>
+		<div class="grid md:grid-cols-2 gap-4">
+			{categories.map((cat) => {
+				const catTools = tools.filter((t) => t.data.category === cat);
+				return (
+					<a href={`/tools/category/${cat}/`} class="panel panel-hover p-5 group">
+						<div class="flex items-baseline justify-between gap-3 mb-2">
+							<h3 class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">
+								{TOOL_CATEGORY_LABELS[cat]}
+							</h3>
+							<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums shrink-0">{catTools.length} tools</span>
 						</div>
-					</div>
-					<div class="lg:col-span-5">
-						<a href={`/standards/${pillar.id}`} class="block transition-transform hover:scale-[1.02] active:scale-[0.98]">
-							<PillarGraphic order={pillar.data.order} />
-						</a>
-					</div>
+						<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-3">{TOOL_CATEGORY_BLURBS[cat]}</p>
+						<p class="font-mono text-xs text-stone-500 dark:text-zinc-500 truncate">{catTools.slice(0, 4).map((t) => t.data.name).join(' · ')}</p>
+					</a>
+				);
+			})}
+			<a href="/tools/self-hosted/" class="panel panel-hover p-5 group">
+				<div class="flex items-baseline justify-between gap-3 mb-2">
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">Self-hosted</h3>
+					<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums shrink-0">{selfHostable} tools</span>
 				</div>
-			</div>
-		))}
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">Reviewers that run inside your own network, for teams whose code cannot leave it.</p>
+			</a>
+			<a href="/tools/open-source/" class="panel panel-hover p-5 group">
+				<div class="flex items-baseline justify-between gap-3 mb-2">
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">Open source</h3>
+					<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums shrink-0">{openSource} tools</span>
+				</div>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">Tools whose source you can read, audit and fork before you trust them with your codebase.</p>
+			</a>
+		</div>
 	</section>
 
-	{toolCount > 0 && (
-		<section class="mt-40 pt-16 border-t border-stone-200 dark:border-zinc-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-			<div>
-				<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase mb-3">[ The Directory ]</h2>
-				<p class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 text-balance">
-					{toolCount} AI code review tools, mapped against the standard.
-				</p>
-				<p class="text-stone-600 dark:text-zinc-400 mt-2 text-pretty">Pricing, licensing, self-hosting, platforms — structured facts, no star ratings.</p>
-			</div>
-			<a href="/tools" class="shrink-0 inline-flex items-center gap-2 text-sm font-medium text-stone-900 dark:text-zinc-100 bg-white dark:bg-zinc-950 px-5 py-3 border border-stone-300 dark:border-zinc-700 hover:bg-stone-50 dark:hover:bg-zinc-900 transition-colors">
-				Browse Tools
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-			</a>
-		</section>
-	)}
+	<section class="mb-20 pt-12 border-t hairline">
+		<div class="flex flex-wrap items-baseline justify-between gap-3 mb-8">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100">From the blog</h2>
+			<a href="/blog/" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100">All posts →</a>
+		</div>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{posts.map((post) => (
+				<a href={`/blog/${post.id}/`} class="block group">
+					<div class="flex items-center gap-3 mb-2 eyebrow">
+						<span>{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
+						<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
+					</div>
+					<h3 class="text-lg font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline decoration-accent-600 decoration-2 underline-offset-4">
+						{post.data.title}
+					</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{post.data.description}</p>
+				</a>
+			))}
+		</div>
+	</section>
 
-	{latestPosts.length > 0 && (
-		<section class="mt-40 pt-16 border-t border-stone-200 dark:border-zinc-800">
-			<div class="flex items-baseline justify-between mb-12">
-				<h2 class="text-sm font-mono tracking-widest text-stone-500 dark:text-zinc-500 uppercase">[ From the Blog ]</h2>
-				<a href="/blog" class="text-sm font-medium text-stone-600 dark:text-zinc-400 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">All posts →</a>
-			</div>
-			<div class="grid md:grid-cols-2 gap-x-12 gap-y-10">
-				{latestPosts.map((post) => (
-					<a href={`/blog/${post.id}`} class="block group">
-						<div class="flex items-center gap-3 mb-2 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
-							<span>{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
-							<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-						</div>
-						<h3 class="text-xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4">
-							{post.data.title}
-						</h3>
-						<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{post.data.description}</p>
-					</a>
-				))}
-			</div>
-		</section>
-	)}
-
-	<section class="mt-40 pt-16 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col items-center text-center max-w-2xl mx-auto">
-		<h2 class="text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-6">Evaluate your AI Code Review Readiness</h2>
-		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty mb-8">
-			Stop paying for expensive wrappers. See how your current setup scores against the 2026 baseline.
-		</p>
-		<a href="/assessment" class="bg-stone-900 dark:bg-zinc-100 text-stone-50 dark:text-zinc-900 font-bold px-8 py-4 uppercase tracking-widest text-sm hover:bg-stone-800 dark:hover:bg-zinc-200 transition-colors">
-			Take the Assessment [↗]
+	<section class="mb-20 pt-12 border-t hairline grid md:grid-cols-3 gap-4">
+		<a href="/standards/" class="panel panel-hover p-6 group">
+			<span class="eyebrow block mb-3">The standard</span>
+			<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">9 pillars</h2>
+			<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{pillars.length} standards every AI code reviewer should meet, and why each one exists. This is what the scores are measured against.</p>
 		</a>
+		<a href="/learn/" class="panel panel-hover p-6 group">
+			<span class="eyebrow block mb-3">Learn</span>
+			<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">{guides.length} guides</h2>
+			<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">Long-form guides on running code review well — process, metrics, security, scale — independent of which tool you buy.</p>
+		</a>
+		<a href="/glossary/" class="panel panel-hover p-6 group">
+			<span class="eyebrow block mb-3">Reference</span>
+			<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 mb-2 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">{glossary.length} terms</h2>
+			<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">Plain definitions for the vocabulary vendors use — from cyclomatic complexity to BYOK — with what it means when you are buying.</p>
+		</a>
+	</section>
+
+	<section class="mb-20 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-8">Common questions</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<section class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Score your own setup, not just the vendors'</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">The same 9 standards, turned into a 10-minute readiness assessment.</p>
+		</div>
+		<a href="/assessment/" class="btn-solid w-full md:w-auto">Take the assessment [↗]</a>
 	</section>
 </Layout>

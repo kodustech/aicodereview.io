@@ -1,0 +1,32 @@
+---
+term: "Change failure rate"
+definition: "The share of deployments that cause a degraded service \u2014 a rollback, a hotfix, an incident \u2014 one of the four DORA metrics."
+category: "metrics"
+aliases: ["CFR"]
+related: ["dora-metrics", "deployment-frequency", "mttr", "defect-escape-rate", "blast-radius"]
+relatedTools: ["kodus", "sonarqube"]
+relatedPosts: ["ai-code-review-statistics", "how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Of the changes that reached production, what fraction caused a problem. It is the counterweight to [deployment frequency](/glossary/deployment-frequency/): shipping more often only counts as improvement if this number holds.
+
+## Why it is the hardest of the four to measure honestly
+
+It depends on a definition of "failure" that your team has to agree and then keep stable. Does a fast rollback count? A config fix within the hour? A degradation nobody outside engineering noticed? Teams that tighten or loosen this definition over time produce a trend that means nothing.
+
+Attribution is the second problem. A deployment that fails because of a change three deploys earlier is not the failure of the change that revealed it.
+
+## Why review tooling claims here deserve scepticism
+
+"Our tool reduces change failure rate" is the most common ROI claim in this category and the hardest to verify. Failures have many causes — test coverage, environment drift, dependency changes, load — and review is one input among them. A vendor case study showing a drop is showing correlation from a single team over a single window.
+
+Treat it as a guardrail rather than a headline: watch that it does not get worse while you optimise for speed.
+
+## Common mistakes
+
+- Redefining failure mid-measurement.
+- Counting only incidents that triggered a page, which undercounts silent degradations.
+- Expecting a review tool to move it measurably within a quarter.

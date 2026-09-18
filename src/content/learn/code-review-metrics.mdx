@@ -1,0 +1,88 @@
+---
+title: "Code review metrics worth tracking (and the ones that mislead)"
+description: "Which review measurements predict outcomes, how to baseline them before buying tooling, and why comments-per-PR and lines-of-code will send you the wrong way."
+order: 4
+updated: "2026-09-17"
+faq: [{"q": "What are the most important code review metrics?", "a": "Time to first response, median change size, reviewer load distribution, and escaped defects tagged as review-catchable. Those four cover speed, the thing that drives review quality most, resilience, and outcome. Everything else is diagnostic detail underneath them."}, {"q": "Is comments per pull request a useful metric?", "a": "Only as a diagnostic, never as a target. A median of zero comments tells you review is a rubber stamp, which is useful. But driving the number up produces commentary, not scrutiny, and once a bot is commenting the metric measures nothing at all."}, {"q": "How do you measure whether an AI code review tool is working?", "a": "Measure the share of its findings the team acts on, not the number of findings it produces. Tag every finding for two weeks as acted on, acknowledged but ignored, or wrong. Below roughly a third acted on, adoption collapses regardless of the occasional good catch."}, {"q": "Should code review metrics be tracked per developer?", "a": "No. Review metrics describe a system \u2014 queueing, batch size, routing \u2014 and attributing them to individuals produces gaming rather than improvement: more approvals, faster and shallower, or artificially split pull requests. Track them per team, per repository, and over time."}]
+relatedTools: ["graphite", "codacy", "kodus", "sonarqube"]
+relatedPosts: ["ai-code-review-statistics", "how-to-evaluate-ai-code-review-tools"]
+relatedTerms: ["review-latency", "cycle-time", "dora-metrics", "signal-to-noise", "review-coverage", "defect-escape-rate", "code-churn", "change-failure-rate"]
+---
+
+Review metrics are easy to collect and easy to misuse. Most platforms will hand you a dashboard of numbers, roughly half of which change behaviour in the wrong direction the moment anyone is measured on them.
+
+This guide covers the small set that predicts outcomes, how to baseline them before you buy anything, and which popular metrics to leave in the dashboard and out of your goals.
+
+## The four that matter
+
+### 1. Time to first response
+
+[Review latency](/glossary/review-latency/) is the load-bearing metric. Slow reviews cause context loss for the author, encourage larger batches, and push people toward working around the process.
+
+Measure time from *ready for review* to *first human response* — a comment or an approval, not a bot. Report the median and the 90th percentile; means hide the reviews people actually complain about.
+
+A working target is four working hours at the median and one working day at p90. What matters more than the exact number is that it exists and is visible.
+
+### 2. Median change size
+
+The strongest predictor of whether review finds anything. Above roughly 400 lines, defect detection falls off sharply — not because reviewers are careless, but because attention does not hold.
+
+Track the median, not the mean; one migration commit will wreck the mean. Watch the trend rather than the absolute number: rising change size usually means review is slow, so people are batching.
+
+### 3. Reviewer load distribution
+
+What share of reviews are done by your top three reviewers? Above about 60% you have a resilience problem, a burnout problem, and an under-measured knowledge concentration problem, all of which look fine until someone takes leave.
+
+This one is invisible in most dashboards and is often the single most useful thing a team discovers when it starts measuring review.
+
+### 4. Escaped defects, categorised
+
+Of the defects that reached production, how many should have been caught in review? Tag production incidents and customer-reported bugs with the stage that should have caught them: review, tests, staging, or genuinely unforeseeable.
+
+The category breakdown matters more than the total. If most escapes are "tests should have caught this", a review tool is not your bottleneck, and buying one will not change the number.
+
+## Useful as diagnostics, dangerous as targets
+
+**Comments per pull request.** A median of zero is a real signal — it means approvals are happening without reading. But set it as a target and you get commentary. And once an automated reviewer is posting, the metric stops measuring human engagement entirely, so exclude bots or stop tracking it.
+
+**Approval rate and [review coverage](/glossary/review-coverage/).** Branch protection guarantees approvals, not reading. Approvals within sixty seconds of request, on large diffs, with no comments, are the proxy for rubber-stamping. Look at that distribution rather than the headline percentage.
+
+**Rework and [churn](/glossary/code-churn/).** Code rewritten within a few weeks of being written points at unclear requirements or a design that did not survive. Good signal, terrible individual metric.
+
+**Iterations per pull request.** How many review rounds before merge. Rising iterations can mean thorough review or unclear requirements; it needs a human to interpret, which makes it a diagnostic rather than a goal.
+
+## Metrics to ignore
+
+**Lines of code.** Not a measure of anything, in any direction.
+
+**Number of findings produced by a tool.** This measures verbosity. A tool producing fifty findings of which five matter is worse than one producing eight of which five matter — it costs forty-five readings of attention. Track [signal-to-noise](/glossary/signal-to-noise/) instead: findings acted on over findings produced.
+
+**Individual review counts.** Reviewing more is not better. The behaviour this incentivises is fast, shallow approvals.
+
+**Global [code coverage](/glossary/code-coverage/) percentage.** Coverage on changed code is useful in a pull request. A repository-wide percentage as a target produces tests written to execute lines rather than to verify behaviour.
+
+## Baselining before you buy
+
+If you are evaluating tooling, the measurement has to start before the trial, or you will have no way to attribute anything.
+
+**Four weeks before.** Collect time to first response (median and p90), median change size, reviewer distribution, and escaped defects by category. Most of this is available from your platform's API; it does not need a vendor dashboard.
+
+**During the trial.** Tag every finding the tool produces: acted on, acknowledged but ignored, or wrong. This is the number that predicts whether the tool survives, and nobody else can measure it for you.
+
+**Four weeks after.** Re-measure the same four. Then ask the honest question: did human review latency change, or only bot latency? A tool that comments in ninety seconds while humans still take two days has moved a number without moving an outcome.
+
+## Connecting to delivery metrics
+
+Review metrics sit upstream of the [DORA](/glossary/dora-metrics/) set, and the causal chain gets weaker the further downstream you look.
+
+- Review latency → [cycle time](/glossary/cycle-time/) → lead time for changes. This link is direct and measurable.
+- Review quality → [change failure rate](/glossary/change-failure-rate/). Real, but confounded by test coverage, environment drift and load. Expect a quarter or more before any signal, and be sceptical of vendor claims here.
+- Review anything → time to restore. Essentially unrelated. Be suspicious of a pitch that claims it.
+
+Be precise about which link you are claiming. Most ROI arguments in this category quietly slide from the first to the second.
+
+## A minimal monthly review
+
+Four numbers, one page, once a month: p90 time to first response, median change size, top-3 reviewer share, escaped defects by category. Change one thing, then look again next month.
+
+That is enough to keep a review process healthy. More instrumentation than that tends to produce dashboards nobody reads, which is its own kind of waste.

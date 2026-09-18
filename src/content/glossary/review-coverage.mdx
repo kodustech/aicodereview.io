@@ -1,0 +1,30 @@
+---
+term: "Review coverage"
+definition: "The share of changes that actually received a meaningful review before merging \u2014 as opposed to the share that received an approval."
+category: "metrics"
+aliases: []
+related: ["code-review", "code-owner", "signal-to-noise", "defect-escape-rate", "branch-protection"]
+relatedTools: ["codacy", "graphite", "kodus"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Two numbers that look the same and are not: the percentage of pull requests with an approval, and the percentage that a human actually read. Branch protection guarantees the first. Nothing guarantees the second.
+
+## How to see the gap
+
+Proxies that expose rubber-stamping: approvals within a minute of the request, approvals on diffs above a few hundred lines with no comments, and the distribution of comments per pull request. A team with ninety-five percent approval coverage and a median of zero comments is not reviewing; it is unblocking.
+
+## Why it matters before you buy a tool
+
+If your real coverage is low because reviewers are overloaded, automation can genuinely help — it clears the mechanical findings so the human read is cheaper. If it is low because pull requests are too large to read, a tool will not fix it, and adding bot comments to an unread diff changes nothing.
+
+Diagnose which one you have before attributing the problem to missing tooling.
+
+## Common mistakes
+
+- Reporting approval rate as review coverage.
+- Requiring two approvals as a fix, which usually adds latency and diffuses responsibility.
+- Counting bot comments toward coverage. A bot reading a change is not a colleague understanding it.

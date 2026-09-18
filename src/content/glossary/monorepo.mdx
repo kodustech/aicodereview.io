@@ -1,0 +1,35 @@
+---
+term: "Monorepo"
+definition: "A single repository holding many projects or services, with one history and usually one build system."
+category: "delivery"
+aliases: []
+related: ["context-window", "rag", "code-owner", "ci-cd", "embeddings"]
+relatedTools: ["greptile", "kodus", "sonarqube", "graphite"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "self-hosted-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+One repository, many things inside it. Atomic cross-project changes, one dependency graph, no version skew between internal packages — at the cost of tooling that has to understand scale.
+
+## Why it breaks review tools
+
+Nearly every limitation in this category shows up first in a monorepo:
+
+- Indexing time and cost scale with repository size, not with the size of your change.
+- Retrieval gets harder — "related code" in a two-million-line repository needs precision, not similarity.
+- Per-path configuration becomes mandatory, because one rule set cannot serve a payments service and a docs site.
+- Pricing models based on lines of code or repository count behave unpredictably.
+
+A tool that demos beautifully on a service repository can be unusable on a monorepo for reasons that never appear in marketing material.
+
+## Why it matters when you are evaluating
+
+If you run a monorepo, make it the trial repository rather than something smaller. Ask directly: how long does the first index take, how is it kept current, can rules be scoped by directory, and how is pricing calculated here.
+
+## Common mistakes
+
+- Trialling on a small repository, buying for the monorepo.
+- Assuming CODEOWNERS-style scoping carries over into the tool's rule engine.
+- Overlooking that the whole repository may be indexed even though you only enabled the tool for one directory.

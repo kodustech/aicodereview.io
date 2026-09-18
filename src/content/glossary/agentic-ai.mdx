@@ -1,0 +1,32 @@
+---
+term: "Agentic AI"
+definition: "A model given tools and a loop \u2014 it can run commands, read files, and act on the results across several steps, instead of producing one answer from one prompt."
+category: "ai"
+aliases: ["AI agent"]
+related: ["ai-code-review", "sandbox-validation", "mcp", "prompt-injection"]
+relatedTools: ["cursor-bugbot", "qodo", "baz", "greptile"]
+relatedPosts: ["what-is-ai-code-review", "best-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+An agentic system does not answer in one shot. It plans, calls a tool, reads what came back, and decides what to do next. In code review that might mean: fetch the file, search for callers, run the test suite, then comment on what actually failed rather than what might fail.
+
+## Why it matters for review
+
+The interesting claim is verification. A non-agentic reviewer reasons about whether a change breaks something; an agentic one can go and check. That is the difference between "this may throw when the list is empty" and "this throws when the list is empty, here is the failing test I ran".
+
+That capability is what [sandbox validation](/standards/06-sandbox-validation/) asks about, and it is still the least common of the nine standards across the tools in this directory.
+
+## What to watch out for
+
+Agency cuts both ways. A system that can run commands is a system that can be persuaded to run the wrong commands — which is what makes [prompt injection](/glossary/prompt-injection/) a live concern once an agent reads untrusted content like a pull request description or a dependency's README.
+
+Cost is the other side. Multi-step loops call the model repeatedly, and per-review cost for agentic tools is typically several times a single-pass review. Vendors that price per credit or per run rather than per seat usually do so for exactly this reason.
+
+## Common mistakes
+
+- Buying "agentic" as a feature without asking what the agent is allowed to run, and where.
+- Ignoring the isolation question: an agent executing code from an untrusted branch needs a sandbox, not a CI runner with your production credentials in it.
+- Comparing per-seat and per-run pricing as if they were the same shape.

@@ -1,0 +1,30 @@
+---
+term: "Blast radius"
+definition: "How much of a system a given change can affect if it is wrong \u2014 the practical measure of how carefully it should be reviewed."
+category: "review-practice"
+aliases: []
+related: ["diff", "code-review", "code-owner", "change-failure-rate", "monorepo"]
+relatedTools: ["greptile", "kodus", "sonarqube"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+A twenty-line change to a shared authentication helper has a larger blast radius than a two-hundred-line change to an internal admin page. Line count measures effort; blast radius measures risk, and they routinely point in opposite directions.
+
+## Why review should be proportional to it
+
+Teams that review everything with equal intensity tend to under-review the dangerous changes and over-review the safe ones, because attention follows diff size. Making risk explicit — through ownership rules, path-scoped severity, or simply a convention about which directories get two reviewers — puts the attention where the exposure is.
+
+## How tools can help, and where they fall short
+
+Blast radius is a structural property: who calls this, what depends on that, how far the change propagates. Tools with real code-graph [retrieval](/glossary/rag/) can approximate it; tools working from the diff alone cannot see it at all, which is why they treat every change as equally consequential.
+
+The configuration equivalent is per-path rules. If a tool can only apply one rule set to an entire organisation, it cannot express that the payments directory deserves more scrutiny than the marketing site.
+
+## Common mistakes
+
+- Using diff size as a proxy for risk.
+- Applying uniform review policy across a monorepo with wildly different risk profiles inside it.
+- Forgetting that configuration and infrastructure changes often have the largest radius of all.

@@ -1,0 +1,30 @@
+---
+term: "MTTR"
+definition: "Mean time to restore: how long it takes to recover service after a failure in production \u2014 the fourth DORA metric."
+category: "metrics"
+aliases: ["Mean time to restore", "Time to restore service"]
+related: ["dora-metrics", "change-failure-rate", "deployment-frequency"]
+relatedTools: ["kodus"]
+relatedPosts: ["ai-code-review-statistics"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+From the moment a failure starts affecting users to the moment service is restored. Restoration, not root cause — a rollback that fixes the symptom stops the clock.
+
+## Why it is more about deployment than about review
+
+MTTR is dominated by how fast you can detect and reverse. Teams with fast pipelines, good observability and a trusted rollback path recover in minutes; teams that need a manual release process to ship a one-line fix recover in hours, however good their code review is.
+
+It appears in this glossary because it is the DORA metric most often cited in tooling pitches where the causal link is weakest. Review can plausibly reduce how *often* you need to restore; it does almost nothing for how *fast*.
+
+## The one real connection
+
+Small changes are faster to diagnose and safer to revert. A review culture that keeps pull requests small indirectly improves MTTR by making the failing change easier to identify. That is a second-order effect, and worth describing as one.
+
+## Common mistakes
+
+- Using the mean on a distribution with a few very long incidents; the median tells a different and usually more useful story.
+- Measuring from detection rather than from onset, which hides monitoring gaps.
+- Crediting a review tool with an MTTR improvement that came from a better rollback process.

@@ -1,0 +1,129 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ToolDirectory from '../../components/ToolDirectory.astro';
+import ComparisonTable from '../../components/ComparisonTable.astro';
+import { getRankedTools, scoreTool, SELF_HOSTED_LABELS } from '../../lib/tools';
+import { SITE_URL } from '../../lib/blog';
+
+const all = await getRankedTools();
+const full = all.filter((t) => t.data.selfHosted === 'full');
+const enterprise = all.filter((t) => t.data.selfHosted === 'enterprise-only');
+const byok = all.filter((t) => t.data.selfHosted === 'byok');
+const listed = [...full, ...byok, ...enterprise];
+const lastVerified = all.map((t) => t.data.lastVerified).sort().at(-1);
+
+const title = `Self-Hosted AI Code Review Tools (2026): ${full.length} That Run On Your Infrastructure | aicodereview.io`;
+const description = `${full.length} AI code review tools document full self-hosting, ${enterprise.length} more gate it behind an enterprise contract. Licences, deployment notes and standards scores — verified ${lastVerified}.`;
+
+const faq = [
+	{
+		q: 'Which AI code review tools can be fully self-hosted?',
+		a: `${full.length} of the ${all.length} tools in this directory document self-hosting on a standard plan: ${full.map((t) => t.data.name).join(', ')}. A further ${enterprise.length} offer it only on a custom enterprise contract.`,
+	},
+	{
+		q: 'Is self-hosted the same as open source?',
+		a: 'No, and conflating them is the most common mistake in this evaluation. A proprietary tool can ship a self-hosted deployment you cannot read the source of, and an open-source tool can still route your code through a vendor API. Check the licence row and the deployment row separately.',
+	},
+	{
+		q: 'Does self-hosting keep my code away from an LLM provider?',
+		a: 'Only if the model runs somewhere you control too. Self-hosting the reviewer moves the orchestration into your network, but the model call still goes wherever the tool points it. Look for BYOK plus support for a local or private endpoint if the requirement is that code never leaves your boundary.',
+	},
+	{
+		q: 'What does self-hosting cost?',
+		a: 'Usually your own infrastructure plus your own model spend, which is why the total bill can be lower or much higher than a seat price depending on review volume. Tools that meter model usage separately are marked in the pricing column of each profile.',
+	},
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Tools', url: `${SITE_URL}/#directory` },
+		{ name: 'Self-hosted', url: `${SITE_URL}/tools/self-hosted/` },
+	]}
+	schemas={[
+		{
+			"@type": "ItemList",
+			"name": "Self-hosted AI code review tools",
+			"description": description,
+			"numberOfItems": listed.length,
+			"itemListElement": listed.map((tool, i) => ({ "@type": "ListItem", "position": i + 1, "url": `${SITE_URL}/tools/${tool.id}/`, "name": tool.data.name })),
+		},
+		{ "@type": "FAQPage", "mainEntity": faq.map((item) => ({ "@type": "Question", "name": item.q, "acceptedAnswer": { "@type": "Answer", "text": item.a } })) },
+	]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Tools', href: '/#directory' }, { name: 'Self-hosted' }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">Filtered view · Verified {lastVerified}</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			AI code review that runs on your own infrastructure
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">
+			For teams in regulated industries, or with a security review that says source code does not leave the network, deployment is the first filter — not features.
+			{full.length} of {all.length} tools here document full self-hosting; {enterprise.length} more will sell it to you on an enterprise contract.
+		</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Watch the second half of the question too: self-hosting the reviewer does not move the <em>model</em> inside your boundary. Check the model-control row on each profile.
+		</p>
+	</section>
+
+	{full.length > 0 && (
+		<section class="mb-16">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">Full self-hosting on a standard plan</h2>
+			<p class="text-sm text-stone-500 dark:text-zinc-400 mb-6">No enterprise contract required to run it yourself.</p>
+			<ComparisonTable tools={full} caption="Fully self-hostable AI code review tools" />
+			<div class="mt-8">
+				<ToolDirectory tools={full} filters={false} id="self-hosted-grid" />
+			</div>
+		</section>
+	)}
+
+	{byok.length > 0 && (
+		<section class="mb-16 pt-10 border-t hairline">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">Bring your own keys</h2>
+			<p class="text-sm text-stone-500 dark:text-zinc-400 mb-6">Hosted orchestration, but the model calls run against your provider account.</p>
+			<ToolDirectory tools={byok} filters={false} id="byok-grid" />
+		</section>
+	)}
+
+	{enterprise.length > 0 && (
+		<section class="mb-16 pt-10 border-t hairline">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-2">Self-hosting on enterprise only</h2>
+			<p class="text-sm text-stone-500 dark:text-zinc-400 mb-6">Available, but priced and gated — expect a sales cycle and, in some cases, a seat minimum.</p>
+			<div class="border-t hairline">
+				{enterprise.map((tool) => (
+					<div class="grid md:grid-cols-[12rem_1fr_5rem] gap-x-6 gap-y-1 py-4 border-b hairline items-baseline">
+						<a href={`/tools/${tool.id}/`} class="font-bold text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2">{tool.data.name}</a>
+						<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">{tool.data.selfHostedNote || SELF_HOSTED_LABELS[tool.data.selfHosted]}</p>
+						<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 tabular-nums md:text-right">{scoreTool(tool).score}/9</span>
+					</div>
+				))}
+			</div>
+		</section>
+	)}
+
+	<section class="mb-16 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-8">Questions about self-hosting</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Open source matters to you too?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Different filter, different list — self-hostable and readable are not the same thing.</p>
+		</div>
+		<a href="/tools/open-source/" class="btn-solid w-full md:w-auto">Open-source tools [↗]</a>
+	</div>
+</Layout>

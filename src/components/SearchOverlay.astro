@@ -1,0 +1,156 @@
+---
+// Client-side search over a prebuilt index (/search-index.json). Small enough
+// (a few hundred rows) that substring ranking beats shipping a search library.
+---
+
+<div
+	data-search-dialog
+	class="fixed inset-0 z-[100] hidden items-start justify-center pt-[12vh] px-4 bg-stone-900/40 dark:bg-black/60 backdrop-blur-sm"
+	role="dialog"
+	aria-modal="true"
+	aria-label="Search"
+>
+	<div class="w-full max-w-2xl panel shadow-2xl" data-search-panel>
+		<div class="flex items-center gap-3 px-4 border-b hairline">
+			<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="text-stone-400 dark:text-zinc-600 shrink-0"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+			<input
+				type="search"
+				data-search-input
+				placeholder="Search tools, comparisons, guides, glossary…"
+				autocomplete="off"
+				spellcheck="false"
+				class="flex-1 bg-transparent py-4 text-base text-stone-900 dark:text-zinc-100 placeholder:text-stone-400 dark:placeholder:text-zinc-600 focus:outline-none"
+			/>
+			<kbd class="text-[10px] font-mono border border-stone-300 dark:border-zinc-700 px-1.5 py-0.5 text-stone-500 dark:text-zinc-500 shrink-0">ESC</kbd>
+		</div>
+		<div data-search-results class="max-h-[55vh] overflow-y-auto p-2"></div>
+	</div>
+</div>
+
+<script is:inline>
+	(() => {
+		const dialog = document.querySelector('[data-search-dialog]');
+		const input = document.querySelector('[data-search-input]');
+		const results = document.querySelector('[data-search-results]');
+		if (!dialog || !input || !results) return;
+
+		let index = null;
+		let active = -1;
+
+		const TYPE_LABEL = { tool: 'Tool', post: 'Blog', term: 'Glossary', guide: 'Guide', compare: 'Compare', page: 'Page' };
+
+		async function load() {
+			if (index) return index;
+			try {
+				const res = await fetch('/search-index.json');
+				index = await res.json();
+			} catch {
+				index = [];
+			}
+			return index;
+		}
+
+		// Hyphens and slashes are noise when matching: "self host" should find
+		// "Self-hosting", and "ci cd" should find "CI/CD".
+		const norm = (s) => s.toLowerCase().replace(/[-_/]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+		// Generated comparison pages share one description, so on an equal text
+		// match they sink below the pages that say something specific.
+		const TYPE_WEIGHT = { tool: 0, term: 0, guide: 0, post: 0.1, page: 0.1, compare: 0.4 };
+
+		function score(item, q) {
+			const title = norm(item.title);
+			const hay = norm(item.title + ' ' + item.description + ' ' + (item.keywords || ''));
+			const weight = TYPE_WEIGHT[item.type] ?? 0.2;
+			if (title === q) return 0 + weight;
+			if (title.startsWith(q)) return 1 + weight;
+			if (title.includes(q)) return 2 + weight;
+			if (hay.includes(q)) return 3 + weight;
+			// Every query word present somewhere still counts, just lower.
+			return q.split(' ').every((w) => hay.includes(w)) ? 4 + weight : Infinity;
+		}
+
+		function render(items, q) {
+			active = -1;
+			if (!q) {
+				results.innerHTML = '<p class="px-4 py-8 text-center text-sm text-stone-500 dark:text-zinc-500 font-mono">Type to search the directory, the blog, the guides and the glossary.</p>';
+				return;
+			}
+			if (items.length === 0) {
+				results.innerHTML = '<p class="px-4 py-8 text-center text-sm text-stone-500 dark:text-zinc-500 font-mono">No match. Try a tool name, a standard, or a term.</p>';
+				return;
+			}
+			results.innerHTML = items
+				.map(
+					(item, i) => `
+					<a href="${item.url}" data-result="${i}" class="flex items-start gap-3 px-3 py-3 hover:bg-stone-100 dark:hover:bg-zinc-800 transition-colors group">
+						<span class="text-[10px] font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500 border border-stone-300 dark:border-zinc-700 px-1.5 py-0.5 mt-0.5 shrink-0">${TYPE_LABEL[item.type] || item.type}</span>
+						<span class="min-w-0">
+							<span class="block text-sm font-bold text-stone-900 dark:text-zinc-100 truncate">${item.title}</span>
+							<span class="block text-xs text-stone-500 dark:text-zinc-400 line-clamp-1">${item.description}</span>
+						</span>
+					</a>`
+				)
+				.join('');
+		}
+
+		async function search() {
+			const q = norm(input.value);
+			const data = await load();
+			if (!q) return render([], q);
+			const hits = data
+				.map((item) => ({ item, s: score(item, q) }))
+				.filter(({ s }) => s !== Infinity)
+				.sort((a, b) => a.s - b.s || a.item.title.length - b.item.title.length)
+				.slice(0, 12)
+				.map(({ item }) => item);
+			render(hits, q);
+		}
+
+		function open() {
+			dialog.classList.remove('hidden');
+			dialog.classList.add('flex');
+			document.body.style.overflow = 'hidden';
+			input.focus();
+			load();
+		}
+
+		function close() {
+			dialog.classList.add('hidden');
+			dialog.classList.remove('flex');
+			document.body.style.overflow = '';
+		}
+
+		function move(delta) {
+			const nodes = results.querySelectorAll('[data-result]');
+			if (!nodes.length) return;
+			active = (active + delta + nodes.length) % nodes.length;
+			nodes.forEach((n, i) => n.classList.toggle('bg-stone-100', i === active));
+			nodes.forEach((n, i) => n.classList.toggle('dark:bg-zinc-800', i === active));
+			nodes[active].scrollIntoView({ block: 'nearest' });
+		}
+
+		document.querySelectorAll('[data-search-open]').forEach((btn) => btn.addEventListener('click', open));
+		dialog.addEventListener('click', (e) => {
+			if (!e.target.closest('[data-search-panel]')) close();
+		});
+		input.addEventListener('input', search);
+		input.addEventListener('keydown', (e) => {
+			if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+			else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+			else if (e.key === 'Enter' && active >= 0) {
+				e.preventDefault();
+				results.querySelectorAll('[data-result]')[active].click();
+			}
+		});
+		document.addEventListener('keydown', (e) => {
+			const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+			if (e.key === 'Escape') close();
+			else if ((e.key === '/' && !typing) || (e.key === 'k' && (e.metaKey || e.ctrlKey))) {
+				e.preventDefault();
+				open();
+			}
+		});
+		render([], '');
+	})();
+</script>

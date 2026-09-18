@@ -1,0 +1,30 @@
+---
+term: "Open source"
+definition: "Software whose source code is published under a licence that permits reading, modifying and redistributing it \u2014 which is a licensing property, not a deployment one."
+category: "delivery"
+aliases: ["OSS"]
+related: ["self-hosting", "byok", "supply-chain-attack"]
+relatedTools: ["kodus", "pr-agent", "semgrep", "sonarqube", "openreview"]
+relatedPosts: ["open-source-ai-code-review-tools", "self-hosted-ai-code-review"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+An open-source tool publishes its source under a licence granting rights to use, study, modify and share it. For a code review tool, the most interesting consequence is that you can read how the review prompt is built and what leaves your network.
+
+## The licence families that matter here
+
+- **Permissive** (MIT, Apache 2.0, BSD): use it almost however you like, including inside a commercial product.
+- **Copyleft** (GPL, AGPL): modifications must be published under the same terms. AGPL extends that to software offered over a network, which is why it appears often in this category.
+- **Dual-licensed**: an open core with commercial-only components, typically the enterprise features. Common, and worth reading carefully — "open source" on the homepage can mean "some of it".
+
+## What open source does not guarantee
+
+It does not mean free to run: you still pay for [inference](/glossary/inference-cost/) and infrastructure. It does not mean [self-hostable](/glossary/self-hosting/), though the two often coincide. It does not mean maintained — check commit recency and issue response before depending on it. And it does not mean your code stays local; an open-source tool can still call a vendor API on every review.
+
+## Common mistakes
+
+- Reading the badge and not the licence file.
+- Assuming an open-source tool needs no vendor relationship, then discovering the hosted version is where the features are.
+- Adopting an unmaintained project because the README looked current.

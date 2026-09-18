@@ -1,69 +1,120 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getPublishedPosts, CATEGORY_LABELS, readingTime, formatDate, SITE_URL } from '../../lib/blog';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { getPublishedPosts, getTagMap, tagLabel, CATEGORY_LABELS, readingTime, formatDate, SITE_URL } from '../../lib/blog';
+import { getRankedTools } from '../../lib/tools';
 
 const posts = await getPublishedPosts();
+const [featured, ...rest] = posts;
 const categories = [...new Set(posts.map((p) => p.data.category))];
+const tagMap = await getTagMap();
+const topTags = [...tagMap.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 12);
+const toolCount = (await getRankedTools()).length;
 
-const title = "AI Code Review Blog — Comparisons, Guides & Benchmarks | aicodereview.io";
-const description = "In-depth comparisons, alternatives, and evaluation guides for AI code review tools, benchmarked against the 2026 AI Code Review Standard.";
+const title = "AI Code Review Blog — Comparisons, Alternatives & Guides | aicodereview.io";
+const description = `In-depth comparisons, honest alternatives and evaluation guides for AI code review tools, all benchmarked against the same 9-pillar standard as the ${toolCount}-tool directory.`;
 ---
 
 <Layout
 	title={title}
 	description={description}
+	width="wide"
 	breadcrumbs={[
 		{ name: 'Home', url: `${SITE_URL}/` },
-		{ name: 'Blog', url: `${SITE_URL}/blog/` }
+		{ name: 'Blog', url: `${SITE_URL}/blog/` },
 	]}
-	schemas={[{
-		"@type": "Blog",
-		"name": "aicodereview.io Blog",
-		"url": `${SITE_URL}/blog/`,
-		"description": description,
-		"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": `${SITE_URL}/about/` }
-	}]}
+	schemas={[
+		{
+			"@type": "Blog",
+			"name": "aicodereview.io Blog",
+			"url": `${SITE_URL}/blog/`,
+			"description": description,
+			"publisher": { "@type": "Organization", "name": "aicodereview.io", "url": SITE_URL },
+		},
+		{
+			"@type": "ItemList",
+			"name": "AI code review articles",
+			"numberOfItems": posts.length,
+			"itemListElement": posts.map((post, i) => ({
+				"@type": "ListItem",
+				"position": i + 1,
+				"url": `${SITE_URL}/blog/${post.id}/`,
+				"name": post.data.title,
+			})),
+		},
+	]}
 >
-	<section class="max-w-3xl mb-16">
-		<h1 class="text-stone-500 dark:text-zinc-500 font-mono tracking-widest uppercase text-sm mb-4">
-			The Blog
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Blog' }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">The blog · {posts.length} articles</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			Comparisons, alternatives &amp; evaluation guides
 		</h1>
-		<h2 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-6 font-sans leading-none">
-			Comparisons, guides &amp; evaluations.
-		</h2>
-		<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
-			Everything we learn testing AI code reviewers against <a href="/#standards" class="underline underline-offset-4 decoration-2 hover:decoration-stone-400">the 9 standards</a> — tool comparisons, honest alternatives, and evaluation playbooks.
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Everything we learn testing AI code reviewers against <a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2">the 9 standards</a> — written for the engineer who has to make the call, not the person signing the invoice.
 		</p>
 	</section>
 
-	{categories.length > 1 && (
-		<nav class="flex flex-wrap gap-3 mb-16" aria-label="Blog categories">
-			{categories.map((cat) => (
-				<a href={`/blog/category/${cat}`} class="text-xs font-mono uppercase tracking-widest px-4 py-2 border border-stone-300 dark:border-zinc-700 text-stone-600 dark:text-zinc-400 hover:bg-stone-100 dark:hover:bg-zinc-900 hover:text-stone-900 dark:hover:text-zinc-100 transition-colors">
-					{CATEGORY_LABELS[cat] ?? cat}
-				</a>
-			))}
-		</nav>
+	<nav class="flex flex-wrap gap-2 mb-12 pb-10 border-b hairline" aria-label="Blog categories">
+		{categories.map((cat) => (
+			<a href={`/blog/category/${cat}/`} class="chip">
+				{CATEGORY_LABELS[cat] ?? cat}
+				<span class="tabular-nums opacity-60">{posts.filter((p) => p.data.category === cat).length}</span>
+			</a>
+		))}
+	</nav>
+
+	{featured && (
+		<article class="mb-16 grid lg:grid-cols-12 gap-8 items-start">
+			<div class="lg:col-span-8">
+				<div class="flex items-center gap-3 mb-3 eyebrow">
+					<span class="text-accent-700 dark:text-accent-400">Latest</span>
+					<span>{CATEGORY_LABELS[featured.data.category] ?? featured.data.category}</span>
+					<time datetime={featured.data.pubDate.toISOString()}>{formatDate(featured.data.pubDate)}</time>
+					<span>{readingTime(featured.body)} min</span>
+				</div>
+				<h2 class="text-3xl md:text-4xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-100 mb-4 leading-tight">
+					<a href={`/blog/${featured.id}/`} class="hover:underline decoration-accent-600 decoration-2 underline-offset-8">{featured.data.title}</a>
+				</h2>
+				<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-5">{featured.data.description}</p>
+				<a href={`/blog/${featured.id}/`} class="btn-ghost">Read the article</a>
+			</div>
+			<div class="lg:col-span-4 panel p-5">
+				<h3 class="eyebrow mb-3">Browse by topic</h3>
+				<div class="flex flex-wrap gap-1.5">
+					{topTags.map(([tag, list]) => (
+						<a href={`/blog/tag/${tag}/`} class="chip">{tagLabel(tag)} <span class="tabular-nums opacity-60">{list.length}</span></a>
+					))}
+				</div>
+			</div>
+		</article>
 	)}
 
-	<section class="space-y-12">
-		{posts.map((post) => (
-			<article class="border-t border-stone-200 dark:border-zinc-800 pt-10 group">
-				<div class="flex items-center gap-4 mb-3 text-xs font-mono uppercase tracking-widest text-stone-500 dark:text-zinc-500">
-					<span>[ {CATEGORY_LABELS[post.data.category] ?? post.data.category} ]</span>
-					<time datetime={post.data.pubDate.toISOString()}>{formatDate(post.data.pubDate)}</time>
-					<span>{readingTime(post.body)} min read</span>
+	<section class="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-16">
+		{rest.map((post) => (
+			<article class="panel panel-hover p-5 group relative flex flex-col">
+				<div class="flex items-center gap-3 mb-3 eyebrow">
+					<span>{CATEGORY_LABELS[post.data.category] ?? post.data.category}</span>
+					<span>{readingTime(post.body)} min</span>
 				</div>
-				<h3 class="text-2xl md:text-3xl font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 group-hover:underline decoration-stone-300 dark:decoration-zinc-700 underline-offset-4">
-					<a href={`/blog/${post.id}`}>{post.data.title}</a>
-				</h3>
-				<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed max-w-3xl">
-					{post.data.description}
-				</p>
+				<h2 class="text-lg font-bold tracking-tight text-balance text-stone-900 dark:text-zinc-100 mb-3 leading-snug">
+					<a href={`/blog/${post.id}/`} class="after:absolute after:inset-0 group-hover:underline decoration-accent-600 decoration-2 underline-offset-4">{post.data.title}</a>
+				</h2>
+				<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed line-clamp-4 mb-4">{post.data.description}</p>
+				<time datetime={post.data.pubDate.toISOString()} class="eyebrow mt-auto">{formatDate(post.data.pubDate)}</time>
 			</article>
 		))}
 		{posts.length === 0 && (
-			<p class="text-stone-500 dark:text-zinc-500 font-mono">No posts yet — first batch shipping soon.</p>
+			<p class="text-stone-500 dark:text-zinc-500 font-mono">No posts yet.</p>
 		)}
 	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Want the data rather than the argument?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">All {toolCount} tools, scored against the same 9 standards, with a source for every claim.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</div>
 </Layout>

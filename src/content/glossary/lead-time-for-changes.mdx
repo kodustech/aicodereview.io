@@ -1,0 +1,28 @@
+---
+term: "Lead time for changes"
+definition: "The time from a change being committed to that change running in production \u2014 one of the four DORA metrics."
+category: "metrics"
+aliases: ["Lead time"]
+related: ["dora-metrics", "cycle-time", "deployment-frequency", "review-latency"]
+relatedTools: ["kodus", "graphite"]
+relatedPosts: ["ai-code-review-statistics"]
+updated: "2026-09-17"
+---
+
+## What it is
+
+Commit to production. Narrower than [cycle time](/glossary/cycle-time/), which usually starts earlier, and deliberately so: it measures the delivery pipeline rather than the whole development process.
+
+## What it actually tells you
+
+Long lead time is rarely a coding problem. It is review queues, slow or flaky pipelines, manual approval steps, and batched releases. Because it captures all of those in one number, it is a good early warning that something structural is wrong, and a poor diagnostic on its own — you need the stage breakdown to know which.
+
+## Why review tooling affects it
+
+Review is usually the longest stage. Anything that shortens the wait for first feedback shortens lead time, provided it does not add latency of its own — which is the trap with a slow blocking check in CI.
+
+## Common mistakes
+
+- Measuring from pull request open rather than first commit, which hides work-in-progress time.
+- Improving lead time by skipping review rather than accelerating it.
+- Ignoring the difference between merged and actually deployed, especially with weekly release trains.

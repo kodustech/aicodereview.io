@@ -1,0 +1,134 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import ToolDirectory from '../../../components/ToolDirectory.astro';
+import ComparisonTable from '../../../components/ComparisonTable.astro';
+import { getRankedTools, scoreTool, TOOL_CATEGORY_LABELS, TOOL_CATEGORY_BLURBS, PILLAR_SHORT } from '../../../lib/tools';
+import { SITE_URL } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+	const tools = await getRankedTools();
+	const categories = [...new Set(tools.map((t) => t.data.category))];
+	return categories.map((category) => ({
+		params: { category },
+		props: { tools: tools.filter((t) => t.data.category === category), total: tools.length },
+	}));
+}
+
+const { category } = Astro.params;
+const { tools, total } = Astro.props;
+const label = TOOL_CATEGORY_LABELS[category!] ?? category!;
+const blurb = TOOL_CATEGORY_BLURBS[category!] ?? '';
+
+const selfHostable = tools.filter((t) => ['full', 'byok'].includes(t.data.selfHosted));
+const openSource = tools.filter((t) => t.data.openSource);
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+const leader = tools[0];
+
+// The pillar this category is collectively worst at — a genuinely useful,
+// non-generic sentence that only this page can make.
+const pillarGaps = Object.keys(PILLAR_SHORT).map((id) => ({
+	id,
+	met: tools.filter((t) => t.data.standards[id]?.status === 'yes').length,
+}));
+const weakest = pillarGaps.sort((a, b) => a.met - b.met)[0];
+
+const title = `${label} Tools (2026): ${tools.length} Compared & Scored | aicodereview.io`;
+const description = `All ${tools.length} ${label.toLowerCase()} tools in the directory, scored against the 9-pillar AI code review standard. Pricing, licensing, self-hosting — sourced and verified ${lastVerified}.`;
+
+const faq = [
+	{
+		q: `What is the best ${label.toLowerCase()} tool?`,
+		a: `On documented coverage of the 9 standards, ${leader.data.name} leads this category at ${scoreTool(leader).score}/9 as of ${lastVerified}. That is a measure of what each vendor documents, not of review quality on your codebase — re-rank the list on the pillars your team actually needs.`,
+	},
+	{
+		q: `How many ${label.toLowerCase()} tools can be self-hosted?`,
+		a: selfHostable.length
+			? `${selfHostable.length} of ${tools.length}: ${selfHostable.map((t) => t.data.name).join(', ')}. The rest are cloud-only or gate self-hosting behind an enterprise contract.`
+			: `None of the ${tools.length} tools in this category document self-hosting on a standard plan. If code cannot leave your network, look at the self-hosted list instead.`,
+	},
+	{
+		q: `Are any ${label.toLowerCase()} tools open source?`,
+		a: openSource.length
+			? `${openSource.length}: ${openSource.map((t) => `${t.data.name} (${t.data.license.split('(')[0].trim()})`).join(', ')}.`
+			: `No tool in this category publishes its source.`,
+	},
+	{
+		q: `What do ${label.toLowerCase()} tools most often get wrong?`,
+		a: `Across this category, ${(PILLAR_SHORT[weakest.id] ?? weakest.id).toLowerCase()} is the least documented standard — only ${weakest.met} of ${tools.length} tools back it up publicly. It is the first thing worth asking a vendor about in a demo.`,
+	},
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Tools', url: `${SITE_URL}/#directory` },
+		{ name: label, url: `${SITE_URL}/tools/category/${category}/` },
+	]}
+	schemas={[
+		{
+			"@type": "ItemList",
+			"name": `${label} tools`,
+			"description": description,
+			"numberOfItems": tools.length,
+			"itemListOrder": "https://schema.org/ItemListOrderDescending",
+			"itemListElement": tools.map((tool, i) => ({
+				"@type": "ListItem",
+				"position": i + 1,
+				"url": `${SITE_URL}/tools/${tool.id}/`,
+				"name": tool.data.name,
+			})),
+		},
+		{
+			"@type": "FAQPage",
+			"mainEntity": faq.map((item) => ({ "@type": "Question", "name": item.q, "acceptedAnswer": { "@type": "Answer", "text": item.a } })),
+		},
+	]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Tools', href: '/#directory' }, { name: label }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">Category · {tools.length} of {total} tools</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			{label} tools, scored
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">{blurb}</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Every tool here is mapped against the same <a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2">9 standards</a> with a source and a date.
+			{leader.data.name} currently leads the category at {scoreTool(leader).score}/9; the weakest spot across the whole category is {(PILLAR_SHORT[weakest.id] ?? weakest.id).toLowerCase()}, documented by only {weakest.met} of {tools.length}.
+		</p>
+	</section>
+
+	<section class="mb-16">
+		<ComparisonTable tools={tools} caption={`${label} tools compared`} />
+	</section>
+
+	<section class="mb-16">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-6">All {label.toLowerCase()} tools</h2>
+		<ToolDirectory tools={tools} filters={false} id="category-grid" />
+	</section>
+
+	<section class="mb-16 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-8">Questions about {label.toLowerCase()} tools</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Looking wider than {label.toLowerCase()}?</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">The full directory holds {total} tools across every category, filterable in one place.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</div>
+</Layout>
