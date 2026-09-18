@@ -1,0 +1,43 @@
+---
+import { PLATFORM_ICON_PATHS } from '../lib/platform-icons';
+import { platformLabel } from '../lib/tools';
+
+interface Props {
+	platform: string;
+	size?: number;
+	/** Renders the label next to the mark. */
+	showLabel?: boolean;
+	class?: string;
+}
+
+const { platform, size = 16, showLabel = false, class: className = '' } = Astro.props;
+const icon = PLATFORM_ICON_PATHS[platform];
+const label = platformLabel(platform);
+// Marks are monochrome: brand colour would fight the palette and the matrix
+// glyphs, and these are identifying a fact rather than endorsing a product.
+const initials = label.replace(/[^A-Z]/g, '').slice(0, 2) || label.slice(0, 2).toUpperCase();
+---
+
+<span class:list={['inline-flex items-center gap-1.5 shrink-0', className]} title={label}>
+	{icon ? (
+		<svg
+			role="img"
+			aria-label={label}
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="currentColor"
+			class="shrink-0"
+		>
+			<path d={icon.path} />
+		</svg>
+	) : (
+		<span
+			aria-label={label}
+			role="img"
+			class="shrink-0 inline-flex items-center justify-center font-mono font-bold border border-current/40 leading-none"
+			style={`width:${size}px;height:${size}px;font-size:${Math.round(size * 0.46)}px`}
+		>{initials}</span>
+	)}
+	{showLabel && <span>{label}</span>}
+</span>

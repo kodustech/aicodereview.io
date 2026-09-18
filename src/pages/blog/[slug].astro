@@ -59,6 +59,7 @@ if (post.data.faq.length > 0) {
 	title={`${post.data.title} | aicodereview.io`}
 	description={post.data.description}
 	width="wide"
+	ogImage={`blog/${post.id}`}
 	ogType="article"
 	article={{ pubDate: post.data.pubDate, updatedDate: post.data.updatedDate, tags: post.data.tags }}
 	breadcrumbs={[

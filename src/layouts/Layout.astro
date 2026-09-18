@@ -13,6 +13,8 @@ interface Props {
 	schemas?: Record<string, unknown>[];
 	/** `prose` for reading pages, `wide` for the directory and comparison grids. */
 	width?: 'prose' | 'wide';
+	/** Path under /og/, without extension — e.g. "tools/kodus". Falls back to the default card. */
+	ogImage?: string;
 }
 
 const SITE = 'https://aicodereview.io';
@@ -25,8 +27,10 @@ const {
 	article,
 	schemas = [],
 	width = 'prose',
+	ogImage: ogImagePath,
 } = Astro.props;
-const ogImage = `${SITE}/og-image.png`;
+// Per-page cards are generated into public/og by `npm run og`.
+const ogImage = `${SITE}/og/${ogImagePath ?? 'default'}.png`;
 const mainWidth = width === 'wide' ? 'max-w-6xl' : 'max-w-4xl';
 
 const publisher = {
@@ -46,6 +50,7 @@ const publisher = {
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 		<link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />

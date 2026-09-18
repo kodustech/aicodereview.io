@@ -1,5 +1,6 @@
 ---
 import ScoreMeter from './ScoreMeter.astro';
+import PlatformIcon from './PlatformIcon.astro';
 import {
 	scoreTool,
 	monogram,
@@ -75,7 +76,14 @@ const search = [d.name, d.tagline, TOOL_CATEGORY_LABELS[d.category], d.license, 
 	</p>
 
 	<div class="mt-auto space-y-3">
-		<ScoreMeter score={score} />
+		<div class="flex items-center gap-3">
+			<ScoreMeter score={score} />
+			{d.platforms.length > 0 && (
+				<span class="flex items-center gap-1.5 text-stone-400 dark:text-zinc-600 ml-auto">
+					{d.platforms.slice(0, 5).map((p) => <PlatformIcon platform={p} size={14} />)}
+				</span>
+			)}
+		</div>
 
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] font-mono text-stone-500 dark:text-zinc-500">
 			<span>{SELF_HOSTED_SHORT[d.selfHosted]}</span>
