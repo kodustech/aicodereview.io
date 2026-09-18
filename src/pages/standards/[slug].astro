@@ -3,7 +3,7 @@ import { getCollection, render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import PillarGraphic from '../../components/PillarGraphic.astro';
-import { getRankedTools, scoreTool, statusOf, noteOf, STATUS_GLYPHS, STATUS_LABELS, SPONSOR_SLUG } from '../../lib/tools';
+import { getRankedTools, scoreTool, statusOf, noteOf, STATUS_GLYPHS, STATUS_LABELS } from '../../lib/tools';
 import { getPublishedPosts, CATEGORY_LABELS, SITE_URL } from '../../lib/blog';
 
 export async function getStaticPaths() {
@@ -81,7 +81,6 @@ const description = `${pillar.data.description} ${met.length} of ${tools.length}
 								<div class="grid md:grid-cols-[11rem_1fr] gap-x-6 gap-y-1 py-3 border-b hairline items-baseline">
 									<a href={`/tools/${tool.id}/`} class="font-bold text-sm text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2">
 										{tool.data.name}
-										{tool.id === SPONSOR_SLUG && <span class="ml-1.5 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600">sponsor</span>}
 									</a>
 									<p class="text-sm text-stone-600 dark:text-zinc-400 text-pretty">{noteOf(tool, pillar.id)}</p>
 								</div>

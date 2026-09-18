@@ -8,16 +8,20 @@ import {
 	platformLabel,
 	TOOL_CATEGORY_LABELS,
 	SELF_HOSTED_SHORT,
-	SPONSOR_SLUG,
 	type Tool,
 } from '../lib/tools';
 
 interface Props {
 	tool: Tool;
+	/** Competition rank — tied tools share it. */
 	rank?: number;
+	/** True when this rank is shared, rendered as "=2". */
+	tied?: boolean;
+	/** Unique position, used only as the client-side sort key. */
+	order?: number;
 }
 
-const { tool, rank } = Astro.props;
+const { tool, rank, tied = false, order } = Astro.props;
 const d = tool.data;
 const score = scoreTool(tool);
 const hue = monogramHue(tool.id);
@@ -37,7 +41,7 @@ const search = [d.name, d.tagline, TOOL_CATEGORY_LABELS[d.category], d.license, 
 	data-freetier={d.freeTier}
 	data-platforms={d.platforms.join(' ')}
 	data-score={score.score}
-	data-rank={rank ?? 0}
+	data-rank={order ?? rank ?? 0}
 	data-name={d.name.toLowerCase()}
 	data-search={search}
 >
@@ -60,7 +64,9 @@ const search = [d.name, d.tagline, TOOL_CATEGORY_LABELS[d.category], d.license, 
 		</div>
 
 		{rank !== undefined && (
-			<span class="shrink-0 font-mono text-[10px] text-stone-400 dark:text-zinc-600 tabular-nums">#{rank}</span>
+			<span class="shrink-0 font-mono text-[10px] text-stone-400 dark:text-zinc-600 tabular-nums" title={tied ? `Joint ${rank} — tied on score` : undefined}>
+				{tied ? '=' : '#'}{rank}
+			</span>
 		)}
 	</div>
 
@@ -79,12 +85,6 @@ const search = [d.name, d.tagline, TOOL_CATEGORY_LABELS[d.category], d.license, 
 				<>
 					<span aria-hidden="true">·</span>
 					<span class="text-accent-700 dark:text-accent-400">Open source</span>
-				</>
-			)}
-			{tool.id === SPONSOR_SLUG && (
-				<>
-					<span aria-hidden="true">·</span>
-					<span class="uppercase tracking-widest border border-stone-300 dark:border-zinc-700 px-1.5">Sponsor</span>
 				</>
 			)}
 		</div>

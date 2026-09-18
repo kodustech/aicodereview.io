@@ -3,8 +3,9 @@ import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import ToolDirectory from '../components/ToolDirectory.astro';
 import ComparisonTable from '../components/ComparisonTable.astro';
-import { getRankedTools, TOOL_CATEGORY_LABELS, TOOL_CATEGORY_BLURBS, scoreTool } from '../lib/tools';
+import { getRankedTools, TOOL_CATEGORY_LABELS, TOOL_CATEGORY_BLURBS, scoreTool, monogram, monogramHue } from '../lib/tools';
 import { buildPairs } from '../lib/compare';
+import { editorsPicks } from '../lib/picks';
 import { getPublishedPosts, CATEGORY_LABELS, formatDate, SITE_URL } from '../lib/blog';
 
 const tools = await getRankedTools();
@@ -16,6 +17,7 @@ const guides = (await getCollection('learn')).sort((a, b) => a.data.order - b.da
 const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
 const categories = [...new Set(tools.map((t) => t.data.category))];
 const topTools = tools.slice(0, 12);
+const picks = editorsPicks(tools);
 
 const postSlugs = new Set((await getPublishedPosts()).map((p) => p.id));
 const featuredPairs = buildPairs(tools, postSlugs).slice(0, 8);
@@ -44,8 +46,8 @@ const faq = [
 		a: `Yes — ${openSource} of the ${tools.length} tools here publish their source. Open source and self-hostable are not the same thing, and the licence matters: some are permissive, some copyleft, some dual-licensed with commercial-only files.`,
 	},
 	{
-		q: 'Who runs this directory and how is it funded?',
-		a: 'It is funded by Kodus, who build one of the tools listed. Kodus is scored with the same rubric, from the same kind of public sources, and sits in the ranking wherever that score puts it. Every claim on every tool page carries a source link and a verification date so the work can be checked.',
+		q: 'How often is this directory updated?',
+		a: `Every tool carries the date its facts were last checked against the vendor's own documentation — currently ${lastVerified} across the directory. Pricing and plan changes are the most common corrections; the dataset is public, so a stale row can be reported and fixed directly.`,
 	},
 ];
 ---
@@ -110,6 +112,42 @@ const faq = [
 				</div>
 			))}
 		</dl>
+	</section>
+
+	<section class="mb-20">
+		<div class="flex flex-wrap items-baseline justify-between gap-3 mb-6">
+			<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100">Editor's picks</h2>
+			<p class="text-sm text-stone-500 dark:text-zinc-500 text-pretty max-w-xl">
+				One pick per dimension, each the highest-scoring tool that qualifies. The ranked list below is pure arithmetic — this strip is where we choose which dimension leads.
+			</p>
+		</div>
+		<div class="grid md:grid-cols-2 gap-4">
+			{picks.map((pick, i) => (
+				<a
+					href={`/tools/${pick.tool.id}/`}
+					class:list={[
+						'panel panel-hover p-5 group relative flex gap-4',
+						i === 0 && 'md:col-span-2 border-accent-600/50 dark:border-accent-500/40 bg-accent-50/50 dark:bg-accent-900/10',
+					]}
+				>
+					<span
+						class="shrink-0 w-11 h-11 border flex items-center justify-center font-mono text-xs font-bold"
+						style={`border-color: hsl(${monogramHue(pick.tool.id)} 45% 55% / 0.5); background: hsl(${monogramHue(pick.tool.id)} 60% 55% / 0.10); color: hsl(${monogramHue(pick.tool.id)} 45% 38%);`}
+						aria-hidden="true"
+					>{monogram(pick.tool.data.name)}</span>
+					<span class="min-w-0">
+						<span class="block eyebrow text-accent-700 dark:text-accent-400 mb-1.5">{pick.label}</span>
+						<span class="flex items-baseline gap-2 mb-1.5">
+							<span class="font-bold text-lg text-stone-900 dark:text-zinc-100 group-hover:underline underline-offset-4 decoration-accent-600 decoration-2">
+								{pick.tool.data.name}
+							</span>
+							<span class="font-mono text-xs text-stone-500 dark:text-zinc-500 tabular-nums">{scoreTool(pick.tool).score}/9</span>
+						</span>
+						<span class="block text-sm text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{pick.reason}</span>
+					</span>
+				</a>
+			))}
+		</div>
 	</section>
 
 	<section class="mb-20">

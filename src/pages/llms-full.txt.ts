@@ -13,7 +13,7 @@ export async function GET() {
   const sections: string[] = [
     '# aicodereview.io — full content',
     '',
-    `> An independent directory and standard for AI code review tools: ${tools.length} tools scored against 9 public standards, with sources and verification dates. Funded by Kodus (https://kodus.io), who build one of the listed tools and are scored by the same rubric. Methodology: ${SITE_URL}/methodology/.`,
+    `> A directory and standard for AI code review tools: ${tools.length} tools scored against 9 public standards, with sources and verification dates. Scoring formula, sources and editorial policy: ${SITE_URL}/methodology/.`,
     '',
     'Scoring: documented = 1, partial = 0.5, not offered = 0, undocumented = 0, summed over 9 standards.',
     '',

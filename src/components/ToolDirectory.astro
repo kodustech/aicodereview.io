@@ -1,6 +1,7 @@
 ---
 import ToolCard from './ToolCard.astro';
 import { TOOL_CATEGORY_LABELS, platformLabel, type Tool } from '../lib/tools';
+import { rankWithTies } from '../lib/picks';
 
 interface Props {
 	tools: Tool[];
@@ -13,6 +14,7 @@ interface Props {
 const { tools, filters = true, showRank = true, id = 'directory' } = Astro.props;
 
 const categories = [...new Set(tools.map((t) => t.data.category))];
+const ranked = rankWithTies(tools);
 const platforms = [...new Set(tools.flatMap((t) => t.data.platforms))].sort();
 ---
 
@@ -57,7 +59,9 @@ const platforms = [...new Set(tools.flatMap((t) => t.data.platforms))].sort();
 	)}
 
 	<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" data-tool-grid>
-		{tools.map((tool, i) => <ToolCard tool={tool} rank={showRank ? i + 1 : undefined} />)}
+		{ranked.map((entry, i) => (
+			<ToolCard tool={entry.tool} rank={showRank ? entry.rank : undefined} tied={entry.tied} order={i + 1} />
+		))}
 	</div>
 
 	{filters && (

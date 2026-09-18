@@ -3,7 +3,7 @@ import { render } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import { getPublishedPosts, relatedPosts, readingTime, formatDate, tagLabel, CATEGORY_LABELS, SITE_URL } from '../../lib/blog';
-import { getRankedTools, scoreTool, SPONSOR_SLUG } from '../../lib/tools';
+import { getRankedTools, scoreTool } from '../../lib/tools';
 
 export async function getStaticPaths() {
 	const posts = await getPublishedPosts();
@@ -26,7 +26,6 @@ const toc = headings.filter((h) => h.depth === 2);
 const tools = await getRankedTools();
 const taggedTools = tools.filter((t) => post.data.tags.includes(t.id));
 const toolsInPost = taggedTools.length > 0 ? taggedTools : tools.filter((t) => t.data.relatedPosts.includes(post.id)).slice(0, 5);
-const mentionsSponsor = toolsInPost.some((t) => t.id === SPONSOR_SLUG);
 
 const schemas: Record<string, unknown>[] = [
 	{
@@ -86,12 +85,6 @@ if (post.data.faq.length > 0) {
 			<p class="text-lg md:text-xl text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-8">
 				{post.data.description}
 			</p>
-
-			{mentionsSponsor && (
-				<p class="text-xs text-stone-500 dark:text-zinc-500 border-l-2 border-accent-600 dark:border-accent-500 pl-3 py-1 mb-8 text-pretty">
-					Disclosure: Kodus sponsors this site and appears below as one option among others. It is scored with the same rubric as every other tool — <a href="/methodology/" class="underline underline-offset-2">see the methodology</a>.
-				</p>
-			)}
 
 			<div class="prose dark:prose-invert prose-stone max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:text-stone-900 dark:prose-a:text-zinc-100 prose-a:decoration-accent-600 prose-a:underline-offset-4 prose-p:text-pretty prose-p:leading-relaxed prose-li:text-pretty prose-table:text-sm prose-th:font-mono prose-th:uppercase prose-th:tracking-wider prose-th:text-xs">
 				<Content />
@@ -155,10 +148,7 @@ if (post.data.faq.length > 0) {
 					<ul class="space-y-2.5">
 						{toolsInPost.map((tool) => (
 							<li class="flex items-baseline justify-between gap-2">
-								<a href={`/tools/${tool.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4">
-									{tool.data.name}
-									{tool.id === SPONSOR_SLUG && <span class="ml-1 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600">sponsor</span>}
-								</a>
+								<a href={`/tools/${tool.id}/`} class="text-sm text-stone-700 dark:text-zinc-300 hover:text-stone-900 dark:hover:text-zinc-100 hover:underline underline-offset-4">{tool.data.name}</a>
 								<span class="font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums shrink-0">{scoreTool(tool).score}/9</span>
 							</li>
 						))}

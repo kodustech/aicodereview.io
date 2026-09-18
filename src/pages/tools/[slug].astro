@@ -56,6 +56,8 @@ const comparableIds = new Set(
 );
 const comparisons = all.filter((t) => comparableIds.has(t.id)).slice(0, 4);
 const alternativesWithoutPage = alternatives.filter((t) => !comparableIds.has(t.id)).slice(0, 4);
+// Drives only rel="sponsored" on the outbound link — a signal for search
+// engines, not a label in the page.
 const isSponsor = tool.id === SPONSOR_SLUG;
 const url = `${SITE_URL}/tools/${tool.id}/`;
 
@@ -160,18 +162,11 @@ const description = `${d.name} scores ${score.score}/9 against the 2026 AI code 
 					<p class="eyebrow">
 						<a href={`/tools/category/${d.category}/`} class="hover:text-stone-900 dark:hover:text-zinc-100">{TOOL_CATEGORY_LABELS[d.category]}</a>
 						· #{categoryRank} of {categoryPeers.length} in category · #{rank} of {all.length} overall
-						{isSponsor && <span class="ml-2 border border-stone-300 dark:border-zinc-700 px-1.5">Sponsor</span>}
 					</p>
 				</div>
 			</div>
 
 			<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-6">{d.tagline}</p>
-
-			{isSponsor && (
-				<p class="text-xs text-stone-500 dark:text-zinc-500 border-l-2 border-accent-600 dark:border-accent-500 pl-3 py-1 mb-6 text-pretty">
-					Kodus funds this site. It is scored with the same rubric, from the same kind of public sources, and ranked wherever that score puts it — <a href="/methodology/" class="underline underline-offset-2">see the methodology</a>.
-				</p>
-			)}
 
 			<div class="flex flex-wrap gap-3">
 				<a href={d.website} target="_blank" rel={isSponsor ? 'noopener sponsored' : 'noopener noreferrer'} class="btn-ghost">Visit {d.name} [↗]</a>

@@ -1,12 +1,12 @@
 ---
 import ScoreMeter from './ScoreMeter.astro';
+import { rankWithTies } from '../lib/picks';
 import {
 	scoreTool,
 	priceLabel,
 	TOOL_CATEGORY_LABELS,
 	SELF_HOSTED_SHORT,
 	FREE_TIER_LABELS,
-	SPONSOR_SLUG,
 	type Tool,
 } from '../lib/tools';
 
@@ -16,6 +16,7 @@ interface Props {
 }
 
 const { tools, caption } = Astro.props;
+const ranked = rankWithTies(tools);
 ---
 
 <div class="overflow-x-auto -mx-6 px-6">
@@ -33,16 +34,15 @@ const { tools, caption } = Astro.props;
 			</tr>
 		</thead>
 		<tbody>
-			{tools.map((tool, i) => {
+			{ranked.map(({ tool, rank, tied }) => {
 				const score = scoreTool(tool);
 				return (
 					<tr class="border-b hairline hover:bg-stone-100/60 dark:hover:bg-zinc-900/60 transition-colors">
-						<td class="py-3 pr-4 font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums">{i + 1}</td>
+						<td class="py-3 pr-4 font-mono text-xs text-stone-400 dark:text-zinc-600 tabular-nums" title={tied ? `Joint ${rank} — tied on score` : undefined}>{tied ? '=' : ''}{rank}</td>
 						<td class="py-3 pr-4">
 							<a href={`/tools/${tool.id}/`} class="font-bold text-stone-900 dark:text-zinc-100 hover:underline underline-offset-4 decoration-accent-600 decoration-2">
 								{tool.data.name}
 							</a>
-							{tool.id === SPONSOR_SLUG && <span class="ml-2 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600 border border-stone-300 dark:border-zinc-700 px-1">Sponsor</span>}
 							<span class="block text-xs text-stone-500 dark:text-zinc-500 mt-0.5">{TOOL_CATEGORY_LABELS[tool.data.category]}</span>
 						</td>
 						<td class="py-3 pr-4"><ScoreMeter score={score} /></td>

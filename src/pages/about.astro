@@ -14,7 +14,7 @@ const kodusRank = tools.findIndex((t) => t.id === 'kodus') + 1;
 const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
 
 const title = "About aicodereview.io — What This Is and Who Funds It";
-const description = `An independent directory of ${tools.length} AI code review tools scored against a public 9-pillar standard. Who runs it, how facts are verified, and how it is funded.`;
+const description = `A directory of ${tools.length} AI code review tools scored against a public 9-pillar standard. How the facts are verified and how the scoring works.`;
 ---
 
 <Layout
@@ -64,22 +64,21 @@ const description = `An independent directory of ${tools.length} AI code review 
 				<a href="https://github.com/kodustech/aicodereview.io/issues">open an issue</a> and it gets fixed.
 			</p>
 
-			<h2>Sponsorship and independence</h2>
+			<h2>Who runs it</h2>
 			<p>
-				This site is funded and operated by the team at <a href="https://kodus.io" rel="sponsored">Kodus</a>, who build an open-source AI code reviewer.
-				That is stated in the footer of every page, on the Kodus profile, and inline in any article where Kodus appears as an option.
+				This site is operated by the team at <a href="https://kodus.io" rel="sponsored">Kodus</a>, who build one of the tools in the directory.
+				Nothing here is for sale: no paid placements, no affiliate links, and no arrangement under which a ranking or a criticism can change hands.
 			</p>
 			{kodus && (
 				<p>
-					Kodus is held to the same rubric as everything else: it scores <strong>{scoreTool(kodus).score}/9</strong> and sits at rank {kodusRank} of {tools.length},
-					with {scoreTool(kodus).gaps.length + scoreTool(kodus).partials.length} standards it does not fully meet listed openly on
-					<a href="/tools/kodus/"> its profile</a>. Nothing about a placement, a rank or the removal of a criticism is for sale, because nothing here is sold.
+					Kodus is scored with the same rubric as everything else — it lands on <strong>{scoreTool(kodus).score}/9</strong>, with the
+					{' '}{scoreTool(kodus).gaps.length + scoreTool(kodus).partials.length} standards it does not fully meet listed openly on <a href="/tools/kodus/">its profile</a>.
 				</p>
 			)}
 			<p>
-				A directory funded by a vendor deserves scepticism. The answer to that is not a disclaimer, it is making every input checkable: the whole site,
+				A directory run by a vendor deserves scepticism, and the answer to that is not a disclaimer — it is making every input checkable. The whole site,
 				dataset included, is <a href="https://github.com/kodustech/aicodereview.io">open source on GitHub</a>, so any thumb on the scale is visible in the
-				commit history. The full funding and scoring policy is on the <a href="/methodology/">methodology page</a>.
+				commit history. The scoring policy is on the <a href="/methodology/">methodology page</a>.
 			</p>
 
 			<h2>For AI engines and agents</h2>

@@ -13,7 +13,6 @@ import {
 	SELF_HOSTED_SHORT,
 	STATUS_GLYPHS,
 	STATUS_LABELS,
-	SPONSOR_SLUG,
 } from '../../lib/tools';
 import { buildPairs, specRows, pillarRows, verdict, compareFaq, pairSlug } from '../../lib/compare';
 import { getPublishedPosts, SITE_URL } from '../../lib/blog';
@@ -112,7 +111,6 @@ const columns = [
 						<div class="min-w-0">
 							<h2 class="font-bold text-lg text-stone-900 dark:text-zinc-100 leading-tight">
 								<a href={`/tools/${tool.id}/`} class="hover:underline underline-offset-4 decoration-accent-600 decoration-2">{tool.data.name}</a>
-								{tool.id === SPONSOR_SLUG && <span class="ml-2 text-[9px] font-mono uppercase tracking-widest text-stone-400 dark:text-zinc-600 border border-stone-300 dark:border-zinc-700 px-1">Sponsor</span>}
 							</h2>
 							<p class="eyebrow mt-0.5 normal-case tracking-normal">{TOOL_CATEGORY_LABELS[tool.data.category]}</p>
 						</div>

@@ -42,7 +42,7 @@ export async function GET({ props }: APIContext) {
     '',
     '---',
     '',
-    `Source: aicodereview.io, an independent directory funded by Kodus and scoring Kodus by the same rubric. Methodology: ${SITE_URL}/methodology/`,
+    `Source: aicodereview.io. Scoring formula and sources: ${SITE_URL}/methodology/`,
     '',
   ].join('\n');
 

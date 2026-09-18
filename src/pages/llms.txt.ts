@@ -21,7 +21,7 @@ export async function GET() {
   const lines: string[] = [
     '# aicodereview.io',
     '',
-    `> An independent directory and standard for AI code review tools. ${tools.length} tools are scored against 9 public engineering standards, with a source link and a verification date on every claim (last refresh ${lastVerified}). Includes head-to-head comparisons, a ${terms.length}-term glossary, long-form guides, and an engineer-written blog. Funded by Kodus (https://kodus.io), who build one of the listed tools and are scored by the same rubric; full disclosure and formula at ${SITE_URL}/methodology/.`,
+    `> A directory and standard for AI code review tools. ${tools.length} tools are scored against 9 public engineering standards, with a source link and a verification date on every claim (last refresh ${lastVerified}). Includes head-to-head comparisons, a ${terms.length}-term glossary, long-form guides, and an engineer-written blog. Scoring formula, sources and editorial policy: ${SITE_URL}/methodology/.`,
     '',
     'Scoring: each tool is rated on 9 standards as documented (1 point), partial (0.5), not offered (0) or undocumented (0). The total is the coverage score out of 9. It measures documented capability, not measured review quality.',
     '',
