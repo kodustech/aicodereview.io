@@ -1,4 +1,4 @@
-import { scoreTool, type Tool } from './tools';
+import { scoreTool, platformLabel, type Tool } from './tools';
 
 /**
  * Editorial picks: the strip above the ranked directory.
@@ -27,15 +27,13 @@ interface Dimension {
 // Order matters: the first dimension gets the lead slot.
 const DIMENSIONS: Dimension[] = [
   {
-    // Three criteria, stated openly on the card. Only one tool in the directory
-    // documents all three, which is the claim — not a general superlative.
-    label: 'Best for keeping code in-house',
-    filter: (t) =>
-      t.data.selfHosted === 'full' &&
-      t.data.standards['02-rule-centric']?.status === 'yes' &&
-      t.data.standards['07-economic-transparency']?.status === 'yes',
+    // Platform breadth is the dimension the platform pages are built around,
+    // and it is the one buyers filter on first. Winner = highest score among
+    // the tools that cover the most platforms.
+    label: 'Widest platform coverage',
+    filter: (t) => t.data.platforms.length >= 5,
     reason: (t) =>
-      `The only tool here that documents all three at once: runs on your own infrastructure, models under your own keys, and org-wide rules you write yourself${t.data.openSource ? `. Open source under ${t.data.license.split('(')[0].trim()}, so you can audit what leaves your network` : ''}.`,
+      `Documents ${t.data.platforms.length} platforms — ${t.data.platforms.map(platformLabel).join(', ')} — more than anything else here, and scores highest among the tools that cover that many.`,
   },
   {
     label: 'Best documented coverage',
