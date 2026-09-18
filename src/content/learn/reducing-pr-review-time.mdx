@@ -60,6 +60,8 @@ It does not automatically shorten **time to merge**. If your human reviewers wer
 
 Two things to check before wiring one in: its 90th-percentile response time, because a slow blocking check is now on every change's critical path; and whether it re-reviews on every push, which affects both latency and cost.
 
+That second point is where the bill hides. A tool that re-reads the whole change on every push charges you again for each one, and on an active pull request that is three or four reviews instead of one. How visible that is to you depends on the pricing model: **[Kodus](/tools/kodus/)** bills model usage to your own provider keys with no markup, so re-review cost shows up on your own invoice line by line, while seat-priced tools such as **[CodeRabbit](/tools/coderabbit/)** ($24/dev/mo) bundle it and cap you with hourly rate limits instead. Neither is automatically cheaper — it depends on your review volume — but only one of them lets you see the number before the renewal.
+
 ### 6. Fix the pipeline, not just the review
 
 If CI takes twenty minutes and is flaky, review speed is not your problem. Flaky tests are especially corrosive: they train people to re-run until green, which adds a full cycle each time and quietly erodes trust in the whole gate.

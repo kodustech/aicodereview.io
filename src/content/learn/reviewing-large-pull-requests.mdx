@@ -71,4 +71,8 @@ Some contexts produce them unavoidably — generated clients, [monorepo](/glossa
 | Path-scoped rules | Lets the generated directories be quiet while the core stays strict |
 | Disclosed truncation | You find out what was skipped from the tool, not from production |
 
+On the first row, the tools documenting repository-level retrieval rather than diff-plus-window are **[Greptile](/tools/greptile/)**, which indexes the codebase into a graph, **[Cubic](/tools/cubic/)**, which can read up to five linked repositories during review, **[Augment Code](/tools/augment-code/)**, whose context engine reads the full codebase, and **[Kodus](/tools/kodus/)**, which pulls in linked sibling repositories alongside the repository in hand.
+
+On the third row, scoping rules by path, **[Kodus](/tools/kodus/)** documents rules applied globally, per repository or per directory, and **[Augment Code](/tools/augment-code/)** documents review guidelines matched by glob with per-rule severities. That is what lets the generated parts of a large change stay quiet while the core stays strict — a single global rule set cannot do it.
+
 The [directory](/#directory) scores every tool on context depth and rule control, which are the two pillars that decide most of this. The rest — truncation behaviour, incremental review, p90 latency at size — is not something a vendor publishes, so it has to come out of a trial on your own largest repository, not a sample one.

@@ -38,6 +38,16 @@ const PLATFORM_NOTES: Record<string, string> = {
 };
 const note = PLATFORM_NOTES[platform!] ?? `Tools in this directory that document support for ${label}.`;
 
+// Portability paragraph. Teams rarely stay on one platform, so the tools that
+// cover the most of them are worth naming by name — computed from the dataset.
+const allTools = (await getRankedTools());
+const maxBreadth = Math.max(...allTools.map((t) => t.data.platforms.length));
+const broadest = allTools
+	.filter((t) => t.data.platforms.length === maxBreadth)
+	.sort((a, b) => scoreTool(b).score - scoreTool(a).score || a.data.name.localeCompare(b.data.name));
+const fourPlus = allTools.filter((t) => t.data.platforms.length === 4).length;
+const singlePlatform = tools.filter((t) => t.data.platforms.length === 1).length;
+
 const title = `Best AI Code Review Tools for ${label} (2026): ${tools.length} Compared | aicodereview.io`;
 const description = `${tools.length} AI code review tools document ${label} support, scored against the same 9-pillar standard. Pricing, licensing, self-hosting and model control — verified ${lastVerified}.`;
 
@@ -102,7 +112,15 @@ const faq = [
 			{tools.length} of the {total} tools tracked here document {label} support. They are scored against the same
 			<a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2"> 9 standards</a>, with a source and a date on every claim.
 		</p>
-		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{note}</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">{note}</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">
+			Worth checking before you commit either way: how many platforms a tool covers at all. Teams merge repositories, acquire companies and move forges, and a reviewer that only
+			speaks one platform becomes a migration blocker. {broadest.length === 1 ? (
+				<span><a href={`/tools/${broadest[0].id}/`} class="underline underline-offset-4 decoration-accent-600 decoration-2">{broadest[0].data.name}</a> documents the most in this directory — {broadest[0].data.platforms.map(platformLabel).join(', ')}</span>
+			) : (
+				<span>The widest coverage here belongs to {broadest.map((t) => t.data.name).join(' and ')}, at {maxBreadth} platforms each — {broadest[0].data.platforms.map(platformLabel).join(', ')} for <a href={`/tools/${broadest[0].id}/`} class="underline underline-offset-4 decoration-accent-600 decoration-2">{broadest[0].data.name}</a>, which scores {scoreTool(broadest[0]).score}/9</span>
+			)}. Another {fourPlus} cover four, and most of the rest stop at GitHub{singlePlatform > 0 ? `; ${singlePlatform} of the ${label} tools below support no other platform at all` : ''}.
+		</p>
 	</section>
 
 	<section class="mb-16">

@@ -52,6 +52,19 @@ This is the part that catches teams out, because a tool that demos beautifully o
 
 **Blast radius awareness.** A twenty-line change to a shared library in a monorepo can affect fifty consumers. Tools working from the diff alone cannot see that; tools with a real code graph can approximate it.
 
+### Which tools document what a monorepo needs
+
+No vendor publishes a monorepo benchmark, so the closest proxy is what they document on retrieval depth, rule scoping and pricing shape:
+
+| Tool | Retrieval | Per-path rules | Pricing shape |
+|---|---|---|---|
+| [Kodus](/tools/kodus/) | Repository plus linked sibling repositories | Yes — global, per repository or per directory | Per seat, model usage billed to your own keys |
+| [Cubic](/tools/cubic/) | Repository wiki index, up to 5 linked repositories | Yes — `cubic.yaml` agents with ignore filters | Per seat |
+| [Augment Code](/tools/augment-code/) | Context engine reads the full codebase | Yes — guidelines matched by glob, with severities | Flat monthly plus a fee on model usage |
+| [Greptile](/tools/greptile/) | Full codebase indexed into a graph | Partial — plain-English rules on Pro | Per seat, plus credits |
+
+The pricing column matters more here than anywhere else: in a monorepo, anything metered by lines of code or by repository behaves unpredictably, whereas usage billed to your own provider account at least stays legible. Verify each of these on your own repository during a trial — this table records what the vendors document, not what we measured at two million lines.
+
 ## What to test in a trial
 
 Run the trial on the monorepo. Not a representative service, not a sample repository — the actual one, because every limitation above is a function of size.

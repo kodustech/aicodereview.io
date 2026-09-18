@@ -62,6 +62,19 @@ The capability that matters most at volume is the fourth: [sandbox validation](/
 
 What no reviewer, human or otherwise, can outsource: deciding whether the change should exist.
 
+### Which tools document the three that matter here
+
+Context, rules and ticket comparison are the pillars that decide whether a reviewer can catch agent-specific defects. Of the tools in this directory, these document all three:
+
+Exactly two of the 27 tools tracked here document all three:
+
+- **[Kodus](/tools/kodus/)** (6.5/9) — repo-level analysis plus linked sibling repositories, plain-language rules scoped globally, per repository or per directory, and context pulled from Jira, Linear and Notion so a change can be checked against what the ticket asked for. Open source, and it does not run your code, so it argues about the change rather than executing it.
+- **[Cubic](/tools/cubic/)** (7.5/9) — a repository wiki index that can read up to five linked repositories during review, with custom agents configured in `cubic.yaml`.
+
+Widely used tools do not automatically clear this bar: **[CodeRabbit](/tools/coderabbit/)** (6.0/9) documents ticket comparison but is only partial on context depth and rule control, with linked-repository analysis capped by tier.
+
+If you want the reviewer to *verify* rather than argue, that is a different pillar and a different list: **[Augment Code](/tools/augment-code/)**, **[Baz](/tools/baz/)** and **[Greptile](/tools/greptile/)** are the three documenting sandbox execution.
+
 ## A workable setup
 
 | Stage | What runs | Who reads it |
