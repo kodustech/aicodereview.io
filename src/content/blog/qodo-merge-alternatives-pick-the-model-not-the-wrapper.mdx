@@ -1,0 +1,27 @@
+---
+title: "Qodo Merge alternatives: pick the model, not the wrapper"
+description: "Qodo folded PR-Agent/Merge into one platform. For teams comparing alternatives, the real question is which model + harness you're actually betting on."
+pubDate: 2026-09-18
+category: "alternatives"
+tags: ["qodomerge", "pragent", "aicodereview", "codereviewtools"]
+---
+
+If you're shopping Qodo Merge alternatives, the first thing to notice is that Qodo Merge barely exists as its own product anymore. The live Qodo site now talks about PR review as one sliver of a single "code quality infrastructure" platform, alongside rules, agentic workflows, and a risk software map. PR-Agent became Qodo Merge, and Qodo Merge got folded into the platform. Consolidation is the direction of travel in this space, and it matters for how you should evaluate the alternatives.
+
+Here's the part that most comparison posts skip: PR-Agent was always a wrapper around someone else's model. The review quality was the model's, not the harness's. So the honest frame for "alternatives to Qodo Merge" is that you are not really choosing a vendor; you are choosing a model plus a scaffold around it, and the scaffold's real job is context, permissions, and noise control.
+
+What I'd actually put side by side, broken by axis rather than by brand:
+
+Model attribution. Qodo's flagship claims depend on the reasoning model doing the review. So does CodeRabbit's and Greptile's. The wrappers differ far less on model than on what they do with it. When you compare, ask what happens to review quality when the underlying model ships a new version. A wrapper that pins a snapshot and a wrapper that tracks the frontier are different products after six months.
+
+Context handling across repos. This is where wrapper quality shows up. Qodo's context engine pulls codebase, PR history, rules, and business requirements. The alternative worth checking is whether it can actually fetch cross-repo context and how deep the permission boundary goes. A reviewer that can see every repo your agent can is a reviewer that can leak context everywhere.
+
+Rules and standards as deterministic controls. Part of Qodo's pitch is machine-enforceable rules that every developer and agent follows. If that's what you actually need, evaluate the alternative's rule engine, not its marketing. Can a rule be written once and enforced across IDE, CLI, and PR? Is it deterministic or fuzzy-matched? This is the difference between governance and a suggestion box.
+
+Verification and noise. The underrated axis. Review tools that flag more issues are not better; they're noisier. Something that only surfaces real bugs, rule violations, and requirement gaps with low hallucination rate is worth more than one that comments on style. If you can't measure the false-positive rate on your own codebase, you're buying on vibes.
+
+Self-review blind spot. If the model writes the code and the same model reviews it, you get one model's opinion measured N times. That correlated-judge problem applies to Qodo and to most alternatives equally. If you can bring a second, independent model or a non-model pass into the loop, that's the single highest-leverage improvement to any choice in this list.
+
+Concretely: before you compare pricing tiers, run the shortlist against a fixed slice of two weeks of your real PRs, measure how many comments were acted on and how many were noise, and re-run when the underlying model bumps. Vendor review-time percentages are self-attested; a fixed-slice measurement on your own repo is not.
+
+The consolidation trend means your "alternative" today is a brand that may merge into a platform next year. Pick the one whose model and harness you can see and measure, not the one with the loudest launch post.
