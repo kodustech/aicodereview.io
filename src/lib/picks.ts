@@ -27,10 +27,15 @@ interface Dimension {
 // Order matters: the first dimension gets the lead slot.
 const DIMENSIONS: Dimension[] = [
   {
-    label: 'Best open-source reviewer',
-    filter: (t) => t.data.openSource,
-    reason: (t, runnerUp) =>
-      `The highest-scoring tool you can read the source of${runnerUp ? `, ${(scoreTool(t).score - scoreTool(runnerUp).score).toFixed(1)} points clear of the next open-source option` : ''}. ${t.data.selfHosted === 'full' ? 'Runs on your own infrastructure, with models under your own keys.' : ''}`.trim(),
+    // Three criteria, stated openly on the card. Only one tool in the directory
+    // documents all three, which is the claim — not a general superlative.
+    label: 'Best for keeping code in-house',
+    filter: (t) =>
+      t.data.selfHosted === 'full' &&
+      t.data.standards['02-rule-centric']?.status === 'yes' &&
+      t.data.standards['07-economic-transparency']?.status === 'yes',
+    reason: (t) =>
+      `The only tool here that documents all three at once: runs on your own infrastructure, models under your own keys, and org-wide rules you write yourself${t.data.openSource ? `. Open source under ${t.data.license.split('(')[0].trim()}, so you can audit what leaves your network` : ''}.`,
   },
   {
     label: 'Best documented coverage',
