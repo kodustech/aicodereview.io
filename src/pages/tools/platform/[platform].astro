@@ -1,0 +1,136 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import ToolDirectory from '../../../components/ToolDirectory.astro';
+import ComparisonTable from '../../../components/ComparisonTable.astro';
+import { getRankedTools, scoreTool, platformLabel, SELF_HOSTED_LABELS, TOOL_CATEGORY_LABELS } from '../../../lib/tools';
+import { SITE_URL } from '../../../lib/blog';
+
+export async function getStaticPaths() {
+	const tools = await getRankedTools();
+	const platforms = [...new Set(tools.flatMap((t) => t.data.platforms))];
+	return platforms.map((platform) => ({
+		params: { platform },
+		props: { tools: tools.filter((t) => t.data.platforms.includes(platform)), total: tools.length },
+	}));
+}
+
+const { platform } = Astro.params;
+const { tools, total } = Astro.props;
+const label = platformLabel(platform!);
+
+const leader = tools[0];
+const selfHostable = tools.filter((t) => ['full', 'byok'].includes(t.data.selfHosted));
+const openSource = tools.filter((t) => t.data.openSource);
+const free = tools.filter((t) => ['yes', 'limited'].includes(t.data.freeTier));
+const lastVerified = tools.map((t) => t.data.lastVerified).sort().at(-1);
+const missing = total - tools.length;
+
+// Each platform gets a line that is true of it specifically, so the pages are
+// not 5 copies of one template with a word swapped.
+const PLATFORM_NOTES: Record<string, string> = {
+	'github': 'GitHub has the deepest tool support in the category — almost everything integrates here first, which means the platform is rarely the constraint and the decision comes down to context depth, rules and cost.',
+	'gitlab': 'GitLab support is common but not universal, and it is often shallower than the GitHub integration from the same vendor: check whether merge request review, CI integration and self-managed instances are all covered, not just the SaaS.',
+	'bitbucket': 'Bitbucket is the most frequently skipped major platform. The list below is materially shorter than the GitHub one, so platform support genuinely narrows the field here.',
+	'azure-devops': 'Azure DevOps support usually arrives after GitHub and GitLab, and is more often gated behind a higher tier. Confirm which repository type is supported — Azure Repos Git is not the same as TFVC.',
+	'forgejo': 'Forgejo and other self-hosted forges are supported by very few tools, and usually only by ones that are self-hostable themselves.',
+	'gitea': 'Gitea support is rare and mostly comes from open-source projects that run inside your own infrastructure anyway.',
+};
+const note = PLATFORM_NOTES[platform!] ?? `Tools in this directory that document support for ${label}.`;
+
+const title = `Best AI Code Review Tools for ${label} (2026): ${tools.length} Compared | aicodereview.io`;
+const description = `${tools.length} AI code review tools document ${label} support, scored against the same 9-pillar standard. Pricing, licensing, self-hosting and model control — verified ${lastVerified}.`;
+
+const faq = [
+	{
+		q: `What is the best AI code review tool for ${label}?`,
+		a: `On documented coverage of the 9 standards, ${leader.data.name} leads the ${label} list at ${scoreTool(leader).score}/9 as of ${lastVerified}. That measures what each vendor documents, not review quality on your codebase — the full matrix is on each profile so you can re-rank on the pillars your team actually needs.`,
+	},
+	{
+		q: `How many AI code review tools support ${label}?`,
+		a: `${tools.length} of the ${total} tools tracked here document ${label} support${missing > 0 ? `; the other ${missing} do not list it` : ''}. ${note}`,
+	},
+	{
+		q: `Are there free AI code review tools for ${label}?`,
+		a: free.length
+			? `${free.length} of them document a free or limited free tier: ${free.map((t) => t.data.name).join(', ')}. Free tiers in this category are usually capped by reviews per month, lines of code, or seats, so check which limit applies before planning around it.`
+			: `None of the ${label} tools here document a permanently free tier; several offer trials.`,
+	},
+	{
+		q: `Can I self-host an AI code reviewer for ${label}?`,
+		a: selfHostable.length
+			? `${selfHostable.length} document self-hosting or bring-your-own-key on a standard plan: ${selfHostable.map((t) => `${t.data.name} (${SELF_HOSTED_LABELS[t.data.selfHosted]})`).join(', ')}.`
+			: `None of the ${label} tools here document self-hosting on a standard plan; some offer it on an enterprise contract.`,
+	},
+];
+---
+
+<Layout
+	title={title}
+	description={description}
+	width="wide"
+	breadcrumbs={[
+		{ name: 'Home', url: `${SITE_URL}/` },
+		{ name: 'Tools', url: `${SITE_URL}/#directory` },
+		{ name: label, url: `${SITE_URL}/tools/platform/${platform}/` },
+	]}
+	schemas={[
+		{
+			"@type": "ItemList",
+			"name": `AI code review tools for ${label}`,
+			"description": description,
+			"numberOfItems": tools.length,
+			"itemListOrder": "https://schema.org/ItemListOrderDescending",
+			"itemListElement": tools.map((tool, i) => ({
+				"@type": "ListItem",
+				"position": i + 1,
+				"url": `${SITE_URL}/tools/${tool.id}/`,
+				"name": tool.data.name,
+			})),
+		},
+		{ "@type": "FAQPage", "mainEntity": faq.map((item) => ({ "@type": "Question", "name": item.q, "acceptedAnswer": { "@type": "Answer", "text": item.a } })) },
+	]}
+>
+	<Breadcrumbs items={[{ name: 'Home', href: '/' }, { name: 'Tools', href: '/#directory' }, { name: label }]} />
+
+	<section class="max-w-3xl mb-12">
+		<p class="eyebrow mb-4">Platform · {tools.length} of {total} tools · Verified {lastVerified}</p>
+		<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-balance text-stone-900 dark:text-zinc-50 mb-5 leading-none">
+			AI code review tools for {label}
+		</h1>
+		<p class="text-lg text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed mb-4">
+			{tools.length} of the {total} tools tracked here document {label} support. They are scored against the same
+			<a href="/standards/" class="underline underline-offset-4 decoration-accent-600 decoration-2"> 9 standards</a>, with a source and a date on every claim.
+		</p>
+		<p class="text-stone-600 dark:text-zinc-400 text-pretty leading-relaxed">{note}</p>
+	</section>
+
+	<section class="mb-16">
+		<ComparisonTable tools={tools} caption={`AI code review tools that support ${label}`} />
+	</section>
+
+	<section class="mb-16">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-6">All {label} tools</h2>
+		<ToolDirectory tools={tools} filters={false} id="platform-grid" />
+	</section>
+
+	<section class="mb-16 pt-12 border-t hairline">
+		<h2 class="text-2xl font-bold tracking-tight text-stone-900 dark:text-zinc-100 mb-8">Questions about {label} support</h2>
+		<div class="grid md:grid-cols-2 gap-x-10 gap-y-8">
+			{faq.map((item) => (
+				<div>
+					<h3 class="font-bold text-stone-900 dark:text-zinc-100 mb-2 text-balance">{item.q}</h3>
+					<p class="text-sm text-stone-600 dark:text-zinc-400 leading-relaxed text-pretty">{item.a}</p>
+				</div>
+			))}
+		</div>
+	</section>
+
+	<div class="pt-12 border-t-2 border-stone-900 dark:border-zinc-100 flex flex-col md:flex-row justify-between items-center gap-6">
+		<div class="text-center md:text-left">
+			<p class="font-bold text-stone-900 dark:text-zinc-100 mb-1">Platform is rarely the only constraint</p>
+			<p class="text-sm text-stone-500 dark:text-zinc-400">Filter all {total} tools by licence, hosting and model control in one place.</p>
+		</div>
+		<a href="/#directory" class="btn-solid w-full md:w-auto">Open the directory [↗]</a>
+	</div>
+</Layout>

@@ -1,0 +1,83 @@
+---
+title: "How to review the growing volume of AI-generated code"
+description: "Coding agents produce more code than human reviewers can read. What actually changes about review, which failure modes are new, and how to keep a quality bar without becoming the bottleneck."
+order: 7
+updated: "2026-09-17"
+faq: [{"q": "How do you review code written by an AI agent?", "a": "Review the intent and the boundaries rather than the syntax. Agent-written code is usually locally plausible and syntactically clean, so line-by-line reading finds little; what it misses is whether the change solves the right problem, whether it silently widened scope, and whether it invented an abstraction the codebase already has. Require the agent's prompt or task description in the pull request, keep changes small enough to read, and let automation handle the mechanical layer so human attention goes to intent."}, {"q": "Does AI-generated code need more review or less?", "a": "The same amount per change, but there are far more changes, which is the actual problem. The volume arrives faster than reviewer headcount can grow, so the only workable answers are reducing what each review has to decide \u2014 through automation, tiering by blast radius, and strict limits on change size \u2014 rather than reviewing each change more loosely."}, {"q": "What are the most common defects in AI-generated code?", "a": "Four recur: duplicated logic that reimplements something the codebase already has; error and edge-case paths that look handled but are not; dependencies added unnecessarily; and changes that satisfy the literal request while missing its intent. None of these are syntax errors, which is why they survive linting and often survive a quick human read."}, {"q": "Can an AI reviewer check AI-generated code?", "a": "Yes, and the pairing is less circular than it sounds, because the two jobs have different information. A generator optimises for producing plausible code from a prompt; a reviewer with repository context, team rules and the linked ticket is checking that output against constraints the generator never saw. What it cannot do is replace the human judgement about whether the change should exist at all."}]
+relatedTools: ["cubic", "baz", "coderabbit", "kodus", "greptile", "qodo"]
+relatedPosts: ["what-is-ai-code-review", "how-to-evaluate-ai-code-review-tools", "ai-code-review-vs-static-analysis"]
+relatedTerms: ["ai-code-review", "pull-request", "code-review", "blast-radius", "false-positive", "sandbox-validation", "code-churn", "review-latency", "prompt-injection", "code-coverage"]
+---
+
+The bottleneck moved. For most of the last decade the scarce resource in software delivery was people who could write the code; now, in a growing number of teams, it is people who can read it. Coding agents produce changes faster than review capacity grows, and review is where that surplus piles up.
+
+This guide is about what actually changes when a large share of your diffs were not typed by a human — and what does not.
+
+## What is different about agent-written code
+
+Three properties matter for review, and all three work against the way most teams review today.
+
+**It is locally plausible.** Agent output is syntactically clean, idiomatic, and usually passes the linter on the first try. Every surface signal a reviewer uses to decide "this needs a careful read" is absent. The code looks finished.
+
+**It is generated without the constraints in your head.** The agent saw a prompt and whatever context the harness gave it. It did not sit in the incident review six months ago, does not know that the payments module has an invariant nobody wrote down, and has no memory of the team deciding against that abstraction last quarter.
+
+**It arrives in volume, and volume defeats attention.** A reviewer who carefully reads the first three changes of the day reads the eighth by scrolling. This is the part teams underestimate: the failure is not that any single agent change is bad, it is that human scrutiny per change falls as throughput rises.
+
+## The failure modes that actually recur
+
+Not syntax errors. The defects that survive to production from agent-written changes cluster in four places:
+
+1. **Reimplementation.** A new helper that duplicates one three directories away, because retrieval did not surface it. This is invisible in the diff — the new code is correct — and it compounds: the next bug fix lands in one copy. See [code duplication](/glossary/code-duplication/).
+2. **Plausible error handling.** A `try`/`catch` that catches, logs and continues, turning a hard failure into a silent one. It reads as diligence and behaves as a bug.
+3. **Quiet scope expansion.** Asked to fix a bug, the agent also refactors two adjacent functions, renames a field and updates a config default. Each part is defensible; together they turn a five-line review into a two-hundred-line one.
+4. **Literal-but-wrong.** The change does exactly what the ticket said and not what the ticket meant. This is the expensive one, and the only defence is a reviewer — human or automated — that can compare the change against the stated intent.
+
+## What to change in the process
+
+### Make the prompt part of the pull request
+
+The single highest-value change, and the cheapest. If a change was produced by an agent, the task description or prompt belongs in the pull request body. It gives the reviewer the intent to check against, and it makes "literal-but-wrong" visible in seconds rather than after production.
+
+Teams that do this well add one required line to the PR template: what was asked for, and what the author verified themselves before opening it.
+
+### Keep the size limit, and mean it
+
+Agents make it trivial to produce large changes, which is exactly why the limit matters more now than it did. Nothing else you do improves review quality as much as keeping changes small enough to read in one sitting — a warning above a few hundred lines, and a required justification above a thousand. See [designing a review process](/learn/code-review-process/).
+
+### Tier by blast radius, not by author
+
+It does not matter whether a change to the authentication path was written by a person or an agent; it matters that it touches authentication. Tie review depth to the path, not to the origin of the diff. What agent volume changes is how often the low-risk tier fires — which is precisely the tier worth automating hard.
+
+### Move the mechanical layer off humans entirely
+
+Every finding a formatter, [linter](/glossary/linter/), dependency scanner or [secret scanner](/glossary/secret-scanning/) can produce is a finding no human should read. This was always true; at agent volume it becomes the difference between a review process and a queue. See the [checklist](/learn/code-review-checklist/) for what belongs where.
+
+## Where an AI reviewer genuinely helps here
+
+It is fair to be sceptical of answering machine-generated code with a machine. The reason the pairing works is that the two systems hold different information.
+
+A generator optimises for plausible code given a prompt. A reviewer with **repository context**, **your team's written rules** and the **linked ticket** is checking that output against constraints the generator never saw. That is a real asymmetry, and it maps onto three of the [nine standards](/standards/): [context depth](/standards/01-multi-dimensional-context/), [rule control](/standards/02-rule-centric/), and [business-logic validation](/standards/04-business-logic/).
+
+The capability that matters most at volume is the fourth: [sandbox validation](/standards/06-sandbox-validation/). A reviewer that runs the change and reports what actually broke converts a probabilistic opinion into evidence — which is the only kind of finding that survives a reviewer processing forty pull requests in a day. It is also still the rarest capability in the category — only a handful of the tools tracked in this directory document it at all.
+
+What no reviewer, human or otherwise, can outsource: deciding whether the change should exist.
+
+## A workable setup
+
+| Stage | What runs | Who reads it |
+|---|---|---|
+| Before the commit | Formatter, fast lint, secret scan | Nobody — it just fixes or blocks |
+| On the pull request | Dependency scan, SAST, coverage delta on changed lines | Nobody unless it fails |
+| On the pull request | AI review: context, team rules, ticket comparison | Author first, reviewer second |
+| Human review | Intent, design, blast radius, the questions above | A person, on a change small enough to read |
+
+The ordering principle is unchanged from before agents existed: deterministic checks gate, probabilistic checks advise, and human attention is spent on the judgement nothing else can make. What changed is the cost of getting that ordering wrong.
+
+## The measurement that tells you it is working
+
+Not findings produced. Two numbers, tracked before and after:
+
+- **[Review latency](/glossary/review-latency/)**, median and 90th percentile. If agent volume is outrunning your process, this is where it shows first.
+- **Share of findings acted on.** If the automated layer is producing noise, this falls, and the team quietly stops reading — which leaves you with the volume and none of the defence.
+
+If both hold while throughput rises, the process is absorbing the new volume. If latency climbs, the answer is not a better reviewer; it is smaller changes.

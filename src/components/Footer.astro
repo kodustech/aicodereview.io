@@ -1,9 +1,14 @@
 ---
-import { getRankedTools, TOOL_CATEGORY_LABELS } from '../lib/tools';
+import { getRankedTools, TOOL_CATEGORY_LABELS, platformLabel } from '../lib/tools';
 
 // Built from the data rather than the enum: a category with no tools has no page.
 const tools = await getRankedTools();
 const categories = [...new Set(tools.map((t) => t.data.category))];
+// Busiest platforms first — these are the pages buyers search for by name.
+const platforms = [...new Set(tools.flatMap((t) => t.data.platforms))]
+	.map((id) => ({ id, count: tools.filter((t) => t.data.platforms.includes(id)).length }))
+	.sort((a, b) => b.count - a.count)
+	.slice(0, 4);
 
 const columns = [
 	{
@@ -11,6 +16,12 @@ const columns = [
 		links: [
 			{ href: '/#directory', label: 'All tools' },
 			...categories.map((slug) => ({ href: `/tools/category/${slug}/`, label: TOOL_CATEGORY_LABELS[slug] ?? slug })),
+		],
+	},
+	{
+		heading: 'By platform',
+		links: [
+			...platforms.map((p) => ({ href: `/tools/platform/${p.id}/`, label: `For ${platformLabel(p.id)}` })),
 		],
 	},
 	{
@@ -45,7 +56,7 @@ const columns = [
 
 <footer class="border-t hairline mt-auto bg-stone-100 dark:bg-zinc-900">
 	<div class="max-w-6xl mx-auto px-6 py-14">
-		<div class="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+		<div class="grid grid-cols-2 md:grid-cols-5 gap-10 mb-12">
 			{columns.map((col) => (
 				<div>
 					<h2 class="eyebrow mb-4">{col.heading}</h2>

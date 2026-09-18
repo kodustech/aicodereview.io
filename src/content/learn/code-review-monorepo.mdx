@@ -1,0 +1,69 @@
+---
+title: "Code review in a monorepo: what breaks and what to fix"
+description: "Ownership, routing, CI scope and tooling limits in a monorepo \u2014 the failures that only appear at scale, and what to test before buying a reviewer for one."
+order: 10
+updated: "2026-09-17"
+faq: [{"q": "Does a monorepo make code review harder?", "a": "It makes routing and tooling harder rather than review itself. The hard parts are getting the change in front of the team that owns that directory, keeping CI scoped to what actually changed, and finding tools whose indexing, retrieval and pricing behave sanely at repository sizes they were not demoed on."}, {"q": "What is the best AI code review tool for a monorepo?", "a": "The one whose retrieval follows real code references rather than similarity alone, whose rules can be scoped per directory, and whose pricing does not scale with total repository size. No vendor publishes enough to answer this from a website \u2014 trial on your actual monorepo, not a sample repository, and measure first-index time and per-review cost."}, {"q": "How should CODEOWNERS work in a monorepo?", "a": "Own with teams rather than individuals, nest files close to the code they govern, and audit for two failure modes: top-level paths with no owner, and teams owning so much that they stop reading carefully. In most implementations the last matching rule wins, so test the file rather than assuming it."}, {"q": "Should every service in a monorepo have the same review policy?", "a": "No. Tie policy to paths, not to the repository: security-critical directories and shared libraries deserve stricter requirements than an internal dashboard. A single organisation-wide rule set in a monorepo is either too strict to live with or too loose to matter."}]
+relatedTools: ["greptile", "kodus", "sonarqube", "graphite", "cubic", "augment-code"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "self-hosted-ai-code-review", "best-ai-code-review-tools"]
+relatedTerms: ["monorepo", "code-owner", "rag", "embeddings", "context-window", "ci-cd", "blast-radius", "merge-queue", "branch-protection", "inference-cost"]
+---
+
+A monorepo does not make code review harder in principle. It makes four specific things harder in practice — routing, scope, ownership and tooling — and each of them fails quietly enough that teams usually diagnose it as something else.
+
+## 1. Routing: who is supposed to look at this?
+
+In a service repository, everyone who can review is already watching. In a monorepo, the author often does not know which team owns the directory they just touched, so the change goes to whoever they know — and load concentrates on the visible, helpful people until they burn out.
+
+[CODEOWNERS](/glossary/code-owner/) stops being a nicety here and becomes the routing layer. Two rules make it survive:
+
+- **Own with teams, never individuals.** Individual ownership turns holidays into merge blockers.
+- **Audit both directions.** Run a check that every top-level path has an owner, and that no team owns so much of the tree that it cannot review carefully. Both failure modes are invisible until someone measures them.
+
+Nest the files close to the code they govern rather than keeping one enormous root file. In most implementations the last matching rule wins, which is the opposite of what people assume — test the file rather than trusting it.
+
+## 2. Scope: CI that runs everything
+
+The second failure is a pipeline that rebuilds and retests the world on every change. It turns a two-line fix into a twenty-minute wait, which pushes people to batch work, which produces exactly the large pull requests a monorepo is worst at reviewing.
+
+Affected-target detection — running only what the changed paths can break — is the fix, and it is a prerequisite for everything else. If CI is slow, review speed is not your bottleneck and tooling will not fix it.
+
+## 3. Policy: one rule set cannot serve the whole tree
+
+Tie review requirements to paths, not to the repository or the org chart:
+
+- Security-critical directories and shared libraries: two approvals, owning team mandatory, stricter automated checks.
+- Generated code, vendored directories, fixtures: quiet, or excluded outright.
+- Everything else: one approval, standard checks.
+
+Team-based policy decays because reorganisations happen faster than codebases change. Path-based policy keeps working through both.
+
+## 4. Tooling: where monorepos break AI reviewers
+
+This is the part that catches teams out, because a tool that demos beautifully on a service repository can be unusable on a two-million-line one, and none of the reasons appear in marketing material.
+
+**Indexing.** How long does the first index take, what does it cost, and how is it kept current after every merge? A tool that re-indexes per pull request is unusable at this size. Ask for the number on a repository like yours, not a benchmark.
+
+**Retrieval precision.** [Embedding](/glossary/embeddings/) similarity degrades as the corpus grows: in two million lines, "code that looks related" returns plausible noise. What holds up is [retrieval](/glossary/rag/) that follows real structural references — definitions, imports, call sites. This is the single biggest quality difference between tools in a monorepo, and it maps directly onto the [context standard](/standards/01-multi-dimensional-context/).
+
+**Configuration granularity.** If rules are global-only, the tool is either too strict for the docs directory or too loose for payments. Per-path rule scoping is the dividing line between tools built for one repository and tools built for an organisation — see the [rule-control standard](/standards/02-rule-centric/).
+
+**Pricing shape.** Per-repository pricing is meaningless here. Per-line-of-code pricing can be brutal. Ask exactly how the meter reads a monorepo before you get anywhere near a contract, and model it on your real merge volume — see [inference cost](/glossary/inference-cost/).
+
+**Blast radius awareness.** A twenty-line change to a shared library in a monorepo can affect fifty consumers. Tools working from the diff alone cannot see that; tools with a real code graph can approximate it.
+
+## What to test in a trial
+
+Run the trial on the monorepo. Not a representative service, not a sample repository — the actual one, because every limitation above is a function of size.
+
+1. **Time and cost of the first index.** Then the refresh behaviour after a merge.
+2. **A cross-cutting change.** Open a pull request that is only correct or incorrect because of something defined in a distant directory, and see whether the tool notices.
+3. **Per-path rules.** Configure one directory strictly and one loosely, and confirm both hold.
+4. **A generated-code change.** Confirm the tool can be told to stay quiet there.
+5. **Cost per merged pull request**, measured over two weeks at your real volume — not per seat, which tells you nothing here.
+
+## The thing that does not scale, and should not
+
+Careful human review of high-blast-radius changes. As the repository grows, the *proportion* of changes needing that read falls, but the cost of getting one wrong rises.
+
+Everything above — routing, path policy, affected-target CI, automation of the mechanical layer — exists to protect that capacity. If your senior engineers are spending their review time on dependency bumps and formatting inside a monorepo, scale has already won, and no additional tooling helps until the mechanical layer is genuinely automated away.

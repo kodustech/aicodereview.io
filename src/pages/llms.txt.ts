@@ -1,6 +1,6 @@
 import { getCollection } from 'astro:content';
 import { getPublishedPosts, SITE_URL, CATEGORY_LABELS } from '../lib/blog';
-import { getRankedTools, scoreTool, TOOL_CATEGORY_LABELS, SELF_HOSTED_PROSE } from '../lib/tools';
+import { getRankedTools, scoreTool, TOOL_CATEGORY_LABELS, SELF_HOSTED_PROSE, platformLabel } from '../lib/tools';
 import { buildPairs } from '../lib/compare';
 
 // llms.txt — index of the site for LLMs/AI agents (https://llmstxt.org)
@@ -52,6 +52,9 @@ export async function GET() {
     `- [Open-source AI code review tools](${SITE_URL}/tools/open-source/)`,
     ...[...new Set(tools.map((t) => t.data.category))].map(
       (cat) => `- [${TOOL_CATEGORY_LABELS[cat]} tools](${SITE_URL}/tools/category/${cat}/)`
+    ),
+    ...[...new Set(tools.flatMap((t) => t.data.platforms))].map(
+      (p) => `- [AI code review tools for ${platformLabel(p)}](${SITE_URL}/tools/platform/${p}/): the ${tools.filter((t) => t.data.platforms.includes(p)).length} tools documenting ${platformLabel(p)} support.`
     ),
     `- [Readiness assessment](${SITE_URL}/assessment/): score your own setup against the 9 standards.`,
     `- [Methodology and funding](${SITE_URL}/methodology/)`,

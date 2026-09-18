@@ -1,0 +1,84 @@
+---
+title: "How to reduce pull request review time (without reviewing less)"
+description: "Where review time actually goes, which interventions move it, and how to baseline the numbers before you buy anything. The fixes ranked by how much they return."
+order: 8
+updated: "2026-09-17"
+faq: [{"q": "How long should a pull request take to review?", "a": "A workable target is a first human response within four working hours and a hard expectation of one working day, measured at the 90th percentile rather than the mean. The total time to merge matters less than the time to first response, because that is the number that decides whether the author has moved on to something else before feedback arrives."}, {"q": "What is the fastest way to reduce review time?", "a": "Reduce change size. It is unglamorous and it beats every tooling intervention: smaller changes get picked up sooner, read more carefully and approved faster, and they shorten every downstream stage as well. Teams looking for a tooling answer usually have a batching problem."}, {"q": "Does AI code review actually speed up pull requests?", "a": "It reliably shortens time to first feedback, because a bot responds in minutes regardless of the hour. Whether it shortens time to merge depends on whether human reviewers were the bottleneck and whether the tool's findings are worth reading \u2014 a noisy reviewer adds a step without removing one. Baseline both numbers separately before and after."}, {"q": "Why is our code review so slow?", "a": "Almost always one of four things: changes are too large to read, reviews are routed to people who are already overloaded, there is no agreed response-time expectation, or the queue is invisible and lives in individual notification feeds. Measure which one you have before fixing the others."}]
+relatedTools: ["graphite", "coderabbit", "kodus", "cubic", "codacy"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "ai-code-review-statistics", "what-is-ai-code-review"]
+relatedTerms: ["review-latency", "cycle-time", "pull-request", "code-owner", "merge-queue", "dora-metrics", "lead-time-for-changes", "signal-to-noise", "pre-commit-hook", "review-coverage"]
+---
+
+Most teams that want faster review are looking for a tool, and most of them have a batching problem. This guide is about finding out which one you have, then fixing it in the order that returns the most.
+
+## First: where the time actually goes
+
+[Cycle time](/glossary/cycle-time/) breaks into stages, and the breakdown is consistent enough across teams to predict. Coding is a minority of it. The bulk is queueing: waiting for a reviewer to look, waiting for CI, waiting for a second approval, waiting for a release window.
+
+Before changing anything, get four numbers for the last month:
+
+1. **Time to first human response** — median and 90th percentile. Bot comments do not count.
+2. **Median change size** in lines.
+3. **Share of reviews done by your top three reviewers.**
+4. **Time from approval to merge.**
+
+All four are available from your platform's API. They take an afternoon to pull, and they tell you which of the fixes below is yours.
+
+## The fixes, in order of return
+
+### 1. Smaller changes
+
+The strongest lever, and the one nobody wants to hear. Above roughly four hundred lines, review quality falls sharply and review *speed* falls with it — large diffs sit in the queue longer because reviewers postpone them, then get a shallower read anyway.
+
+If your median change is above four hundred lines, stop here and fix this first. Everything else on this list is a rounding error next to it.
+
+What works: a warning in the PR template above a threshold, stacked or chained pull requests for larger work, and — the cultural part — reviewers being allowed to send a change back for splitting without it being a rejection.
+
+### 2. An explicit response-time expectation
+
+Many teams have never stated one. Without a number, "I'll get to it" is a reasonable answer indefinitely.
+
+Set it — four working hours to first response is achievable for most teams — and measure the 90th percentile, because that is the experience people actually remember. Then make the queue visible: a shared, age-sorted list of unclaimed reviews beats individual notification feeds, which get filtered within a month.
+
+### 3. Routing that spreads the load
+
+If your top three reviewers do more than about 60% of reviews, latency is a queueing problem at those three people, and no tool fixes it. [CODEOWNERS](/glossary/code-owner/) plus round-robin within the owning team is the standard answer, with a manual override because the author often knows who has the context.
+
+### 4. Automate the mechanical layer
+
+Every comment about formatting, lint rules, a missing test or a vulnerable dependency is a round trip: reviewer writes, author reads, author fixes, author pushes, reviewer re-reads. Each round trip costs hours of wall-clock time even though it costs minutes of work.
+
+Push all of it earlier — formatter on save, [pre-commit hooks](/glossary/pre-commit-hook/), scanners on the pull request — so the human read starts from a change that is already clean. This is the intervention that most reliably shortens *iteration count*, which is what actually drives time to merge.
+
+### 5. AI review, for time to first feedback
+
+This is where an automated reviewer genuinely helps, and it is worth being precise about what it moves.
+
+It shortens **time to first feedback**: the author gets substantive comments in minutes, at any hour, while the change is still in their head. That matters because the expensive part of latency is not the waiting, it is the context reload afterwards.
+
+It does not automatically shorten **time to merge**. If your human reviewers were not the bottleneck, or if the tool's findings are noisy enough that people stop reading, you have added a step without removing one. The number to watch during a trial is the share of findings acted on — below roughly a third, adoption collapses and the latency gain goes with it.
+
+Two things to check before wiring one in: its 90th-percentile response time, because a slow blocking check is now on every change's critical path; and whether it re-reviews on every push, which affects both latency and cost.
+
+### 6. Fix the pipeline, not just the review
+
+If CI takes twenty minutes and is flaky, review speed is not your problem. Flaky tests are especially corrosive: they train people to re-run until green, which adds a full cycle each time and quietly erodes trust in the whole gate.
+
+## What not to do
+
+- **Adding required approvers.** Evidence is consistent that the first reviewer finds most of what will be found; each additional one adds latency and diffuses responsibility. Reserve two approvals for genuinely high-[blast-radius](/glossary/blast-radius/) paths and say so explicitly.
+- **Chasing the mean.** Latency distributions have long tails and the tail is what people complain about. Use the median and p90.
+- **Optimising review time by reviewing less.** Watch [change failure rate](/glossary/change-failure-rate/) alongside speed; if it rises, you moved the cost rather than removing it.
+- **Counting bot response as review response.** A tool that comments in ninety seconds while humans still take two days has moved a number, not an outcome.
+
+## Baselining a tool properly
+
+If you are trialling an AI reviewer specifically to cut review time:
+
+**Four weeks before.** Time to first *human* response (median, p90), median change size, iterations per pull request, time from approval to merge.
+
+**During.** Tag every finding as acted on, acknowledged but ignored, or wrong.
+
+**Four weeks after.** The same four numbers, plus the honest question: did human latency change, or only bot latency?
+
+That last question is the one vendors' dashboards are least likely to answer for you, and it is the one that decides whether the tool earned its cost.

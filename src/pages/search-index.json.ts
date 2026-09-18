@@ -63,6 +63,13 @@ export async function GET() {
       keywords: 'standard pillar baseline',
     })),
     { type: 'page', title: 'The directory', description: `All ${tools.length} AI code review tools, scored and filterable.`, url: '/#directory' },
+    ...[...new Set(tools.flatMap((t) => t.data.platforms))].map((p): Row => ({
+      type: 'page',
+      title: `AI code review tools for ${platformLabel(p)}`,
+      description: `The ${tools.filter((t) => t.data.platforms.includes(p)).length} tools that document ${platformLabel(p)} support, scored and compared.`,
+      url: `/tools/platform/${p}/`,
+      keywords: `${platformLabel(p)} integration platform support`,
+    })),
     { type: 'page', title: 'Self-hosted tools', description: 'Reviewers that run inside your own infrastructure.', url: '/tools/self-hosted/' },
     { type: 'page', title: 'Open-source tools', description: 'Reviewers whose source you can read and fork.', url: '/tools/open-source/' },
     { type: 'page', title: 'Methodology & scoring', description: 'The exact rubric behind every score, and how this site is funded.', url: '/methodology/' },

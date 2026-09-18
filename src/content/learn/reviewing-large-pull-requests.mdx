@@ -1,0 +1,74 @@
+---
+title: "Reviewing large and complex pull requests"
+description: "Why big diffs defeat both human reviewers and AI tools, how to review one when splitting is not an option, and what to check in a tool if large changes are normal for your team."
+order: 9
+updated: "2026-09-17"
+faq: [{"q": "How do you review a very large pull request?", "a": "In passes rather than linearly: one pass on intent and structure using the description and the file tree, one on the highest-risk files, one on tests and migrations. Then say explicitly in your approval what you read and what you did not, so the approval does not imply more scrutiny than it received. The better answer, when it is available, is to send it back to be split."}, {"q": "Do AI code review tools handle large pull requests well?", "a": "Most degrade, and quietly. Large diffs exceed the context the tool assembles, so it either truncates silently or samples files, and the reviewer never learns which parts were skipped. Ask any vendor directly what happens above a few thousand changed lines, whether the review is incremental across pushes, and whether truncation is disclosed in the output."}, {"q": "How many lines should a pull request be?", "a": "Under about 400 changed lines is the range where review reliably finds defects; beyond that, detection falls off sharply because attention does not hold. Treat that as a target for the author rather than an expectation of the reviewer \u2014 the fix for a large change is splitting it, not concentrating harder."}, {"q": "Why can't reviewers just spend more time on big pull requests?", "a": "Because the limit is attention, not hours. Review effectiveness drops after roughly an hour of continuous reading regardless of the reviewer's seniority, and a 1,500-line diff cannot be read carefully inside that window. Spreading it across days introduces a different failure: the reviewer loses the model of the change between sittings."}]
+relatedTools: ["greptile", "cubic", "baz", "coderabbit", "kodus", "augment-code"]
+relatedPosts: ["how-to-evaluate-ai-code-review-tools", "what-is-ai-code-review", "best-ai-code-review-tools"]
+relatedTerms: ["pull-request", "diff", "context-window", "blast-radius", "rag", "code-review", "review-latency", "monorepo", "code-coverage"]
+---
+
+Every team has them: the migration, the framework upgrade, the vendor integration that touches forty files. The advice to keep pull requests small is correct and does not help once the change already exists.
+
+This guide covers both halves — how to review a large change when you have to, and how to stop most of them from being large.
+
+## Why large diffs defeat review
+
+**Attention, not effort.** Defect detection falls off sharply above a few hundred changed lines, and it keeps falling. That is a property of reading, not of seniority, and it is why "just look harder" fails: the reviewer who carefully reads files one through six is skimming by file twenty.
+
+**The reviewer loses the model.** Understanding a change means holding its shape in your head. Past a certain size that model does not fit, so the reviewer falls back to checking lines locally — which finds typos and misses architecture.
+
+**Everything downstream gets worse.** Large changes sit in the queue longer because reviewers postpone them, which raises [latency](/glossary/review-latency/), which encourages the next change to be batched too. It is self-reinforcing.
+
+## Why AI tools also degrade, and less visibly
+
+A model is not immune to size — it is limited differently, and the limit is easier to hit than vendors advertise.
+
+Everything the tool knows about your change has to fit in the [context window](/glossary/context-window/), along with the surrounding code that makes the diff meaningful. On a 2,000-line change across forty files, the tool has to choose: send the diff and drop the context, or send context for some files and skip others. Both degrade the review, and the second degrades it *selectively* — some files get a real review and some get none.
+
+The dangerous part is that this is usually silent. The output looks the same. You get comments, they are plausible, and nothing tells you that eleven files were never read.
+
+**What to ask a vendor**, in these words:
+
+- What happens above 1,000 changed lines? Above 5,000?
+- Is truncation or sampling disclosed in the review output?
+- Is the review incremental across pushes, or re-run on the whole change each time?
+- What is the 90th-percentile review time at that size?
+
+The answers separate tools built around a demo-sized pull request from tools built for a real codebase. Tools with genuine repository [retrieval](/glossary/rag/) rather than diff-plus-window handle this better, because they can fetch what a specific hunk needs instead of trying to carry everything at once.
+
+## Reviewing one when splitting is not an option
+
+Do not read it top to bottom. That is the approach that produces an approval with no comments.
+
+**Pass 1 — Intent and shape (10 minutes).** Read the description and the ticket. Then read the *file tree*, not the diff: which directories are touched, which are unexpected? A change to `auth/` inside a "rename a config field" pull request is the finding, and you get it in ninety seconds.
+
+**Pass 2 — Split mechanical from semantic.** Most large diffs are mostly mechanical: a rename, a generated file, a formatting sweep, a lockfile. Identify those and confirm they are mechanical by sampling a few hunks, then set them aside. What remains is usually a tenth of the size and is where the actual review is.
+
+**Pass 3 — Highest [blast radius](/glossary/blast-radius/) first.** Read the security-relevant, shared-library and data-migration files properly, while you still have attention. Never leave these for the end.
+
+**Pass 4 — Tests and reversibility.** Do the tests fail if the behaviour is wrong? Is there a migration, and does it work while both versions of the code are running? Can this be reverted in one step?
+
+**Then state your scope.** "Read the migration and the auth changes carefully; skimmed the generated client and the formatting sweep." This is the most useful and least practised habit in large-change review — it stops the approval from implying a level of scrutiny nobody performed.
+
+## Stopping the next one
+
+- **Separate the mechanical from the semantic.** A rename and a behaviour change are two pull requests. Merging the rename first makes the second one readable.
+- **Stack the work.** Chained pull requests, each reviewable on its own, land in order. This is the single biggest workflow change available to a team that produces large diffs.
+- **Land a scaffold first.** For a new feature, merge the empty structure behind a flag, then fill it. Each increment is small and the shape is agreed up front.
+- **Make it a norm, not a rule.** Reviewers being allowed to say "split this" without it reading as rejection is what actually changes behaviour.
+- **Design review before code.** The changes that end up enormous are usually the ones where nobody agreed the approach first.
+
+## If large changes are genuinely normal for you
+
+Some contexts produce them unavoidably — generated clients, [monorepo](/glossary/monorepo/)-wide refactors, regulated releases batched by policy. In that case the tooling requirement changes, and it is worth filtering candidates on it directly rather than discovering the ceiling in month two:
+
+| Requirement | Why it matters at size |
+|---|---|
+| Repository-level retrieval | Fetches what a hunk needs instead of trying to carry the whole change |
+| Incremental review across pushes | Avoids paying, and waiting, for a full re-read on every commit |
+| Path-scoped rules | Lets the generated directories be quiet while the core stays strict |
+| Disclosed truncation | You find out what was skipped from the tool, not from production |
+
+The [directory](/#directory) scores every tool on context depth and rule control, which are the two pillars that decide most of this. The rest — truncation behaviour, incremental review, p90 latency at size — is not something a vendor publishes, so it has to come out of a trial on your own largest repository, not a sample one.
