@@ -1,0 +1,61 @@
+---
+title: "Reduce Pull Request Review Time With AI: A Reproducible Protocol"
+description: "Ask the right question: AI review tools cut how long PRs WAIT, not much how long they take to READ. Plus a two-week PR-slice protocol."
+pubDate: 2026-09-19
+category: "guide"
+tags: ["aicodereview", "prreview", "metrics", "llm"]
+---
+
+Every vendor selling an AI code reviewer has a number for how fast it makes your PRs. Atlassian says its Rovo Dev reviewer [cut PR cycle time internally by up to 45% and by 32% for customers](https://www.atlassian.com/blog/rovo/how-we-cut-pr-cycle-time-with-ai-code-reviews). Others quote single time-saved percentages that look great on a pricing page. None of them publish the harness they measured on.
+
+The surprising part is that those numbers might even be true and still not mean what you think. Almost all of the speedup from an AI reviewer comes from the wait half of the review, not the read half. And the thing teams actually complain about, "these PRs are sitting forever," is overwhelmingly a wait problem.
+
+If you are going to spend money on a review tool, the question worth asking is not "how much faster does it make review?" It is "how much of that speedup is waiting vs. reading, and can I reproduce the number myself?"
+
+## Review time is wait time, mostly
+
+The useful way to slice PR cycle time is into two halves. Time-to-first-review is the interval between when a PR opens and when a human first looks at it. Review turnaround is the interval between when a reviewer starts and when they respond. The first half is wait. The second half is read.
+
+The numbers that exist here come from telemetry, and they point the same direction. LinearB's analysis of 8.1 million pull requests described AI-assisted PRs waiting 16 hours for first review against 200 minutes for human-authored ones, and merging at 32.7% versus 84.5%. Graphite reports its [stacked review workflows move first-review time](https://graphite.com/guides/ai-pull-request-review) from roughly 10 hours down to 3.5 hours. Those are different methodologies on different codebases, but the pattern holds: the long pole is almost always the wait for a reviewer slot, not the effort of reading the diff.
+
+That matters because an AI reviewer attacks the wait problem directly. A bot can comment on a PR in seconds. It clears the "nobody has touched this" bottleneck and does it at 3am without a rotation. So a team drowning in queue depth sees a big cycle-time drop, and the tool gets the credit.
+
+## What the AI reviewer actually does to read time
+
+The read half is where the hype gets thin. AI flags issues, catches style drift, and drafts replies. It genuinely removes the "what does this even do" first pass. But humans still have to read the diff and decide. A tool does not remove that step; it front-loads some of the grunt work so the human reads a pre-annotated diff instead of a blank one.
+
+That is real value, and it is smaller than the wait-side gain. If you measure only cycle time, you will over-credit the tool because you are mostly measuring the wait half it happens to fix. Handing a reviewer a 1,500-line AI-generated diff is not made trivial by having the tool flag the first five style issues. The reading time is still there.
+
+## How to measure it without fooling yourself
+
+If a vendor quotes 45%, the correct response is not to argue. It is to run a protocol you can reproduce. A single vendor time-saved number is not evidential because it has no scoped harness attached. Here is a protocol that has one.
+
+Pick a fixed two-week PR window. Take every PR merged in that window and split it into two buckets: AI-reviewer-enabled and reviewer-disabled. Keep the same reviewer pool in both, because the same humans are doing the reading either way. Split both buckets by PR size and risk level, because a 20-line fixture change and a 900-line refactor are not the same unit of work. Then measure two things for every PR: time-to-first-review and review turnaround. Report the per-size and per-risk slices, not just the mean, because a mean hides the team that shipped twelve tiny PRs on top of one brutal one.
+
+Track three numbers per bucket:
+
+- Time-to-first-review, the wait half.
+- Review turnaround, the read half.
+- Merge rate and revision count, the quality guard.
+
+The practical trap is wanting a single number so badly you skip the split. An aggregate mean is structurally blind to the wait/read split. If the tool eats 14 hours of queue time and saves 20 minutes of reading, the mean says "huge win" and you have learned almost nothing about your actual bottleneck. It also hides the failure mode where a mean drops because the tool clears the easy, small PRs while the hardest diffs keep the read regression alive in the tail.
+
+## A worked example
+
+Say your two-week slice has twenty enabled PRs and twenty disabled PRs, all under 300 lines. In the disabled bucket, time-to-first-review averages 11 hours and turnaround 40 minutes, so a PR costs about 11.7 hours door to door. In the enabled bucket, the bot comments in 30 seconds, time-to-first-review falls to 2 hours, and turnaround barely moves at 36 minutes. Door to door that is about 2.6 hours.
+
+A headline that says "the tool cut cycle time 78%" is technically true and almost useless. It is true because you fixed the waiting, which the tool did. It is useless because it tells you nothing about whether the reviewers are any faster at deciding, which they are not. Now run the same protocol with a bucket of six PRs over 800 lines. The wait-side win shows up again, but turnaround pushes to 95 minutes in both buckets, because nobody reads an 800-line diff in 36 minutes regardless of which bot annotated it. That second result is the one that will actually change how you spend money.
+
+That is the whole point of the split. One number hides the fact that your real constraint moved.
+
+## Why the wait/read split matters for your decision
+
+Run the split and you will know which problem you actually have. If your queue is deep and time-to-first-review is your long pole, an AI reviewer plus a merge queue is genuinely transformative, and the cycle-time claim is honest. If your reviewers are fast to start but slow to finish because diffs are enormous, the tool helps less, because it does not make a big AI-generated PR digest itself.
+
+The second case is increasingly common. Teams are generating more code than they can review. When Salesforce engineering [detailed how they adapted to a surge in AI-generated code](https://engineering.salesforce.com/scaling-code-reviews-adapting-to-a-surge-in-ai-generated-code/), they reported volume climbing by roughly 30% with PRs regularly extending past 20 files and 1,000 lines of change. A reviewer that catches initial issues does not fix that. The bottleneck moved upstream to diff size, and no commenter fixes that on its own.
+
+## The short version
+
+Before you buy, get a reproducible number, not a marketing percentage. Fix a two-week slice. Keep the reviewer pool constant. Split by size and risk. Measure wait and read separately. Pick the tool that fixes your actual bottleneck, not the one with the best-sounding headline.
+
+And if a vendor will not give you the harness behind their 45%, assume it was measured on the kind of PR queue that already had a wait problem. That is the generous interpretation, and the most likely one.
