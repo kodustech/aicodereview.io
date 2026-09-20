@@ -1,19 +1,53 @@
 ---
-title: "Pullfrog vs CodeRabbit: the harness, not the model, is the review"
-description: "Comparing Pullfrog and CodeRabbit properly means separating the reviewer harness from the underlying model — not just lining up features."
-pubDate: 2026-09-07
+title: "## Start with the harness, not the feature list\n\nEvery \"X vs CodeRabbit\" post li"
+description: "Comparing Pullfrog and CodeRabbit properly means separating the reviewer harness from the underlying model, not just lining up features."
+pubDate: 2026-09-20
 category: "comparison"
 tags: ["aicodereview", "pullfrog", "coderabbit", "eval"]
 ---
 
-Every "X vs CodeRabbit" article you'll find lines up features, pricing, and model names. That misses the thing that actually decides review quality: whether you're comparing harnesses or models. Most AI code-review tools conflate the two, and Pullfrog is a clean example of why the distinction matters.
+## Start with the harness, not the feature list
 
-Pullfrog doesn't train or host a review model. It wraps the real vendor agents (Claude Code and Codex) behind a GitHub Actions bot. You bring your own key or pay at-cost, it routes a PR to the underlying agent, and posts comments back on the PR. **The harness owns: whose key is used, what the agent can reach on the repo, and what it's allowed to post back.** Review quality, on the other hand, is inherited wholesale from Claude Code or Codex and the model behind them.
+Every "X vs CodeRabbit" post lines up features, model names, and pricing. That misses what actually decides review quality: whether you are comparing two review harnesses or two review models. Pullfrog is the cleanest current example of why that distinction matters, because it barely has a model of its own at all.
 
-CodeRabbit is the opposite shape: a hosted SaaS with its own models and its own review pipeline. Feature-for-feature it's a longer list (line-level suggestions, chat with the reviewer, incident triage). But that list is a product comparison, not an eval of review quality.
+Pullfrog is an open-source GitHub bot that runs inside GitHub Actions and positions itself, in its own words, as "the BYOK CodeRabbit." It does not train or host a review model. Its README is explicit that it "is not an agent itself": it wraps the stock vendor agents, Claude Code, Codex, and now OpenCode, and selects whichever matches your bring-your-own-key or bring-your-own-subscription setup. It reads the repo-level config you already keep for that agent, CLAUDE.md or AGENTS.md, skills, custom commands, and repo MCP servers. InfoQ covered the launch in May and put the architecture plainly: Pullfrog is an orchestration layer that listens for GitHub webhooks and triggers agent runs against events like new PRs, CI failures, and review submissions.
 
-The practical question for a team choosing between them is: are you paying for a review engine, or for a review harness plus whoever's model is cheapest that day? If Pullfrog routes to the same Claude Code you already trust, its reviews will read a lot like your own Claude Code sessions. The differentiator is the boundary: your keys stay with you, and you control which credentials the agent ever sees through the whole run.
+So the division of labor is clear. The harness owns whose key is used, what the agent can reach on the repo, and what it is allowed to post back. Review quality is inherited wholesale from whichever agent and model you routed the PR to. That is a very different shape from CodeRabbit, a hosted SaaS with its own models and its own closed review pipeline.
 
-That boundary is also where the security evaluation lives. A code-review agent that can read your private repo, run CI-type actions, and post to your PRs is touching your confidence surface. Comparing tools means asking, per product: which sessions does the bot actually hold, and what can each read and write?
+## What changed in the cost and footprint story
 
-CodeRabbit wins on out-of-the-box depth and a managed pipeline. Pullfrog wins on transparency and control: you know exactly which model ran each review because you picked it, and the agent's reach is constrained by the boundary you configured. Whichever you pick, run a few real PRs and check _which harness and which model_ produced each review, not just the tool name.
+Two recent changes make the comparison more concrete than the older takes suggest.
+
+First, Pullfrog is now free for personal and open-source use. The repo banner says so directly. For a solo maintainer or an OSS project, the entry cost is effectively a GitHub Actions runner and the agent subscription you may already pay for.
+
+Second, you can connect a coding-agent plan and bill runs against it instead of supplying a raw API key. Claude Pro/Max, ChatGPT Codex, Grok, Kimi Code, and OpenCode Go all connect through a short auth command. That closes the annoying setup gap where a review bot forced you to mint a separate key at the same vendor you already paid. With the subscription route there is no API key required. If you do go BYOK, your key sits in Pullfrog's encrypted secret store or in GitHub Actions secrets, your choice, and there is a router option billed at raw provider cost with no markup.
+
+The free tier and the subscription billing both push toward the same conclusion: the marginal cost of Pullfrog's harness is approaching zero for small teams. What you are really betting on is the agent it wraps.
+
+## The permission boundary is where the actual evaluation lives
+
+Because Pullfrog's review quality is model-attributed, not harness-attributed, the thing to evaluate about Pullfrog itself is the boundary it draws around those vendor agents. This is where the README gets specific and it is worth reading carefully.
+
+A review bot touches your confidence surface: it can read a private repo, run command actions, and post to your PRs. Pullfrog mitigates that with a few concrete mechanisms. GitHub operations go through a purpose-built MCP server that sits behind a permission layer. Shell access runs in an isolated subprocess that does not see sensitive environment variables. There is a headless browser for E2E tests and screenshots. The credential story is the strongest part: every GitHub operation uses an installation token that is auto-revoked when the run completes, keys are auto-masked in logs, and only the minimum necessary environment variables pass through to the agent.
+
+That is a real, checkable permission design, not a marketing slide. The short-lived installation token is the detail I would actually hold vendors to, because a long-lived token sitting in a bot's session is how these tools turn into an attack surface. This is also the right lens for CodeRabbit: as a hosted SaaS it necessarily holds your repo access on its side, so the question for your security review is which sessions that platform keeps, how long they live, and what each can read and write.
+
+For open-source and self-hosted-minded teams the bar is comparable. The same permission-and-credential lens applies to any tool that reaches into your private repos, whether it is a wrapper like Pullfrog or a self-hosted reviewer you run yourself. What you are auditing is never the model, it is the boundary around it.
+
+## The model attribution problem, stated plainly
+
+The reason the harness-versus-model distinction matters so much in this specific comparison is reproducibility. If you pull up a review Pullfrog posted and want to know whether the underlying reviewer is any good, you can name the model, because you picked it. Run the same PR with Claude Code and with Codex and you get two reviews you can attribute to two different engines. That is the kind of isolation a benchmark wants, and it is rare in this category.
+
+CodeRabbit, by contrast, is a product whose review pipeline you cannot slice apart. You get the output, not the per-PR recipe of model plus prompts plus context window. That is fine operationally, but it means "does CodeRabbit produce good reviews" is a question you can only answer empirically, by running it, and even then you cannot decompose why a bad review was bad. Was the model weak, or the context truncated, or the prompt at fault? For a single data-in point like a PR review, that attribution gap matters less than it does for a benchmark. But it is worth keeping in mind when you read any vendor's accuracy claim: without a published harness and judge, a headline number is model plus harness and you cannot separate the two.
+
+## How to actually compare them
+
+Feature-for-feature, CodeRabbit still wins on out-of-the-box depth: line-level suggestions, chat with the reviewer, incident triage. That is a product comparison and it does not tell you which one produces better reviews.
+
+The practical test is to run a few real PRs through each and ask two separate questions. First, which harness produced the review, meaning which agent, which model, and which prompts. Second, what did that agent have reach over, and how long did those credentials live. Pullfrog makes the first question easy to answer because you picked the model, which is its transparent upside. Its downside is that the depth of the review is only as good as whatever agent you routed to. CodeRabbit makes the first question opaque by design but bundles the whole pipeline for you.
+
+Chase the harness and the credential boundary, not the feature list, and the right choice falls out of your team's real constraints: whether you already trust an agent, whether you want to hold the keys, and how long you are comfortable letting a bot hold access to your repos. For a team on a tight budget the free-tier Pullfrog over a subscription agent is a genuinely cheap way to find out whether agent-driven review works for you before you commit to a managed pipeline. For a team that wants depth and does not want to run its own harness, CodeRabbit is the turnkey path.
+
+For a fuller eval rubric, our guide to [how to evaluate AI code review tools](https://aicodereview.io/blog/how-to-evaluate-ai-code-review-tools/) covers the methodology, and the [multi-repo comparison](https://aicodereview.io/blog/ai-code-review-across-many-repos-what-to-actually-compare/) looks at what differs when the review has to span many repositories at once. The self-hosted and open-source option set is laid out in our [review of open-source AI code review tools](https://aicodereview.io/blog/open-source-ai-code-review-tools/).
+
+One more angle worth naming: this case is a good reminder that a benchmark score is always model plus harness. A direct head-to-head of Pullfrog against CodeRabbit on a single suite would not tell you "which product is better," it would tell you which combination of a particular agent and a particular harness produced more accepted findings on that particular set of PRs. That is a useful number, but it is not a verdict on the products, and it will drift the moment either vendor changes the underlying model. So do not buy on a scorecard. Buy on the shape of the product and run the real PR test on your own repos.
