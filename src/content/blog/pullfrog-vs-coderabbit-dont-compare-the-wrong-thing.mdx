@@ -1,0 +1,66 @@
+---
+title: "Pullfrog vs CodeRabbit: don't compare the wrong thing"
+description: "Pullfrog is a BYOK harness over Claude Code and Codex, not a first-party reviewer like CodeRabbit. Review quality is model-attributed, not harness-attributed. Here's what actually separates them."
+pubDate: 2026-09-22
+category: "comparison"
+tags: ["pullfrog", "coderabbit", "aicodereview", "byok"]
+---
+
+Pullfrog landed on the AI code review scene in May 2026 and everyone did the lazy thing: filed it next to CodeRabbit, ran the feature-grid comparison, called it a day. That framing is wrong, and it produces the wrong buying decision, because Pullfrog and CodeRabbit are not the same category of thing.
+
+Pullfrog is a harness. It does not contain an opinion. CodeRabbit is a first-party reviewer with its own models and evaluation layer. Most of what people compare between the two, review quality above all, is decided before either tool runs, by whichever frontier model you hand the harness. Compare the wrong thing and you pick the tool that looks better on paper while missing how much your own key, your review process, and your credentials actually shop for the outcome.
+
+I run these tools rather than trust their marketing, so here is how to actually evaluate the two.
+
+## The category problem
+
+CodeRabbit markets itself as "AI-first pull request reviewer," an automated review layer that uses its own context and models and closes the loop with your coding agents. It pioneered the line-by-line AI review and the continuous-learning pattern. When you install it, the review is CodeRabbit's review. The quality is a product property, backed by a hosted stack that CodeRabbit controls and prices per seat for 17K customers across 6M repositories, per the [CodeRabbit landing page](https://www.coderabbit.ai/).
+
+Pullfrog is built differently. It is a GitHub bot that runs AI agents inside your own GitHub Actions, triggered by PRs, issues, reviews, and CI events. It brings a purpose-built MCP server for git and GitHub operations, bash isolation, and a headless browser. And it is bring-your-own-key in the literal sense, connecting any provider from Anthropic to OpenAI to Google to any OpenRouter route. Colin McDonnell, who built Zod, described it plainly on [InfoQ](https://www.infoq.com/news/2026/05/pullfrog-ai-github/): Pullfrog is a harness over OpenCode and Claude Code intended to be run in CI.
+
+That one sentence should reframe every comparison. Both tools produce code review comments. But CodeRabbit produces a review from its own models, run and tuned by CodeRabbit. Pullfrog produces a review from whatever model you gave it, run by a harness that mostly does orchestration, permission checks, and credential handling. Those are different supply chains.
+
+## Review quality is model-attributed, not harness-attributed
+
+This is the trap. If you run Pullfrog with a Claude Code plan you already pay for, good review quality tells you almost nothing about Pullfrog. It mostly tells you Claude is good. Swap to a weaker model and the same harness will produce weaker reviews. The harness is roughly constant; the model moves the score.
+
+CodeRabbit, by contrast, attaches its quality to its own stack. The model, the context, the learning loop, the scoring, they are all CodeRabbit code. So when you read a CodeRabbit benchmark, you are benchmarking CodeRabbit. When you read a Pullfrog anecdote, you are benchmarking a frontier model running inside a wrapper. Treat the two numbers as equivalent and you will credit the harness with what the model earned, or blame the model for what the harness mis-verified.
+
+This is exactly the harness-versus-model trap I keep flagging in coding-agent evals: when a vendor reports a benchmark score, it is never just the model, it is the model plus the scaffold. The harness can move the score more than reasoning effort does. Pullfrog conveniently makes the scaffold pluggable, which is useful, but it also means nobody can honestly quote a single stable Pullfrog quality number, because there is none. The quality is whatever you brought.
+
+## Where Pullfrog actually differs: the permission boundary
+
+If review quality is a wash on a frontier model, the real differentiator is operational. Pullfrog runs in your repo's GitHub Actions. That has real security consequences worth weighing against a hosted SaaS reviewer.
+
+Pullfrog's model takes hold of git and GitHub via a short-lived GitHub App installation token that is revoked when the run completes. Shell commands run in an isolated subprocess that does not see sensitive environment variables. GitHub operations go through a dedicated MCP server that enforces permission checks, so the agent cannot push to protected branches or touch repos it should not. Keys live in Pullfrog's encrypted secret store or in GitHub Actions secrets, and they are auto-masked in logs. That is a meaningfully tighter credential boundary than a hosted tool where code leaves your infrastructure and a review service holds your repo connection.
+
+But do not over-read the boundary either. Running agents that create PRs, autofix CI, and triage issues inside your CI means your CI runner is now an agent execution surface. A VM gives you blast-radius containment, but it does not solve secret exposure if the agent is given browser-tool logins or connected-app sessions. Isolated subprocesses and revocable tokens shrink the reach, they do not make the boundary trust-free. Adopt Pullfrog because you want CI-local review and key control, not because it is a security silver bullet.
+
+## The flat pricing story worth checking
+
+Pullfrog is free for personal accounts and public repos, and Pro is a flat $30 a month for the whole organization with no per-run or per-seat billing. In a market of per-developer pricing, that flat structure is notable, especially on top of BYOK across any provider. CodeRabbit is the opposite, host-managed, per-seat, value-tied to being a managed reviewer.
+
+The trade is real. A flat, BYOK harness can be dramatically cheaper to run at team scale, but you are paying for orchestration, not model access. The model cost is on your key, and heavy agentic runs that spin up headless browsers and iterate on CI can burn tokens fast. A hosted reviewer that wraps model cost into the seat price gives you a stable bill in exchange for less control. Neither is universally better; they answer different cost questions.
+
+## What a real Pullfrog-vs-CodeRabbit eval should measure
+
+Do not run a review-accuracy bake-off, because you have already decided the answer by choosing the model. Measure the things that are actually product properties:
+
+- Permission and credential handling. Can the agent reach secrets? What exactly is inside the isolated subprocess? How is the app token scoped and revoked? Map the blast radius under a malicious prompt before you trust review comments, because the model is the same either way.
+- Verification, not comment volume. Does either tool actually prove its suggestions build and pass tests, or does it just emit opinions? A reviewer that writes confident comments without running anything is where AI review gets dangerous.
+- Harness reproducibility. Both tools should be run on the same fixed set of PRs, same model stack, same review instructions, with a human judge and recall measured alongside precision. Recall never gets measured, and it is the number that tells you what slipped through.
+- Cost normalization. Pin the model cost and the orchestration cost separately, because they are separate line items here.
+
+I have written before about how most AI reviewer evaluations report precision and quietly skip recall, and this comparison is no exception. Nobody has published a fixed-slice, cross-model, recall-aware Pullfrog versus CodeRabbit benchmark. Until someone does, treat every "which is better" take as opinion, including this one.
+
+## Tools that fit the same slot
+
+Pullfrog and CodeRabbit are not the only ways to get AI review close to your workflow. Two other models are worth putting in the same candidate set when you evaluate.
+
+Qodo leans into a managed, enterprise review platform with deep repository context across PR, IDE, and CLI, at a higher per-user price. It is closer to CodeRabbit in being a product with its own opinion than to Pullfrog's bare harness.
+
+Kodus sits on the BYOK, control side with Pullfrog. It is open source, understands the whole repository rather than just the diff, lets teams define review rules in natural language, supports self-hosting, and lets you pick your own model stack and keys. That makes it a real alternative for teams that want the model control and openness of the Pullfrog approach without running an agent that writes code inside their CI. If your goal is review control and key ownership without handing CI to a code-writing agent, Kodus is the closer comparison than CodeRabbit is. I go through all of them in more detail in the [CodeRabbit alternatives](https://kodus.io/en/coderabbit-alternative/) guide.
+
+## The takeaway, keep it simple
+
+Do not ask "which reviewer is better." Ask "do I want a managed review product, or do I want a harness that runs my own model on my own keys in my own CI?" CodeRabbit is the former. Pullfrog is the latter, and its quality is whatever model you plug into it. Pick the category that matches your infra and cost model, then evaluate the permission boundary, because that, not the model, is what Pullfrog actually ships and what you can actually control.
