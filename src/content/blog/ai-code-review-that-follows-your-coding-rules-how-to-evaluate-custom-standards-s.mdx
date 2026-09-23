@@ -1,0 +1,59 @@
+---
+title: "AI code review that follows YOUR coding rules: how to evaluate custom-standards support"
+description: "Most AI reviewers catch generic bugs. Whether one will follow your team's own coding rules is a separate question. Here's how to evaluate custom-standards support before you buy."
+pubDate: 2026-09-23
+category: "guide"
+tags: ["aicodereview", "codingstandards", "evaldesign", "customrules"]
+---
+
+## The question that outsells the one most teams ask first
+
+"Does this reviewer catch bugs" is easy to answer. Every tool has a demo showing it flag a null dereference or a SQL injection. The question that actually decides whether a tool survives contact with your team is narrower and harder to evaluate: will it follow the coding rules and standards you've already agreed on?
+
+Not generic best practices. Your rules. The naming convention you argued about in that PR comment thread. The auth-check requirement that exists because of an incident last quarter. The migration-safety rule a senior engineer wrote down in a doc nobody reads. A tool's out-of-the-box reviewer can be excellent and still ignore every one of those.
+
+The vendor docs all say they support custom rules. The honest way to pick is to test it, and the test is different from a bug-catching benchmark.
+
+## Why agents need your rules spelled out differently than a human does
+
+Stack Overflow's engineering team wrote a useful piece on [building coding guidelines for AI agents](https://stackoverflow.blog/2026/03/26/coding-guidelines-for-ai-agents-and-people-too/), and their central point is that you cannot treat an agent like a new junior dev. "You can't just throw a few documents at them and let them explore. Agents are fast but lack the context of your code." A lot of the context human coders have is tacit: the serial comma, the way this one service names its handlers, the fact that configuration and code are kept separate even though nothing enforces it.
+
+To a model, "DRY" and "separate config from code" are not defaults the way they are to an experienced engineer. As Heroku's chief architect puts it in that same piece, you tell the LLM to build your app a certain way, or "build me a snake game and it'll do whatever it wants to."
+
+So when you evaluate a reviewer's custom-standards support, the standard is not "can it read a markdown file." The standard is whether the tool can turn an explicit rule into a check that fires on a violation, reproducibly. This connects to the broader point in how to actually evaluate an AI code review tool: the failure mode that matters is not missing a bug, it is fluent output that is easy to trust and structurally wrong.
+
+## How tools actually implement custom rules
+
+Every serious AI reviewer now has some mechanism, and they are not all the same depth. Here is the range you will actually see.
+
+**Path-specific instructions.** CodeRabbit's config, as shown in their [guide on keeping review consistent across agents](https://www.coderabbit.ai/guides/consistent-ai-code-review-across-coding-agents), lets you attach rules to directories. Anything touching `src/auth/**` gets told to require a security justification and check that permission checks are not weakened. This is the first tier: instructions scoped to where they matter, not applied globally where they'd spam noise.
+
+**Custom checks as pre-merge validation.** The same guide shows team-wide rules expressed as named checks with a mode and a threshold. "If this PR changes a public API, database schema, or config key, require it documented" as an enforceable check, not "review for quality" which is too broad to be enforceable. This is a different tier from instructions: it is a discrete gate that can fail a merge, version-controlled, not a nudge inside a comment blob.
+
+**Rule files as context, not as the policy.** Many repos already carry `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`. CodeRabbit's point is worth stealing: those are valuable context for how generation should behave, but they should not be the whole review policy. The review standard belongs at the merge boundary where every change is held to it, regardless of which agent produced it.
+
+**Your write-your-own-rules config.** Tools that expose a config file where you define the checks yourself give you the closest thing to determinism. Bito's docs route this through custom code review rules you add, and IBM's [guide to standardizing AI code generation](https://www.ibm.com/think/insights/standardize-ai-code-generation-across-your-development-team) makes the same case at the project level: project rules are specific guidelines that define how work should be done in that particular project. The deeper the configuration surface, the more a team rule becomes a repeatable check rather than a hope.
+
+Where Kodus fits is the same place as the others: a PR-level review layer where the rules you define can be applied consistently across the repos the reviewer sees. For a closer look at how codebase context and rule enforcement stack up across tools, the code review directory scores each one against the same standards.
+
+## The evaluation test: three moves, run before you buy
+
+Skip the feature-tour demo. Run this.
+
+**Give it a real violated rule.** Take one of your actual team rules and construct a PR that breaks it and only it. The rule should be specific enough that a human reviewer would catch it in seconds: "all DB access in this module must go through the repository layer," "public API changes must update the docs," "no direct SQL string interpolation." Paste the rule into whatever custom-rules surface the tool exposes.
+
+**Check detection, not warmth.** Does it actually flag the violation? Then the harder question: run the same input twice. If the reviewer flags it on one run and passes it on the next, that is a flaky gate you cannot trust to enforce a standard. This mirrors the eval-design problem I keep coming back to: an LLM judging its own output has a determinism ceiling, and your standards checking will inherit exactly that ceiling. My piece on why your AI reviewer judging its own output is a blind spot lays out the judge-correlation argument.
+
+**Change the context and re-run.** Path-specific rules are only useful if they fire in the path they are scoped to and stay quiet elsewhere. Feed the violation through a different directory and see whether scope holds. That tells you whether the rule is genuinely scoped or just appended to every prompt.
+
+If a tool passes those three moves on the rule that matters to you, it follows your standards well enough for that rule. If it fails on the one rule that matters, nothing in the marketing will save you.
+
+## What custom rules will not fix
+
+A tool that follows every one of your rules perfectly is still only as good as the rules you gave it, and there is a structural blind spot underneath that no configuration covers. If the same model that generated a patch is also the only thing reviewing it, you have a correlated judge, and correlated judges miss defects in a way a rule list cannot repair.
+
+So treat custom rules as the enforcement layer, not the whole safety net. The deterministic checks your team can express are the part a reviewer should hold flat. The judgment about whether the change is right, not just rule-compliant, is the part that still belongs to the human reading the diff, ideally on top of a reviewer that can disagree with the generator.
+
+## The short version
+
+An AI reviewer that follows your rules is not an out-of-the-box property you can read off a benchmark score. It is a configuration depth plus a determinism guarantee you have to verify yourself. Construct one violating PR, run it twice, confirm the scope. A tool that holds on your actual rules is worth far more than one that scores higher on a bug-catching leaderboard but ignores the standards your team wrote down.
