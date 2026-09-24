@@ -1,0 +1,63 @@
+---
+title: "Free AI Code Review Tools: What \"Free\" Actually Costs You"
+description: "A hands-on look at what \"free\" really means across AI code review tools — metered credits, trials, BYO-LLM, and how to evaluate them."
+pubDate: 2026-09-24
+category: "comparison"
+tags: ["aicodereview", "freetools", "codereview", "opensource"]
+---
+
+## The word "free" is doing a lot of work
+
+Search for "free AI code review tools" and you get the same listicle on repeat: CodeRabbit, Greptile, Qodo, Sourcery, CodeAnt AI. Every one of them is a vendor page, every one of them says "free." They are all technically correct, and they all mean different things by it.
+
+That gap matters if you are the person who has to decide whether the tool actually covers your PR flow or quietly runs out of runway. The price tag is the least informative part of the product. What you are really choosing between is the payment model hiding under the word "free."
+
+This is a comparison of what free actually costs you in practice, built from the live pricing pages, not the marketing copy. The tools that rank for "free" fall into four real categories.
+
+## The trial masquerading as a free plan
+
+CodeRabbit is the biggest name in the space and the clearest case of free meaning "try it for two weeks." The [CodeRabbit pricing page](https://www.coderabbit.ai/pricing) lists no perpetually free tier. The cheapest plan, Essentials (the renamed Pro) costs $24 per developer per month billed annually, $30 monthly. Above the included review allowance, extra reviews run $0.25 per file. CodeRabbit Agent, the on-demand coding tool, bills $0.40 per agent minute.
+
+For an individual or a small team that wanted a genuinely free reviewer, this is a dead end. You get the trial, you feel the value, and then you either subscribe or lose the bot in your repo. That is a sound business for them and a real cost for you: the tool you validated against your repo stops existing at the grace period.
+
+Nobody should call a 14-day trial a free plan. It is a demo with billing attached.
+
+## Metered credits that run out
+
+Greptile is the honest version of a free tier, with a ceiling you can see. The [Greptile pricing page](https://www.greptile.com/pricing) shows Starter is free for one active developer, unlimited repositories, and 50 review credits per month. A standard review costs 1 credit, and a TREX review (which writes and runs targeted tests in a sandbox) costs 3. So the free tier is roughly 16 TREX reviews or 50 standard ones a month, for a single person. Pro is $30 per seat, and extra credits are $1 each.
+
+For a solo developer or a side project, 50 credits a month is genuinely usable. For a team of five, it is a metering scheme that funnels you toward the $30 price point before the month is half over. The free part is real and the ceiling is documented, which makes it one of the more transparent offers in this list.
+
+Greptile also makes an open source play: free for non-commercial projects under MIT or Apache licenses, plus a 50 percent discount for pre-Series A startups. That is a real free tier for qualifying users, worth checking against your license before you assume it does not apply.
+
+## Bring-your-own-LLM open source
+
+Then there is the category that removes the metering entirely: open source review platforms that run on your own model and your own keys. Kodus is in this lane, AGPLv3, with a Community plan that is free and self-hostable via Docker Compose against any OpenAI-compatible model. You pay the cloud bill for your own LLM calls, not a per-user subscription, and the code is yours to audit and extend.
+
+This changes the free equation in a few practical ways. There is no credit cap and no per-developer seat, so the limit is your own infrastructure and what your API key costs you. Self-hosting shifts dollars from a subscription to usage on whatever model you choose, which is the same trade you already accept for coding assistants like Cursor or Codex.
+
+The catch is operational. You own the deployment, the upgrades, and the reliability. That is exactly the right trade for a team that wants to avoid the trial-runs-out problem or that needs reviews to stay inside its own network. For someone who just wants a bot on their GitHub repo in five minutes, it is heavier than Greptile, and that is the honest cost.
+
+## The free drop-in widget
+
+Refact.ai occupies the last distinct category: a [web widget](https://refact.ai/ai-code-review/) where you paste code or upload a file and get a review with no registration. Default model is GPT-4o-mini, it auto-detects the language, and it covers 25-plus languages. It is free, and it is also not a PR reviewer. It is a code paste checker.
+
+Useful for a quick second opinion on a snippet, useless for the thing most people mean by "code review tool": automatically reviewing the diff on every pull request in your workflow, with repository context. Worth keeping around as a supplementary check, but it is not in the same product category as the others, so it should not be compared on the same axis. Refact's own cloud product is shutting down, which is a reminder that a free widget backed by a closing service is a shaky foundation.
+
+## What the price tag does not tell you
+
+Stepping back from the four buckets, the thing the price tag hides is the evaluation question, and that is the part that actually matters. A free tool is only free if it adds signal instead of noise, and that is a property of the evaluation design, not the price.
+
+Concretely, the variable that should move your decision is which model is doing the review and how the output gets verified. A tool that runs CodeRabbit's Essentials plan is really running some configured model inside its harness; a self-hosted option runs whatever model you point at it. Review quality here is model-attributed, not harness-attributed, so two "free" tools backed by different models will hand you very different review quality on the same diff.
+
+The second underrated factor is verification. A good AI review output is a checkable artifact: the flagged line, the reason, the reference to your own standards. A bad one is a vibe ("this could be cleaner"). Greptile's TREX mode, which runs tests in a sandbox to check an edge case, is an example of the review carrying its own proof. That is the closest thing to a reproducible signal you will get from a closed tool, and it is rare.
+
+When you run the free tiers side by side, the practical recommendation is boring and it depends on scale. Solo developer or OSS maintainer: Greptile's 50-credit Starter or the OSS free tier is the least friction. Team that wants a persistent reviewer without a credit ceiling and is fine operating it: self-host an open source option like our own self-hosted setup and own your model choice. Anyone who needs a quick snippet sanity check without signing up for anything: Refact's widget is fine for that narrow job. CodeRabbit is a good product with a real price, but the "free" it advertises is a trial, and you should treat it as a subscription with extra steps.
+
+The meta-point is the one worth keeping: the cheapest plan is not the cheapest tool, because the tool's real cost is whether you can trust its output and keep it running past the promo. Evaluate the model, the verification, and the continuity, in that order, and the price tag becomes a footnote.
+
+## Decide with the diff, not the dashboard
+
+If you are picking between free options, skip the marketing pages and run the same pull request through two or three of them. A representative diff from your own repo, one with a real bug in it, will tell you more in an afternoon than any comparison article. Look at whether the review names a concrete line and reason, whether it understands your team's conventions, and whether it would have caught the bug a human reviewer on your team would catch. That last one is the only benchmark that matters, and it is not on the pricing page.
+
+For anyone going further down the self-hosted or open source path, the who-pays-for-the-model question and the how-is-output-verified question are the two that should keep you honest. Your other alternatives always come down to those same two axes, whether the tool is free, metered, or trial-gated.
