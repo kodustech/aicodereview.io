@@ -1,0 +1,49 @@
+---
+title: "Once You Can Measure It, You Can Make It Faster: An Agentic Loop in Action"
+description: "Anthropic made claude.ai 3x faster in two weeks by putting a model inside a measure-build-steer loop. An eval-grounded look at what the sprint proves about agentic workflows."
+pubDate: 2026-09-25
+category: "explainer"
+tags: ["evaldesign", "measurement", "agents", "claude"]
+---
+
+The most useful line in Anthropic's engineering post about its performance sprint is almost an aside. "Once Claude can measure something, it can make it faster." Then the authors say the rest of it: "So we kept finding more things to measure."
+
+That sentence is the whole lesson, and it applies far beyond claude.ai. The sprint is a clean, public case of what an agentic loop actually looks like when the measurement is real. Not a demo, not a "we ran it on five repos," but an internal team putting a model inside a loop where every step has a number attached. It is the closest thing to a reproducible example of agentic work that a vendor has shipped in months, and it shows why measurement is the load-bearing wall.
+
+## What the sprint did
+
+Anthropic wanted claude.ai and the desktop app faster. Users had been saying it was slow, and the team agreed. So in a two-week window they put Claude in a single Slack channel, gave it a standing brief, and had it analyze usage data through the Datadog MCP server.
+
+The model picked four journeys that cover about 95% of user activity: launching the app, starting a conversation, loading an existing conversation, and sending a message. Across web and desktop those became thirteen distinct measurements. Before touching anything, the team instrumented until the numbers were directly comparable: each one started at a user interaction, ended when the result rendered, and separated client work from server work.
+
+The before-and-after table is worth sitting with. At the 75th percentile, a fresh claude.ai load went from 3,085ms to 550ms, a 5.6x cut. Loading a Claude Cowork cloud session went from 2,566ms to 728ms. Sending a message on desktop chat went from 140ms to 64ms. Geometric mean across the thirteen measurements: 3.1x faster.
+
+They merged more than three thousand changes and shipped with no customer-facing incident or rollback.
+
+## The loop is the point, not the speed
+
+Most coverage of a post like this lands on the "3x faster" number. That is the right headline and the wrong takeaway. The transferable part is the loop: measure directly, build a benchmark around the samest metric, change one thing, re-run, ship, watch the deploy.
+
+Nothing in that loop is exotic. It is the same cycle a decent engineering team already runs on its slow endpoints. The difference is that a model could keep it going at volume because the ground truth was legible to both the human and the model. The model could read Datadog, see which journey dominated, find the bottleneck, and confirm the fix moved the same number it had stared at all morning.
+
+This is why the "measure-first" framing matters for anyone evaluating AI coding tools. A model without a trustworthy metric is a model you cannot steer. It will happily make changes that feel good and make nothing measurable better. Anthropic's own phrasing concedes the limit: "today we know that isn't yet possible" to let it run fully autonomous. They kept it inside a loop where a human approved every change and the model watched every deploy.
+
+Contrast that with how most code review and agent benchmarks are set up. A benchmark that measures the model's own output through the same model is not a measurement, it is a mirror. The [Amazon dependence-aware label aggregation work](https://www.amazon.science/) has driven at this for a while: correlated judges are not independent evidence, and having an AI review the AI's own patch is one model's opinion bagged and counted several times. Anthropic sidesteps that entirely because its measurement comes from Datadog, an external system the model cannot flatter. The metric lives outside the model, so it cannot be gamed by a confident summary.
+
+## What this means for teams betting on agents
+
+Three concrete consequences for an engineering team deciding what to trust an agent with.
+
+First, your agent needs a number outside itself. If the only evidence an agent produces is its own self-assessment, you do not have a loop, you have a monologue. Give the agent a metric it cannot rewrite: a green build, a passing property test, a timing benchmark, a diff against a golden answer. On the review side this is exactly why a team should run a [reproducible eval](https://aicodereviews.io/benchmark-ai-code-review/) rather than trusting a vendor scorecard.
+
+Second, the benchmark and the work are the same act. Anthropic did not first build a benchmark and then optimize into it the way most offline evals work. They measured production, abstracted the high-value journeys into thirteen numbers, and then code against those numbers. That is the difference between an offline eval (fixed dataset, clean, reproducible) and an online eval (live metrics, drifting, but real). Both appear in our [breakdown of offline vs online code review evals](https://aicodereviews.io/) and each has a place. The productive loop lives at the online end.
+
+Third, approval gates let you move fast. Three thousand changes without a rollback was not luck and was not the model being cautious. It was a deployment arrangement where every change had a human steering decision and a metric to confirm it. That echoes the [guardrail point](https://aicodereviews.io/) about agents working where the outcome is checkable: compilers fail fast, tests catch regressions, git rolls back. The reason Anthropic could let Claude ship relentlessly is that each change was cheap to verify. If you are putting an agent on work that cannot be mechanically checked, you have removed the thing that made the sprint safe.
+
+## The benchmark is the deliverable
+
+There is a repeatable protocol hiding in this post, and it will look familiar to anyone who has read about [self-hosted AI code review](https://aicodereviews.io/self-hosted-ai-code-review/). Stand up a channel or runner with a standing brief. Point it at real telemetry. Define the journeys that create 95% of the value. Instrument each one until it is a number a human and a model both trust. Then let the model hill-climb against those numbers under approval gates, and watch every deploy.
+
+Tools can plug into this at different depths. Graphite and LinearB have pushed the queue-time data that shows review is often a wait problem before it is a read problem. Ops teams run the same loop on latency. On the review side, a tool like Kodus that keeps models under your own keys and exposes spend lets a team run this exact loop with org-controlled rollouts, deciding the model and the retry policy rather than taking a bundled score. What matters is not the specific tool, it is that the metric is real and outside the thing being measured.
+
+Anthropic's line is worth stealing for evaluation work generally. Do not ask whether an agent is good. Ask whether you can measure it. If you cannot, adding more of it will not help. Keep finding things to measure, and the rest follows.
