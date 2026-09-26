@@ -1,0 +1,43 @@
+---
+title: "The best AI code review tool is the one the agent built to review with"
+description: "Trail of Bits spent six months having agents build an LSP, decompiler, static analyzer, and Lean proof model before the Miden review even started. That is where the leverage landed."
+pubDate: 2026-09-26
+category: "explainer"
+tags: ["aicodereview", "agents", "formalverification", "miden"]
+---
+
+There is a standard story about AI in code review now. A security firm points its agent harness at a codebase, the agent reads the code, and it surfaces a stack of bugs. The harness is the reviewer. Trail of Bits wrote the post that should be the private model most teams keep missing: in their Miden zkVM audit, the agent was not the reviewer at all. It was the tool builder.
+
+For six months before review even started, their agents built an LSP server, a decompiler, a static analysis engine, and a Lean formal model of the VM executor from scratch. Those tools found a real vulnerability, an unvalidated prover-supplied input that let a malicious prover forge Falcon signatures and drain Miden account funds, and the Lean model produced 95 machine-checked correctness proofs. The whole write-up is worth reading: [auditing in the age of good enough AI](https://blog.trailofbits.com/2026/09/18/auditing-in-the-age-of-good-enough-ai/).
+
+## The code under review was make-or-break
+
+Miden is not a normal codebase. It is a zero-knowledge VM with a custom assembly language called MASM, a stack-machine architecture, and no meaningful developer tooling. When you read MASM, register inputs and outputs are implicit, buried in stack effects. There was no LSP, no linter, no IDE support, nothing. A reviewer would spend most of their attention just trying to figure out what a procedure actually did with the stack.
+
+So Trail of Bits made a decision before the audit's opening day: spend the prep time teaching the model to manufacture the tooling that the codebase should have had all along. Within a few days Claude had a working LSP prototype with syntax highlighting and goto-definition. They kept going, adding instruction docs and inline stack-effect annotations so a reviewer would not have to context-switch out to look up instruction semantics.
+
+Then came a decompiler. MASM is a hard decompilation target for reasons that have nothing to do with the model: procedures rarely declare signatures, the calling convention is loose, while-loop conditions can sit in a different stack slot each iteration, and conditional branches can have different stack effects. The team was honest that full decompilation was off the table, so they focused on a well-defined subset and verified it by having agents decompile randomized procedures and diff the result against the original MASM for regressions.
+
+The decompiler was the biggest single effort, north of 100 AI-generated commits over months. But here is the surprising part: the full decompilation pipeline was not the reuse that paid off. What carried over was the intermediate representation underneath it, with instruction inputs and outputs populated as expressions. That gave them a foundation for standard static analysis without rebuilding it.
+
+## Where the value actually landed
+
+The bug that produced something you can hold in your head: an unvalidated prover-supplied input that let a malicious prover forge Falcon signatures and steal funds. That is not a lint-level nit an agent found by eyeballing a diff. It is a property that an analysis framework was able to express because the model had built the harness that understands MASM in the first place.
+
+The Lean work is the more interesting tail. Lean is a proof assistant for machine-checked formal verification, and their model carried it far enough to produce 95 correctness proofs over a large part of the core library. That is not a reviewer saying the code looks fine. It is a machine-checked argument that the code behaves correctly for all inputs. Our older post about [who reviews the AI-generated code before the human does](https://aicodereview.io/blog/who-reviews-the-ai-generated-code-before-the-human-does/) argued that the signal in review is verification against a spec, a test contract, or a concrete invariant, not a second opinion. This is the extreme form of that principle: the verification target was a formal model, and the model was part of the build.
+
+## What this means for a normal team
+
+Miden is a high-assurance cryptography project, not a typical product codebase, so the literal playbook is overkill for most teams. But the underlying shift transfers. When the volume of AI-generated code climbs, most teams reach for a smarter or faster reviewer, or a bigger model, as if the bottleneck is the reader. In the Trail of Bits story the bottleneck was the harness, and the agents' highest-leverage use was building the harness, not starring in it.
+
+The routing insight also matters. In [reviewing the volume of AI-generated code, the problem is routing, not speed](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/), we covered how the queue shape decides whether a human can keep up. Trail of Bits shows the matching idea on the tooling side: the same review effort goes further when the model has been allowed to construct the instruments it reviews with, rather than just reading the patch.
+
+There is a practical takeaway for evaluation too. When you [evaluate an AI review tool](https://aicodereview.io/blog/how-to-actually-evaluate-an-ai-code-review-tool/), most of your attention goes to the quality of the comments the reviewer returns. Trail of Bits spent its budget differently, and the payoff was the thing under the comment: whether the tool can express the semantics of the code it is reviewing. That is a fair and concrete test to run. Feed a tool a codebase in a language or domain it has not been tuned on, like a custom assembly dialect, and see whether its analysis framework can actually hold the meaning of the code, or whether it degrades into generic suggestions.
+
+For teams that review a lot of generated code, a reasonable experiment is to spend some of your agent budget on the harness, not the reviewer. Have the model build the linter, the type checker, the data-flow pass, or the test oracle for the specific code your team writes, then point the reviewer at the output of that tooling. Verify against the invariant, not against a second opinion.
+
+## Kodus and the harness-first review
+
+The harness-first view also sharpens how you should compare review tools in the first place, for any vendor in this space including [Kodus](https://aicodereview.io/tools/), which handles AI code review as a productized workflow. The differentiator worth testing is never the marketing copy about being faster. It is whether the tool carries real semantic understanding into the review, whether it can enforce your team's conventions and invariants rather than hand back generic advice, and whether its analysis survives code your team does not share with its training data. A tool that runs its own verification against your defined contracts is closer to the Trail of Bits model than a tool that just offers the largest model.
+
+The lesson is blunt: agents are patients who can do more than answer the question you ask. The team that treats the model purely as a reviewer gets its bugs. The team that treats the model as an instrument builder gets an LSP, a decompiler, a static analyzer, and 95 proofs, and then, almost as a side effect, the bug.
