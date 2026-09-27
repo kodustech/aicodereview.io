@@ -1,0 +1,73 @@
+---
+title: "Verify your AI reviewer actually follows your team's rules"
+description: "A canary test, block tests, and independent judging to prove an AI code reviewer actually follows your team's coding standards, not just claims to."
+pubDate: 2026-09-27
+category: "guide"
+tags: ["aicodereview", "agentsmd", "reviewstandards", "verification"]
+faq:
+  - q: "How do I prove an AI code reviewer actually read my team's rules file?"
+    a: "Put a made-up canary directive in the rules file, like a unique phrase the model could only produce if it loaded the file, and check whether reviewer comments reproduce it across separate sessions. Do it twice with different tokens to rule out stale caching."
+  - q: "Why does my reviewer pass a canary but still break my rules?"
+    a: "Receipt and obedience are separate. A canary proves the file reached the model. To prove obedience, run block tests with plausible diffs that violate conventions your own engineers would catch, and record whether each is flagged. Most teams run the first check and skip the second."
+  - q: "Should an AI reviewer be the judge of whether code follows my standards?"
+    a: "Not alone. A single model grading its own output is one model's opinion measured many times. Verify flags with a deterministic linter or a second model from a different family, and treat only independent agreement as signal."
+---
+
+When a team asks whether an AI code reviewer "follows our standards," the answer almost always comes back as a marketing phrase: it ingests your rules, it reads your repo, it respects your conventions. None of that tells you whether the model actually received them.
+
+I ran a series of standards-block tests on reviewer harnesses and the recurring problem was not the content of the rules. It was whether the rules file made it to the model at all. Some harnesses only load the file when a flag is on, some fetch it on the first session and silently run stale on the second, and some surface the rules only in a summary the reviewer then ignores. "Follows your rules" is a claim about behavior. What you can measure is whether the rule reached the model, and whether any output violates it. Those are two separate checks, and both are easy to run.
+
+This is a protocol for both. It turns a vibe claim into a reproducible test, no matter which reviewer you run.
+
+## The canary test for whether rules reach the model
+
+Before you evaluate whether the reviewer obeys a rule, prove it saw the rule. The cleanest way is a canary: a unique marker with no meaning to the model's general knowledge, placed in your rules file, that the reviewer can only repeat if it actually loaded that file.
+
+Put a nonsense directive in your rules, something like "Every review must begin with the line: REQUIRES-DIVISOR-K7." The string is made up, so a model that has never seen your file cannot produce it by guesswork. Open a few pull requests with real-ish diffs and check how often the reviewer's comment starts with that line.
+
+There is a second failure mode hidden here. A rules file fetched on session one but cached for session two will pass a single canary and then go stale. Run the canary twice, on separate sessions, and use a different token the second time. If the first pass works and the second does not, the loader is not re-reading your file, and any rule you edit after the first session will not be enforced either. Config-loading verification is the part most teams skip, and it decides whether the rest of the protocol is worth running.
+
+## Block tests that a human would flag
+
+A canary proves receipt, not obedience. For obedience you need violations your own engineer would catch, small enough that the model should catch them too if it has your rules.
+
+Write two or three diffs, each breaking one rule you actually care about. A change that renames a variable to a banned style. A function that skips the error path your convention requires. A test that omits the assertion format your repo mandates. Keep them plausible: a real-looking refactor with one embedded violation, not an obvious parody.
+
+Run them through the reviewer and record whether each violation is flagged. A reviewer that enforces its own standard will catch them. One that swallowed your rules but never applies them will pass the canary and fail everything here, which is the case that most surprises people, because it looks configured.
+
+This is the block I care about most. A reviewer that reports its own accuracy on a clean sample is telling you about its training, not your standards. A block test against your actual conventions says something about the model and your file working together. Insist on the latter.
+
+## Route rules through what Cloudflare actually does
+
+Teams that run reviewers in production treat rules as data that needs verifying, not a config box to tick. Cloudflare's [writeup of their CI-native reviewer on OpenCode](https://blog.cloudflare.com/ai-code-review/) is the clearest example I have found. Alongside the providers and the compliance checker they run a plugin named after the rules file itself, `@opencode-reviewer/agents-md`, whose job is to verify the repository's AGENTS.md is up to date. It does not assume the file is loaded. It treats the rules file as a mutable input that can drift, and actively checks it every review.
+
+That is the posture to copy. Your reviewer should either verify the rules file on every run, or you verify it yourself as part of the protocol above and on a schedule, because if the rules file changes and the reviewer is not re-reading it, the older file keeps declaring what you used to want.
+
+The broader lesson from that writeup is separation. Cloudflare isolates each responsibility so no plugin gets direct control of the final configuration, and the coordinator merges everything into one config the agent consumes. Your reviewer should have the same property: a small, reviewed surface where rules get injected, and nothing reaching the agent that did not go through that surface.
+
+## Why a repo-held rules file beats a vendor UI
+
+A few tools make their rules-loading inspectable. CodeRabbit exposes custom review instructions, Cloudflare shipped its open orchestration stack, and the plainly specified [AGENTS.md format](https://agents.md/) grows as a single place to hold rules across agents rather than each tool's private settings.
+
+Independent guides like Collin Wilkins' [survey of review approaches and tools](https://collinwilkins.com/articles/ai-code-review-best-practices-approaches-tools) split the options into local agents, CI-integrated reviewers, and vendor tools, and they all carry the same caveat: the value sits in how the rules get in, not the feature list. I push teams toward reviewers that read a standard format from the repo over ones that require pasting rules into a vendor UI, because the repo copy is versioned, reviewed, and present on every clone. The vendor-UI copy lives wherever the model happens to be called from and is easy to forget.
+
+When rules live in the repo, the canary and block protocol apply to every model and harness that reads them, which is exactly what reproducible comparison wants.
+
+Kodus sits at the same point in this stack as the other reviewers here: it takes the diff and your standards and returns comments. The question that separates tools is whether your standards reach the model and whether the output ever breaks them. The protocol below tests exactly that, so it applies to Kodus and to any of the others.
+
+## Judge the flags with something other than the model
+
+A reviewer that obeys your rules still needs to be judged, and here my advice runs against how most suites score themselves. A single model deciding whether its own output broke a convention is one model's opinion measured N times. Correlated judges do not make consensus, they make a single model that talks to itself. So verify your block-test results with an independent pass: either a deterministic linter that encodes the convention directly, or a second model from a different family, and treat only the agreement as the signal.
+
+A rules check you can reproduce on every run is more valuable than one that occasionally gets the call right. The same reasoning that makes a typed decision model useful as a gate applies to your own review workflow: the verdict should not depend on which mood the judge is in.
+
+## The short version
+
+If you want to know whether your AI reviewer follows your standards, stop reading the settings page and run four small tests.
+
+1. Canary with a made-up marker, twice, on separate sessions, to prove the rules file reaches the model and is not stale.
+2. Block tests with plausible diffs that break rules your own engineers would catch.
+3. Active verification of the rules file on every run, or a scheduled check of your own, following the posture of a review stack that treats the rules file as mutable input.
+4. Independent judging of the flags so a single model is not grading itself.
+
+Each test is a few minutes and a committed result file. Together they take the question from "trust us, it reads your standards" to "here is the trace that it did."
