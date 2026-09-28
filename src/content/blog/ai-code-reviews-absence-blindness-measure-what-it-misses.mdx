@@ -1,0 +1,80 @@
+---
+title: "AI code review's absence blindness: measure what it misses"
+description: "Teams reviewing a growing volume of AI-generated code need to score what a reviewer fails to notice, not only what it flags. A measurable protocol."
+pubDate: 2026-09-28
+category: "guide"
+tags: ["aicodereview", "evals", "codereview", "aigeneratedcode"]
+faq:
+  - q: "Why do AI code reviewers miss deleted code?"
+    a: "Most reviewers score what is present in the diff, and a deleted error branch or validation has no line left to attach a comment to. Noticing what should be present but isn't is a different task from spotting a defect in the lines that remain."
+  - q: "Is absence blindness the same as hallucination?"
+    a: "They're related but distinct. Hallucination adds a claim the code doesn't support, while absence blindness stays silent about something the code needs. Both come from the same weak spot in verification, and both go away if you test for them directly."
+  - q: "Can a better prompt fix an AI reviewer that misses absent code?"
+    a: "Partly. The extraction benchmark showed one instruction sentence cut invented fields from 70.7% to 20.2%, so wording clearly moves the number. It doesn't get you to zero, which is why you measure absence recall on your own repo instead of trusting a default prompt."
+---
+
+Every team that turns on a coding agent hits the same curve. Generation gets cheap, review capacity stays fixed, and the gap between the two shows up as a queue. Salesforce's engineering org measured roughly 30% more code volume after adopting AI assistance, with pull requests regularly landing over 20 files and 1000 lines, and review latency climbing quarter over quarter. DORA saw the same shape from another angle: more throughput, less stability. The full breakdown of that loop is on our page about [why the old review process breaks under volume](https://aicodereview.io/blog/reviewing-the-surge-in-ai-generated-code-what-scales-and-what-breaks/).
+
+The standard response is to make review faster. We have a [reproducible protocol for measuring and cutting PR review time](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/), and it's worth running. But there's a second failure that a faster queue hides completely, and it decides whether an AI reviewer is actually helping you.
+
+## Review capacity degrades quietly before it runs out
+
+When PRs get large and frequent, reviewers stop reading them carefully. Salesforce's own reading of the data was disengagement rather than efficiency: review time on the biggest PRs flattened or fell while submission volume kept climbing. Faros describes the downstream effect as a [review burden that lands on senior engineers](https://www.faros.ai/blog/ai-code-quality-senior-engineer-review-burden), the people whose attention is the scarcest thing in the pipeline.
+
+A reviewer skimming a generated diff is doing pattern matching on what's visible. The comment threads look active, the approvals keep flowing, and the process looks healthy from the outside. What's missing is any signal about the changes that were wrong because of something absent from them.
+
+## The failure has a name: absence blindness
+
+John Allspaw wrote a rebuttal to the paper "The End of Code Review: Coding Agents Supersede Human Inspection," which argues that agents have crossed the capability threshold where human review is still necessary. His response, [There is more to code review than (automatable) detection](https://www.adaptivecapacitylabs.com/2026/08/24/there-is-more-to-code-review-than-automatable-detection/), names the mechanism:
+
+> "A human reviewer can notice that an API contract has changed but the error handling didn't. They can notice what is missing. The agent reviews what is there; engineers with expertise can easily notice what's missing."
+
+He goes further and says absence is "exactly the class of failure that LLMs tend to be quite poor at." That's a claim you can test, and it's the one that matters most for teams drowning in generated diffs. A reviewer that scores well on planted-bug benchmarks can stay completely silent on the deleted error branch, the new field nothing validates, or the route that lost its permission check, because there's no line in the diff to attach a comment to.
+
+Allspaw's broader point is that review does coordination and sensemaking work too, and that work doesn't survive being decomposed into per-function detection tasks. If your eval only counts findings, your eval can't see the reviewer's silence.
+
+## Someone already measured this, for a simpler task
+
+The [honest dollar extraction benchmark](https://earnanhonestdollar.com/bench) tested 16 models on web extraction with twin pages that differ by one row: one page contains the field, the other doesn't. Both pages carry a decoy, like a struck-through old price.
+
+Without instruction, models invented missing fields in 405 of 573 cases (70.7%). Add a single sentence to the prompt, "Use null for any field whose value is not on the page. Do not guess." and inventing drops to 116 of 574 (20.2%). On the page showing "Was $493.00," all 16 models reported 493 as the current price when the sentence wasn't there.
+
+The spread is wide. Gemini 3.8 Flash invented 1 of 36 missing fields. Firecrawl's API invented 24 of 36, more than 13 of the 16 models managed with the sentence, and all 24 answers copied the decoy.
+
+The part worth stealing is the cheap cross-check at the bottom: a buyer agent can pay a small model to verify each returned value against the page. GPT-6 Luna caught 38 of 49 invented values, rejected 0 of 47 correct ones, and cost $0.0049 for the whole run. The authors are explicit that this is one run per contestant and synthetic pages, so treat the exact ordering as provisional. The shape of the result is what matters: honesty under uncertainty is measurable, and it moves with the prompt as much as with the model.
+
+## The twin-diff test for an AI reviewer
+
+You can build the same test against a code review tool. The unit is a pair of changes that differ by one absence:
+
+- a call site still handling the happy path after its error branch was deleted
+- a new API field nothing downstream validates
+- a route that kept its handler but lost its permission check
+- a feature flag still being read after its writer was removed
+
+For each pair, you run the "present" version, where the code is genuinely correct, and the "absent" version, where something necessary was removed. Then you score three things per pair: did the reviewer flag the real defect in a control diff, did it notice the absence in the trap diff, and did it invent a finding that isn't supported by the code.
+
+Run each pair several times. A reviewer whose output changes between identical runs is a flaky test suite, which is the same problem we've written about in [AI reviewers judging their own output](https://aicodereview.io/blog/your-ai-reviewer-is-judging-its-own-output-thats-a-blind-spot/). You can't compare two tools on a sample size of one if one of them answers differently every time you ask.
+
+There's a related trap on the other side of this. A reviewer that only reads the patch never sees what the code does when it runs, which is a limit we covered in [AI code review reads the patch, not the execution](https://aicodereview.io/blog/ai-code-review-reads-the-patch-not-the-execution/). Absence blindness and run-it-or-read-it are the same argument arriving from two directions: reading the diff is a narrow window onto correctness.
+
+## What this predicts for the tools people run
+
+This is a hypothesis to test with the twin-diff pairs, not a vendor claim.
+
+Chat-style reviewers like CodeRabbit, Greptile, and Cursor BugBot are optimized to produce findings on a PR. That's a good product instinct and a bad prior for absence, since the mode that keeps engagement high is the mode that fills a gap rather than reporting nothing. Bringing your own key, as a bot like Pullfrog lets you, changes which model answers without changing the incentive to comment. Qodo Merge wraps the same class of model in a review workflow.
+
+A rules-based reviewer is a different shape of test. Kodus runs self-hosted with your team's standards loaded as configuration, so a rule whose condition never fires is a legitimate outcome the tool could report instead of generating a comment. Same question applies to it as to everything else: when the missing thing is a deleted validation, does it name the absence, or does it narrate the code that's still there? There's a tool-by-tool version of that check in [how to evaluate custom-standards support](https://aicodereview.io/blog/ai-code-review-that-follows-your-coding-rules-how-to-evaluate-custom-standards-s/), including whether the rules file even reaches the model.
+
+## The four numbers to keep
+
+Whatever reviewer you run, track these on a fixed slice of real PRs rather than a vendor demo:
+
+- recall on defects that are present in the diff
+- false positives, counted as findings a human marks as wrong
+- absence recall, meaning it named the thing that was missing, not the thing that was there
+- run-to-run stability on identical inputs
+
+The last two are the ones nobody publishes, and they're the ones that predict whether a reviewer still helps when your volume doubles.
+
+One concrete next step: take three merged PRs from your own repo last month, and in each one delete something that a real bug would have been masked by, an error branch, a validation, an index on the new column. Open them as draft PRs against your reviewer. If it stays quiet on the deleted error branch, you've learned more in twenty minutes than any comparison page will tell you.
