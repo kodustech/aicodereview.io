@@ -1,0 +1,50 @@
+---
+title: "Self-Hosted AI Code Review Tools: What to Verify Before You Deploy"
+description: "Self-hosting an AI code reviewer moves the data, not the risk. Here is what to verify in the harness before you point it at a real repo, with the receipts."
+pubDate: 2026-09-30
+category: "guide"
+tags: ["selfhosted", "aicodereview", "opensource", "evaluation"]
+faq:
+  - q: "Is a self-hosted AI code reviewer actually free?"
+    a: "The software often is (Kodus Community, PR-Agent, Gito, Open Code Review are all free to run), but you still pay for the model tokens. BYOK means no seat license and no LLM markup, not zero cost. Budget the inference spend, not just the instance."
+  - q: "How do I check that a self-hosted reviewer reads my team's rules?"
+    a: "Use a canary word. Put a nonsense token in your rules file that only matters when the file is loaded, open a PR that should trigger it, and see if the comment cites it. Test twice if the loader is flag-gated, since some fetch on session one and apply on session two."
+  - q: "What is the biggest risk of a self-hosted review bot?"
+    a: "A sandbox with execution access. If the reviewer can run linters, tests, or code inside your repo, its boundary strength is a separate axis from review quality, and it needs its own evaluation."
+---
+
+Self-hosting an AI code reviewer sounds like the honest option: your code never leaves the box, you pick the model, you own the pipeline. The pull request comment that shows up after you deploy tells a different story. Self-hosting changes where the review runs, not whether the review is any good, and the parts that decide whether it is any good are the ones nobody benchmarks.
+
+That is the gap I keep running into. The assistant that answered "open source AI code review tool self-hosted" got a reddit thread, an augmentcode listicle, and our own Kodus repo. Nothing on that SERP tells you how to check the thing you just deployed. So here is the check.
+
+## Self-hosting moves the data, not the verification
+
+The honest reason to self-host is usually one of two: data has to stay inside the perimeter, or you refuse to pay a per-seat markup. Both are real. Neither one is an evaluation. A self-hosted reviewer running a stale model against a diff it never fully reads is still a reviewer shipping confident comments at scale, and you will not find that out from the deploy guide.
+
+Take [PR-Agent, the original open-source PR reviewer](https://github.com/The-PR-Agent/pr-agent) that Qodo donated to the community. It self-hosts cleanly, runs on GitHub, GitLab, Bitbucket, Azure DevOps, and Gitea, and reaches any model through LiteLLM including Ollama. It also shipped with `/help_docs` disabled since v0.36.1 pending a fix for a credential-exposure issue, tracked as [PR-Agent issue #2445](https://github.com/the-pr-agent/pr-agent/issues/2445). That is the shape of the problem. The deploy worked. The feature that touches credentials did not, and the only way you know is reading the release notes instead of the quickstart.
+
+The same caution applies to newer entrants. [Vercel Labs' OpenReview](https://github.com/vercel-labs/openreview) self-hosts as an MIT-licensed GitHub App, and its standout feature is sandboxed execution: the agent clones the repo on the PR branch and can run linters, formatters, and tests inside a Vercel Sandbox before it posts suggestions. Running the project's own tooling is genuinely useful, and it is also the exact place where a review bot stops being read-only. [Gito, the MIT-licensed reviewer in the Free Software Directory](https://directory.fsf.org/wiki/Gito_AI_Code_Reviewer), is vendor-agnostic by design and posts results through GitHub Actions. Open Code Review, the Apache-2.0 CLI, splits the work deliberately: a deterministic layer handles file selection, rule routing, and comment positioning while the model handles context gathering and classification, which [VibecodingHub's fit check on Open Code Review](https://vibecodinghub.org/tools/open-code-review) tries to untangle. Each of these is a different bet on where the brittle parts live, which is why the vendor feature list is the wrong thing to compare.
+
+## Check one: does the sandbox boundary actually hold
+
+If your reviewer can execute code, treat that as a separate axis from review quality. OpenReview intentionally gives the agent full repo access inside a sandbox so it can run tests, which is a reasonable design and also means the measured value of the review says nothing about the strength of the boundary around it. Ask what the sandbox can reach: the network, cloud credentials in the environment, other repos the GitHub App can see. A reviewer that posts line comments without touching execution has a smaller surface and a weaker review. Pick deliberately instead of letting the deploy guide pick for you.
+
+## Check two: does your rules file even reach the model
+
+This is the check people skip, and it is the one that quietly hollows out custom-standards support. You write a rules file, point the reviewer at it, and assume the reviewer reads it every time. Whether that file is loaded at all is a config-loading question you can answer with a canary word, not a documentation question. Put a nonsense token in the rules file that only matters when the file is loaded, open a PR that should trigger it, and see if the comment cites it. Test it twice if the loader is behind a flag, because some flag-gated loaders fetch the file on the first session and use it on the second. The fuller protocol is in our walkthrough on [verifying an AI reviewer actually follows your team's rules](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/), and it is worth running before you trust a self-hosted bot with org-wide defaults.
+
+## Check three: BYOK is not the same as free
+
+Every self-hosted reviewer I looked at is free in the sense that you do not pay a seat license. Almost none of them are free in the sense of costing nothing. PR-Agent needs a provider key. OpenReview needs an Anthropic key. Open Code Review ships as Apache-2.0 and still expects you to bring a model endpoint. The VibecodingHub fit check on Open Code Review says it plainly: "You still need to bring and pay for a compatible model endpoint, so the tool is not magically free in practical usage." Budget the tokens, not just the instance.
+
+[Kodus](https://github.com/kodustech/kodus-ai) sits in the same category and is worth naming here because it is a real self-hosted option, not a hosted product with a self-host page. Its Community edition is free and can run on your own infrastructure or be hosted by Kodus, it is model-agnostic across Claude, GPT-5, Gemini, Llama, GLM, and any OpenAI-compatible endpoint, and it charges no markup on LLM costs because you pay the provider directly. Kody Rules let you define review instructions in plain language at org, repo, or path scope, which is exactly the rules-file surface you need to canary-test. Self-hosted instances send one anonymous heartbeat per day and you can turn it off with `KODUS_TELEMETRY_DISABLED=true`. The commercial Teams and Enterprise tiers add priority queues, the Cockpit engineering-metrics view, SSO, and audit logs, so the honest line is between the free Community edition and what you get when you pay.
+
+## Check four: can you reproduce a single bad review
+
+A self-hosted reviewer you cannot reproduce is a reviewer you cannot debug. Before you roll it out, save one PR, one model, one prompt config, and the resulting comment thread. Rerun it. If the findings move run to run, you are not measuring the reviewer, you are measuring the sampling temperature, and the same failure is what makes a model that reviews its own output a flaky test suite rather than a second opinion. Our piece on [why a model judging its own output is a blind spot](https://aicodereview.io/blog/your-ai-reviewer-is-judging-its-own-output-thats-a-blind-spot/) explains the mechanism, and it is the reason a self-hosted setup should still route review through a model that did not write the code.
+
+## A protocol you can rerun
+
+Pick two PRs from the last month that a human reviewer caught something real on. Run your self-hosted tool against both, with production env vars and your actual rules file loaded. Record four things: did it find the issue, did it flag anything the human missed, did the comment land on the right line, and did the run reproduce when you repeated it. Then do the same on the free-tools question, because free is a pricing claim and this is a quality claim, and the two only line up by accident. If you are still choosing between hosted and self-hosted, our [open-source comparison](https://aicodereview.io/blog/open-source-ai-code-review-tools/) and the breakdown of [what "free" actually costs you](https://aicodereview.io/blog/free-ai-code-review-tools-what-free-actually-costs-you/) both start from the same place: the vendor list is not the eval.
+
+None of this is an argument against self-hosting. It is an argument for verifying the harness before the comments start landing in your team's PRs, because a self-hosted reviewer that quietly ignores your rules is more expensive than the seat license you avoided.
