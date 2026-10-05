@@ -1,0 +1,80 @@
+---
+title: "Martian's Code Review Bench: the \"#1\" claim rots in months"
+description: "Two vendors posted \"#1 on Martian's Code Review Bench.\" Both still improved their scores. Both lost first place. How to read the live leaderboard without getting burned."
+pubDate: 2026-10-05
+category: "guide"
+tags: ["aicodereview", "benchmark", "evaluation", "codereviewtools"]
+---
+
+A blog post from March 2026 still surfaces when you go looking for AI code review benchmarks. In it, CodeRabbit announces the top F1 score on Martian's Code Review Bench: 51.2%, first place across ten tools, measured over nearly 300,000 pull requests. I opened the live board. CodeRabbit sits at 61.0% F1, in fifth place, behind Cubic Dev AI, Greptile, GitHub Copilot, and Claude.
+
+Both numbers are real. That is the part worth sitting with.
+
+Nothing broke. The tool got better by roughly ten points and lost four places, because the leaderboard moved underneath it while everyone was still citing the screenshot. Greptile has the same story from the other direction. Its July 2026 post, [Greptile Ranks #1 on Martian's AI Code Review Benchmark](https://www.greptile.com/content-library/greptile-martian-code-review-benchmark), claims first place at 60.8% F1 with 76.2% precision. On the board I pulled today, Greptile is 62.3% and second, still ahead on precision at 80.5%, no longer first overall.
+
+Two vendors, two "#1" posts, both scores higher than when they were written, both dethroned. If you are picking a reviewer for an engineering team this quarter, that pattern is more useful than either claim.
+
+## What the live board shows right now
+
+This is the online tracker, last-month view, ordered by F1. The header reads "Across 17,466 scored PRs."
+
+| Rank | Tool | F1 | Precision | Recall | Sample | Total PR volume |
+|---|---|---|---|---|---|---|
+| 1 | Cubic Dev AI | 65.5% | 72.4% | 59.8% | 1,551 | 40,758 |
+| 2 | Greptile | 62.3% | 80.5% | 50.8% | 1,564 | 105,183 |
+| 3 | GitHub Copilot | 61.5% | 66.8% | 57.0% | 925 | 611,915 |
+| 4 | Claude | 61.3% | 69.0% | 55.2% | 995 | 54,379 |
+| 5 | CodeRabbit | 61.0% | 68.6% | 55.0% | 2,084 | 329,695 |
+| 6 | Devin AI Integration | 60.7% | 75.1% | 50.9% | 678 | 39,256 |
+| 7 | Macroscope | 60.0% | 77.5% | 48.9% | 809 | 8,060 |
+| 8 | Qodo Code Review | 58.4% | 73.1% | 48.6% | 2,434 | 19,397 |
+| 9 | Cursor | 57.4% | 72.2% | 47.6% | 864 | 66,190 |
+| 10 | Kilo Code | 56.8% | 66.5% | 49.6% | 898 | 6,495 |
+
+Rank 14 is CodeAnt AI at 48.9% F1 with 69.5% precision and 37.6% recall. The whole spread across fourteen tools is about seventeen points, and the gap between second and fifth is 1.3 points. CodeRabbit's March post called 51.2% a winning score. Today 51.2% would not crack the top ten.
+
+The vendor posts are not lying. They are stale, and the shelf life is shorter than the sales cycle.
+
+## A leaderboard is a snapshot, and this one is designed to move
+
+The [Code Review Bench repository](https://github.com/withmartian/code-review-benchmark) is open source, which is why I trust it enough to argue with it. Two benchmarks run side by side, and the difference decides whether a "#1" claim means anything.
+
+The offline benchmark is a fixed dataset: 50 pull requests from five repos (Sentry in Python, Grafana in Go, Cal.com in TypeScript, Discourse in Ruby, Keycloak in Java), with 173 human-curated golden comments, severity labels from Low to Critical, and category profiles that control which issue types count. Fixed inputs mean reproducible runs, and also mean tools may have seen those PRs during training.
+
+The online benchmark continuously samples fresh PRs where review bots already left comments, then asks what the developer changed afterward. Precision here is the share of a bot's suggestions that matched a real post-review fix. Recall is the share of the developer's fixes the bot had already identified. This is the headline metric, and it moves every day because new PRs keep arriving. The dashboard chart plots rank changes week by week, and the lines cross.
+
+Three things make cross-vendor comparisons harder than the posts suggest. Sample sizes vary by a factor of nearly four (Qodo at 2,434 scored PRs against Devin at 678). F-beta is adjustable from 0.5 to 3.0, so a tool optimized for fewer comments and a tool optimized for coverage can both look like a winner depending on where the slider sits. And the judge is an LLM, so the README reports results per judge model. Martian's own data says the top five tools hold their positions across Claude Opus 4.5, Sonnet 4.5, and GPT-5.2, with most tools moving at most two ranks. That is better judge stability than most benchmarks in this space, and it still means rank 6 versus rank 8 is noise.
+
+## Numbers also move for reasons that have nothing to do with the model
+
+The most instructive result I have read on this bench came from a comment thread, not a vendor. On the [Hacker News discussion of Alibaba's Open Code Review](https://news.ycombinator.com/item?id=48406358), a developer ran the tool on 10 of Martian's 50 offline PRs and reported about 74% recall, about 12% precision, and roughly 20% F1, which would have put it near the bottom of the board. An Alibaba maintainer replied that a critical tool call had misbehaved in the tested version, that they reproduced the false-positive spike on the benchmark, and that they fixed it.
+
+Same model, same dataset, one broken call in the harness, and the difference between "near last" and "competitive." The same thread notes something else worth keeping: swapping gpt-5-mini for gpt-5.5 barely moved the scores, and the stronger model was sometimes slightly worse on recall. The commenter's read was that the golden set encodes strong opinions about what counts as an issue, so a more cautious model agrees with it less often.
+
+Alibaba's own [benchmark write-up in the repo README](https://github.com/alibaba/open-code-review) frames it as a deliberate trade: higher precision and F1 than a general-purpose agent on the same model at about a ninth of the token cost, with lower recall accepted as the price. That is a legitimate engineering position, and it is exactly the kind of choice that a single F1 number flattens.
+
+## How to read the board without getting burned
+
+The board is useful if you read it as an instrument with a timestamp instead of a verdict. Five habits cover most of it.
+
+Record the date, the filter set, and the sample size alongside the rank. A rank without those three is decoration. "First place" from a March snapshot and "fifth place" from a live board are not in conflict, they are just different measurements.
+
+Compare tools inside one view. Precision from an F-beta 0.5 view and recall from an F-beta 3.0 view are not the same measurement, and lining them up across two vendor posts is how bad buying decisions happen.
+
+Weight the sample column. A tool at 60.7% on 678 scored PRs and a tool at 61.0% on 2,084 scored PRs are not separated by anything you should act on. Look for tools with real volume before you trust a half-point gap.
+
+Run the pipeline yourself. The README says evaluating a tool that is not on the leaderboard takes an afternoon: fork the 50 benchmark PRs, let the tool review them, add the name to the download config, run it. That is the same protocol I use for the [offline versus online eval split](https://aicodereview.io/blog/ai-code-review-benchmarks-offline-vs-online-evals/), and it is the only version of the number that speaks to your repos.
+
+Note the judge model. If a vendor does not say which judge scored the run, you cannot reproduce the claim, and [an unreproducible eval is not evidence](https://aicodereview.io/blog/how-to-actually-evaluate-an-ai-code-review-tool/).
+
+## Who is actually in the benchmark
+
+The offline set is broad: Augment, Baz, Claude Code, CodeAnt, CodeRabbit, Cubic, Cursor Bugbot, Devin, Gemini, GitHub Copilot, GitLab Duo, Graphite, Greptile, KG, Kodus, Macroscope, Qodo, and Sourcery, with more added over time. The online tracker follows a narrower list of bots that comment on public PRs.
+
+Kodus is in the offline list, which is the honest way to compare a reviewer that you can self-host and point at your own repos: run it on the same 50 PRs, judge it with the same prompts, and look at precision and recall separately rather than at a single blended score. If you are weighing self-hosting, the questions that matter more than a leaderboard rank are the ones in [what to verify before you deploy a self-hosted reviewer](https://aicodereview.io/blog/self-hosted-ai-code-review-tools-what-to-verify-before-you-deploy/), because data location and rule-following behavior do not show up in F1 at all.
+
+## What to ask a vendor that says it is number one
+
+Which view, online or offline? Which date? Which filter set, and where was the F-beta slider? What was the sample size? Which judge model? And has the number been re-run since the post went live?
+
+Any vendor answering those with specifics is giving you something you can check. The Martian board is the best public instrument this space has, mostly because it publishes the PRs, the golden comments, the judge prompts, and the pipeline, and because it keeps moving instead of freezing a win. Treat a "#1 on the benchmark" post the way you would treat a screenshot of a passing test run from six months ago: a signal about that day, not a promise about yours.
