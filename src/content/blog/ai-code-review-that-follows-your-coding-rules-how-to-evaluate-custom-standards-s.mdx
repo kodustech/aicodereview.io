@@ -1,59 +1,78 @@
 ---
-title: "AI code review that follows YOUR coding rules: how to evaluate custom-standards support"
-description: "Most AI reviewers catch generic bugs. Whether one will follow your team's own coding rules is a separate question. Here's how to evaluate custom-standards support before you buy."
-pubDate: 2026-09-23
+title: "AI code review that follows your coding rules: how to test it"
+description: "A reviewer that loads your rules file is not a reviewer that enforces it. Two instruction-following studies give you three tests that tell the two apart."
+pubDate: 2026-10-08
 category: "guide"
-tags: ["aicodereview", "codingstandards", "evaldesign", "customrules"]
+tags: ["ai", "codereview", "evaluation", "engineering"]
 ---
 
-## The question that outsells the one most teams ask first
+## The number that should make you suspicious of any compliance claim
 
-"Does this reviewer catch bugs" is easy to answer. Every tool has a demo showing it flag a null dereference or a SQL injection. The question that actually decides whether a tool survives contact with your team is narrower and harder to evaluate: will it follow the coding rules and standards you've already agreed on?
+An agent that obeys a rule may simply have been going to do that anyway.
 
-Not generic best practices. Your rules. The naming convention you argued about in that PR comment thread. The auth-check requirement that exists because of an incident last quarter. The migration-safety rule a senior engineer wrote down in a doc nobody reads. A tool's out-of-the-box reviewer can be excellent and still ignore every one of those.
+That sentence is the premise of a ByteDance Seed and Tsinghua study called [Harness-IF](https://arxiv.org/abs/2608.11727), and it is the most useful thing I have read this quarter for anyone evaluating an AI code reviewer against their own standards. The authors took 60 realistic multi-turn coding items drawn from a library of 642 rules, pushed 256 of those rules out for verdicts, and placed them on the five configurable surfaces a deployed agent actually reads. Twelve frontier models went through it.
 
-The vendor docs all say they support custom rules. The honest way to pick is to test it, and the test is different from a bug-catching benchmark.
+Raw accuracy across those models spans 72.1% to 85.9%. Looks fine. Then they scored only the rules labeled as opposing the model's unprompted default, re-running each task with the rule withheld across nine probe builds to confirm the label. Against-Prior Accuracy lands at 66.1% to 78.6%. Every model got worse on those rules, by 3.6 to 7.4 points, mean 5.81. The top build kept its spot, but three adjacent rank pairs swapped.
 
-## Why agents need your rules spelled out differently than a human does
+So the aggregate compliance number a vendor quotes you contains a pile of rules the model was already going to follow. The slice that matters, where your team's convention differs from the model's default, runs about 5.8 points lower on average, and the size of that gap is model-specific, which means you cannot apply one correction factor across tools. You have to measure the gap on your own rules.
 
-Stack Overflow's engineering team wrote a useful piece on [building coding guidelines for AI agents](https://stackoverflow.blog/2026/03/26/coding-guidelines-for-ai-agents-and-people-too/), and their central point is that you cannot treat an agent like a new junior dev. "You can't just throw a few documents at them and let them explore. Agents are fast but lack the context of your code." A lot of the context human coders have is tacit: the serial comma, the way this one service names its handlers, the fact that configuration and code are kept separate even though nothing enforces it.
+This is the second version of this page. The first covered the config-loading question and the canary test. What I did not have then was published data on how compliance behaves once a session gets long, and that turns out to be where teams lose the most.
 
-To a model, "DRY" and "separate config from code" are not defaults the way they are to an experienced engineer. As Heroku's chief architect puts it in that same piece, you tell the LLM to build your app a certain way, or "build me a snake game and it'll do whatever it wants to."
+## Canary first: did the rule reach the model at all?
 
-So when you evaluate a reviewer's custom-standards support, the standard is not "can it read a markdown file." The standard is whether the tool can turn an explicit rule into a check that fires on a violation, reproducibly. This connects to the broader point in how to actually evaluate an AI code review tool: the failure mode that matters is not missing a bug, it is fluent output that is easy to trust and structurally wrong.
+Before you score obedience, prove receipt. Put a made-up marker in your rules file, something like `Every review must begin with the line: REQUIRES-DIVISOR-K7`, and open a few pull requests with real diffs. A model that never loaded the file cannot produce that string. Run it twice on separate sessions with a different token the second time, because a loader that fetches on session one and caches will pass a single canary and then run stale forever.
 
-## How tools actually implement custom rules
+I have the full protocol for that, including block tests with plausible violations, in [how to verify your AI reviewer follows your team's rules](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/). The short version: passing the canary proves the file arrived. It says nothing about whether the reviewer applies it.
 
-Every serious AI reviewer now has some mechanism, and they are not all the same depth. Here is the range you will actually see.
+## The prior-control test: score only the rules the model would have broken
 
-**Path-specific instructions.** CodeRabbit's config, as shown in their [guide on keeping review consistent across agents](https://www.coderabbit.ai/guides/consistent-ai-code-review-across-coding-agents), lets you attach rules to directories. Anything touching `src/auth/**` gets told to require a security justification and check that permission checks are not weakened. This is the first tier: instructions scoped to where they matter, not applied globally where they'd spam noise.
+Harness-IF's second contribution is a test design you can copy without any of their tooling. Pick rules, then ask for each one whether a competent model would follow it unprompted. A rule like "functions should have descriptive names" is free compliance, and scoring it tells you about the model's training, not your standards. A rule like "all DB access in this module goes through the repository layer" is against-prior: nothing in the model's default behavior produces it, and a reviewer that ignores your config will let it slide.
 
-**Custom checks as pre-merge validation.** The same guide shows team-wide rules expressed as named checks with a mode and a threshold. "If this PR changes a public API, database schema, or config key, require it documented" as an enforceable check, not "review for quality" which is too broad to be enforceable. This is a different tier from instructions: it is a discrete gate that can fail a merge, version-controlled, not a nudge inside a comment blob.
+Build two small test sets, one of against-prior rules and one of rules the model would satisfy anyway, and run both. The gap between the two scores is the honest measure of your rules config. If a tool scores 90% overall and 55% on your against-prior set, you have a reviewer with a nice demo and a weak gate.
 
-**Rule files as context, not as the policy.** Many repos already carry `AGENTS.md`, `CLAUDE.md`, or `.cursorrules`. CodeRabbit's point is worth stealing: those are valuable context for how generation should behave, but they should not be the whole review policy. The review standard belongs at the merge boundary where every change is held to it, regardless of which agent produced it.
+The study's conflict pilot adds one more thing to test: precedence. Across nine separate builds, pooled precedence did not follow prompt depth. System prompts, project files, and user instructions all sat ahead of tool and skill descriptions. If your reviewer injects your rules through a surface that loses to something else in the stack, the rule can be present, correct, and outvoted.
 
-**Your write-your-own-rules config.** Tools that expose a config file where you define the checks yourself give you the closest thing to determinism. Bito's docs route this through custom code review rules you add, and IBM's [guide to standardizing AI code generation](https://www.ibm.com/think/insights/standardize-ai-code-generation-across-your-development-team) makes the same case at the project level: project rules are specific guidelines that define how work should be done in that particular project. The deeper the configuration surface, the more a team rule becomes a repeatable check rather than a hope.
+## The turn axis: a rules file read at turn one decays by turn six
 
-Where Kodus fits is the same place as the others: a PR-level review layer where the rules you define can be applied consistently across the repos the reviewer sees. For a closer look at how codebase context and rule enforcement stack up across tools, the code review directory scores each one against the same standards.
+A second paper, [MTAC-IFBench](https://arxiv.org/abs/2609.14992) from Tsinghua's CoAI group, Zhipu AI, and UESTC, gives the missing dimension. It scores 11 code agents across 100 multi-turn development instances with 7.04 turns each and 91.33 constraint items per instance, 12.97 per turn, 9,133 constraints in total. Every constraint has a checklist item, verified either by a generated script or by a judge agent, with Claude Code as the standard harness.
 
-## The evaluation test: three moves, run before you buy
+They report two metrics that should both appear in any review-tool evaluation. Constraint Success Rate is the share of constraints satisfied in a turn. Constraint-Instruction Success Rate requires every constraint in that turn to be satisfied. Average CSR across models runs 60.6% to 80.4%. Average C-ISR is mostly below 10%.
 
-Skip the feature-tour demo. Run this.
+Concrete rows from their table, under Claude Code:
 
-**Give it a real violated rule.** Take one of your actual team rules and construct a PR that breaks it and only it. The rule should be specific enough that a human reviewer would catch it in seconds: "all DB access in this module must go through the repository layer," "public API changes must update the docs," "no direct SQL string interpolation." Paste the rule into whatever custom-rules surface the tool exposes.
+- GLM-5.2, the best model on the board: CSR 80.4%, C-ISR 12.7%. On turns 9 and 10, C-ISR drops to 2.6%.
+- Claude-Opus-4.6: CSR 78.6%, C-ISR 8.7%. Turns 9 and 10: 2.3%.
+- Gemini-3.1-Pro: C-ISR 11.1% overall. Turns 5 through 10: 0.0%.
+- Qwen3.6-Plus: C-ISR 2.0% overall, 0.0% from turn 3 onward.
+- Claude-Haiku-4.5: C-ISR 1.9% overall.
 
-**Check detection, not warmth.** Does it actually flag the violation? Then the harder question: run the same input twice. If the reviewer flags it on one run and passes it on the next, that is a flaky gate you cannot trust to enforce a standard. This mirrors the eval-design problem I keep coming back to: an LLM judging its own output has a determinism ceiling, and your standards checking will inherit exactly that ceiling. My piece on why your AI reviewer judging its own output is a blind spot lays out the judge-correlation argument.
+Most models hit zero strict compliance by turn six. The functional side looks completely different: Claude-Opus-4.6 built a working project 98% of the time and satisfied 90.2% of function checklist items, while its strict function rate was 37%. Gemini-3.1-Pro satisfied 66.5% of functions and 14% strictly.
 
-**Change the context and re-run.** Path-specific rules are only useful if they fire in the path they are scoped to and stay quiet elsewhere. Feed the violation through a different directory and see whether scope holds. That tells you whether the rule is genuinely scoped or just appended to every prompt.
+Read that alongside the harness study and the practical implication is blunt. A reviewer that checks the final diff is checking the artifact at the point where process compliance has already fallen off a cliff. The violations your team cares about, the naming rule, the required error path, the migration guard, mostly happen during the work, and an evaluation that only looks at the merged state cannot see them.
 
-If a tool passes those three moves on the rule that matters to you, it follows your standards well enough for that rule. If it fails on the one rule that matters, nothing in the marketing will save you.
+## Where the rule lives changes what the agent does with it
 
-## What custom rules will not fix
+MTAC-IFBench's fourth finding is the one I keep coming back to for config design: constraints held in repository policy files held up better over a long horizon than the same constraints delivered in user instructions. And inside user instructions, updating an existing constraint was harder than adding a new one. Agents track new requirements better than they track changed ones.
 
-A tool that follows every one of your rules perfectly is still only as good as the rules you gave it, and there is a structural blind spot underneath that no configuration covers. If the same model that generated a patch is also the only thing reviewing it, you have a correlated judge, and correlated judges miss defects in a way a rule list cannot repair.
+If you have ever watched an agent follow a rule for forty minutes and then quietly revert to its own convention, that is the mechanism. A rule file on disk is re-read and re-anchored. A correction buried at turn nine is a request the model has to keep in working memory while it does everything else.
 
-So treat custom rules as the enforcement layer, not the whole safety net. The deterministic checks your team can express are the part a reviewer should hold flat. The judgment about whether the change is right, not just rule-compliant, is the part that still belongs to the human reading the diff, ideally on top of a reviewer that can disagree with the generator.
+The paper's own framing of where agents are weakest matches what I see in practice: isolated static constraints like file encoding get followed, while project-wide consistency, multi-step coordination, and precise quantitative limits get missed. Those are exactly the constraints a reviewer is supposed to enforce.
+
+## What this means for picking a reviewer
+
+The tools differ less in whether they accept rules than in how deep the rules surface goes and whether the reviewer re-reads it every run. From the [tool directory](https://aicodereview.io/tools/kodus/), the range is visible. Tabnine's Code Review Agent checks PRs against plain-language team rules on GitHub, GitLab, and Bitbucket. Bito routes custom guidelines through its own config. CodeRabbit scopes instructions to paths and lets team-wide rules become named pre-merge checks. Kodus takes org-wide rules defined once and applied across the repos it reviews, self-hosted or cloud with your own model keys. Those are meaningfully different depths of the same feature, and the directory scores each on documented coverage rather than measured behavior, which is why the tests below still decide it.
+
+## A protocol you can run in an afternoon
+
+1. Canary with a made-up marker, twice, on separate sessions. Proves the file reaches the model and is not cached.
+2. Two rule sets, one against-prior and one free-compliance. The gap between the scores is your real config score.
+3. The same violation at turn one and at turn nine of a session. If it holds early and slips late, your reviewer is reading a rules file the agent has stopped honoring.
+4. Scope check: feed the same violation through a directory your rule does not cover. Path-scoped rules should stay quiet.
+
+## What rule configuration still cannot cover
+
+A reviewer that follows every rule you wrote is still bounded by the rules you wrote, and there is a structural blind spot underneath the config surface. If the model that generated a patch is the only thing reviewing it, you have a correlated judge, and [a single model grading its own output](https://aicodereview.io/blog/your-ai-reviewer-is-judging-its-own-output-thats-a-blind-spot/) is one opinion measured many times. Rule checks are the layer you want flat and reproducible. The judgment about whether the change is right belongs to something that can disagree with the generator.
 
 ## The short version
 
-An AI reviewer that follows your rules is not an out-of-the-box property you can read off a benchmark score. It is a configuration depth plus a determinism guarantee you have to verify yourself. Construct one violating PR, run it twice, confirm the scope. A tool that holds on your actual rules is worth far more than one that scores higher on a bug-catching leaderboard but ignores the standards your team wrote down.
+Rules support is a claim about behavior, and behavior has two parts: whether the rule arrived, and whether it survived the session. Harness-IF shows that aggregate compliance overstates the against-prior slice by about 5.8 points on average across 12 models. MTAC-IFBench shows that strict per-turn compliance collapses to near zero within six turns even for the best agent on the board, while functional success stays high. Test receipt, test the against-prior slice, and test late in a session. The tool that holds on your rules at turn nine is worth more than the one with the better demo at turn one.
