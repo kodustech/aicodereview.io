@@ -1,0 +1,78 @@
+---
+title: "Kodus vs CodeRabbit: four claims worth re-checking"
+description: "Both vendors' docs moved since the last comparison you read. Four claims to re-check against the live pages before you pick a reviewer."
+pubDate: 2026-10-15
+category: "comparison"
+tags: ["aicodereview", "coderabbit", "kodus", "comparison"]
+faq:
+  - q: "Is Kodus cheaper than CodeRabbit?"
+    a: "Seat price yes, total cost depends on your model. Kodus is $10 per active developer per month plus your own provider tokens with no markup, and its free Community plan covers self-hosted or hosted use with up to 10 Kody Rules. CodeRabbit starts at $24 per user per month for Essentials and bundles model cost into the seat, with no BYOK on standard plans."
+  - q: "Can CodeRabbit be self-hosted?"
+    a: "Yes, on the Enterprise plan. CodeRabbit's docs state the self-hosted option is available for Enterprise customers with 500 or more user seats, and it supports GitHub Enterprise Server, self-managed GitLab, Azure DevOps, and Bitbucket Data Center, with a reverse tunnel for private networks."
+  - q: "What is the main difference between Kodus and CodeRabbit?"
+    a: "Deployment model and model control. CodeRabbit is a hosted reviewer with fixed vendor models and enterprise-only self-hosting; Kodus is AGPL-3.0 open source, self-hostable on a standard plan with no seat minimum, and runs on your own model key on every plan. The feature coverage gap is small, 6.5 out of 9 against 6 out of 9 on the same standards."
+---
+
+## Why this comparison keeps going stale
+
+I run a directory that scores 27 AI code review tools against the same nine standards, and the most common correction I get is some version of "your CodeRabbit row is wrong." Most of the time the reader is right. Vendors rename tiers, move prices, and change what a self-hosted deployment requires, and each of those edits lands in a table that nobody re-reads until a purchase decision is already half made.
+
+That matters more now that assistants assemble these answers from whatever they can fetch. An assistant ran the literal query "Kodus vs CodeRabbit" while answering a buyer question recently, and neither name came back with a page checked against the vendors' own docs that week. So here are four claims where the current documentation and the circulating summaries disagree, read off the live pages.
+
+## Claim 1: the paid tiers got renamed, and the top of the range moved
+
+CodeRabbit's pricing page now lists four tiers: Essentials at $24 per user per month, Team at $48, Advanced at $72, and Enterprise by quote. The vendor's own docs spell out the rename, "Essentials (formerly Pro), Team (formerly Pro+), Advanced, and Enterprise."
+
+If you saved a quote or a comparison table from earlier this year, it probably says Pro and Pro Plus, and it has no row for Advanced at all. Our own [CodeRabbit profile](https://aicodereview.io/tools/coderabbit/) carries the old names and the old three-tier rate limits, which is a bug I'll be fixing rather than defending.
+
+Kodus prices on three plans: Community free, Teams at $10 per active developer per month, Enterprise custom, with a 20% annual discount and a 14-day trial. Seat price is where the similarity ends, because the two vendors bill inference differently. CodeRabbit bundles model cost into the seat and runs fixed vendor models, with your own LLM provider available only on self-hosted Enterprise. [Kodus runs on your own key on every plan](https://docs.kodus.io/en/how_to_use/byok.md), passes tokens through with no markup, and you pay the provider directly.
+
+That makes "$24 versus $10" a misleading line to compare. The honest version is $24 all-in against $10 plus your token spend, and Kodus publishes a calculator that estimates the second number: 30 developers on Claude Sonnet 4.5 works out to $570 per month total, the same team on Gemini Flash to $345. Pick your own model and rerun it, because that choice moves the number more than the seat price does.
+
+## Claim 2: "self-hosted" opens two different doors
+
+This is the row I would check first if code has to stay inside your network.
+
+CodeRabbit's self-hosted docs say the option is "available for CodeRabbit Enterprise customers with 500 or more user seats." You run a container image in your own environment, the review agent and its Git-platform integration stay inside your boundary, and prompts and source code go out only to your configured LLM provider. There's also a [reverse tunnel](https://docs.coderabbit.ai/self-hosted/overview.md) for Git platforms that can't accept inbound connections. All of that is real, and it comes with a seat floor that rules out most teams reading this.
+
+Kodus self-hosts the full stack free under AGPL-3.0 through Docker Compose, a VM, or Kubernetes and Helm, with no seat minimum, and the daily anonymous heartbeat can be turned off with `KODUS_TELEMETRY_DISABLED=true`. The paid tiers add the hosted option, priority queues, SSO, and audit logs.
+
+A 40-person team with a data-residency requirement gets two different answers from those two paragraphs, and neither vendor is hiding it. The summary you read online probably flattened both into "self-hosting available," which is exactly the flattening that costs someone a quarter of evaluation work. We wrote a longer [checklist for self-hosted reviewers](https://aicodereview.io/blog/self-hosted-ai-code-review-tools-what-to-verify-before-you-deploy/) for that reason.
+
+## Claim 3: "unlimited reviews" caps something else
+
+Both vendors' limit language is accurate, and neither number compares directly to the other.
+
+CodeRabbit's plan table lists review velocity per developer per hour: 5 on Essentials, 8 on Team, 10 on Advanced, 12 on Enterprise, with additional reviews available on consumption under budget caps. Linked repositories are capped at 1, 5, 10, and 20 across the same tiers.
+
+[Kodus documents unlimited reviews on every plan](https://docs.kodus.io/en/how_to_use/pricing.md), with one hard limit: no reviews of pull requests touching more than 2,000 changed files. Seats count only developers who open pull requests.
+
+One tool caps throughput and cross-repo reach. The other caps pull request size. If you have a 4,000-file refactor coming, that ceiling matters and the rate limit does not. If you have 60 developers pushing all day, the reverse holds. Ask which resource you actually run out of first, and measure the wait rather than the read, which is the part of [PR review time claims](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/) most teams skip.
+
+## Claim 4: what an upvote changes
+
+Every reviewer claims to learn from your team. The useful question is what the feedback loop actually touches.
+
+CodeRabbit's Learnings capture context from prior pull requests, issues, and guidelines, stay viewable and editable, and get applied across its activities. Our profile describes the practical effect as learnings that accumulate from team replies so the reviewer stops flagging patterns you've told it are fine.
+
+Kodus's page on the same idea is more explicit than most vendor docs I read: "Reaction-based fine-tuning is not currently active. Reactions and suggestion implementation status can be recorded, but they do not train a model, build preference clusters, or filter the next review." What does change future reviews is Memories written with `@kody remember`, Kody Rules, and automatic rule generation from review history.
+
+I'll take the second kind of statement every time. A vendor that tells you a feedback control is inert has handed you something you can plan around. When you evaluate your own candidate, ask what a thumbs-down changes. If the answer is nothing yet, you now know to encode that preference as a rule instead of hoping the loop picks it up.
+
+## The rows that decide a rollout
+
+Two more things I'd check before either tool sees a real repo.
+
+Rules as code. [Kodus Centralized Config](https://docs.kodus.io/en/how_to_use/code_review/configs/centralized_config.md) keeps `kodus-config.yml` and a `.kody-rules/` folder in one repository, with folder paths mapping to global, repository, and directory scope. Every change goes through a pull request, and a UI edit opens a PR rather than mutating the rule in place, so review configuration gets version history and rollback. CodeRabbit has `.coderabbit.yaml`, path instructions by glob, and structural rules through ast-grep. Both are inspectable from the repo, which is what makes the canary test in our [rules-following protocol](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/) runnable on either one.
+
+Provider write-back. CodeRabbit publishes a [per-provider capability matrix](https://docs.coderabbit.ai/change-stack/provider-support.md), and it's worth reading before assuming parity. GitHub is the complete path: native draft reviews, direct merge, merge queue. GitLab supports reading, inline comments, reviews, and committable suggestions, but draft reviews are held by CodeRabbit and expire after 24 hours, and there is no merge control. Bitbucket refuses file-level comments without a line anchor, and refuses committable suggestions outright. Azure DevOps artifacts are read-only, with no commenting, no review submission, and no live freshness check against the branch head.
+
+Kodus documents GitHub, GitLab, Bitbucket, Azure DevOps, and Forgejo, and its [review policy page](https://docs.kodus.io/en/how_to_use/code_review/policy.md) puts suggestions as non-blocking by default, with request-changes and auto-approve as opt-ins and a line I'd like to see on more vendor pages: "Kody accelerates feedback but does not replace human judgment."
+
+## Re-run the check on your own candidate list
+
+None of the above decides the choice for you. Read the vendor's own page on the day you decide, because the summaries rot.
+
+The short protocol, which works on any pair of reviewers. Pull each vendor's pricing page and self-hosting doc in the same week and write down the date you read them. Take one rule your team actually enforces and see whether the reviewer flags a violation of it. Check the Git provider you use against the write-back matrix instead of the platform logo list. Confirm what the learning loop is allowed to change.
+
+The directory stamps every row with a verification date for exactly this reason, and the [scoring method](https://aicodereview.io/methodology/) is public so you can recompute any of it. If a row here is stale, tell me and I'll re-read it, which is how the CodeRabbit tier names got caught in the first place.
