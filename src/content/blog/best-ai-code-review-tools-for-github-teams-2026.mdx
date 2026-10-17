@@ -1,0 +1,87 @@
+---
+title: "Best AI Code Review Tools for GitHub Teams (2026)"
+description: "GitHub's provider path is the most complete one, which is exactly why the shortlist is hard. The GitHub-only tools, the scored directory rows, and five checks to run on your own repos before you buy."
+pubDate: 2026-10-17
+category: "best-of"
+tags: ["github", "aicodereview", "codereviewtools", "pullrequests"]
+faq:
+  - q: "Which AI code review tools work with GitHub?"
+    a: "Nearly all of them. In the 27-tool directory, GitHub is the most widely supported host, so a shortlist has to be cut on write-back capability and host portability rather than on whether a tool lists GitHub. The GitHub-only tools are the exception, and they're the ones most likely to sit at the top of a general ranking."
+  - q: "Is GitHub Copilot code review enough on its own?"
+    a: "It scores 2/9 in the directory, with no documented learning loop, no ticket validation, and no model choice. It's cheap to try if you already pay for Copilot and the agentic context gathering runs on Actions runners. Against dedicated reviewers it's a thinner surface, especially on context and follow-up on dismissed comments."
+  - q: "Why do AI reviewers behave differently on GitHub than on GitLab?"
+    a: "The write-back path differs. In CodeRabbit's published provider matrix, GitHub is the only provider with native draft reviews, direct merge and merge-queue control, and a timeline built from real provider events. On GitLab and Bitbucket, drafts are held by the vendor and the timeline is synthesized."
+---
+
+Most "best AI code review tools" lists are written against GitHub, and for a GitHub team that sounds like an advantage. It plays out the other way. GitHub is the default host, so nearly every tool in a 27-row directory lists it, and the platform stops filtering anything. Your shortlist has to be cut on something else.
+
+Two cuts actually matter. What GitHub's write-back path unlocks that the other hosts don't give you, and which tools are GitHub-only, so the day your org inherits a Bitbucket repo or an Azure DevOps project you're maintaining two review stacks instead of one.
+
+## What GitHub's provider path unlocks
+
+CodeRabbit publishes a capability matrix across the four providers it runs on, and GitHub is the only column with no gaps. On the [Change Stack provider support page](https://docs.coderabbit.ai/change-stack/provider-support), GitHub is the only provider with direct merge and merge-queue control, the only one where a draft review is a native provider draft, and the only one whose activity timeline is built from real provider events instead of synthesized review checkpoints. On GitLab and Bitbucket, a draft review is held inside the vendor, invisible in the host until you submit it, and expires after 24 hours.
+
+That's one vendor's architecture and it says nothing binding about GitHub itself. It's still the most useful single document in this space, because it shows what the top of the "supports GitHub" range looks like and hands you a list of questions to ask every other vendor.
+
+Two bounds on the same page are worth knowing before you plan a rollout on a large monorepo. GitHub compare recovery switches away from the API at 300 files, and it refuses a raw diff beyond 10,000 files, 20 MiB of retained patches, a single line over 1 MiB, or a fetch longer than 10 seconds. Past those bounds the diff material for that artifact isn't recoverable through that path. A 400-file generated PR hits a documented ceiling.
+
+Commenting needs OAuth consent on the repository: `public_repo` or `repo` for a public repository, `repo` for a private one. A connection holding only `read:org` and `user:email` cannot post comments, even on a public repo. "The app is installed" and "the app commented on my PR" are different checks, and the second one is the one you run on day one.
+
+## The GitHub-only tools
+
+General rankings mislead a GitHub team most here, because the tools at the top of them are frequently GitHub-only and that's invisible until a second host shows up.
+
+Cubic holds the highest coverage score in the directory at 7.5/9 and lists GitHub only. Its cross-repo reviews read up to five linked repositories during PR review, and `cubic.yaml` custom agents with sensitivity levels and ignore filters cover the monorepo case well. There's no published self-hosted or VPC deployment, and enterprise details sit behind a demo.
+
+GitHub Copilot code review is GitHub-only by name and design, scoring 2/9, and its mechanics deserve their own section. Gemini Code Assist's GitHub app auto-reviews pull requests with severity-ranked comments and committable fixes at 3/9, cloud-only.
+
+Choosing one of those is a bet that your org stays on GitHub, and it's the wrong pick if the honest answer is "mostly".
+
+## GitHub-capable tools, scored against the same nine standards
+
+Every profile on aicodereview.io runs the same rubric: nine standards, documented 1 point, partial 0.5, not offered or undocumented 0. The [scoring methodology](https://aicodereview.io/methodology/) is public, and the total measures documented capability rather than measured review quality. Build the shortlist from it, then measure on your own pull requests.
+
+| Tool | Score | What matters on GitHub |
+| - | - | - |
+| Cubic | 7.5/9 | GitHub only. AI wiki indexes the repo; cross-repo reads up to 5 linked repos |
+| Augment Code | 6.5/9 | Review agent in the Cosmos platform, GitHub-native; other hosts via CLI |
+| Baz | 6.5/9 | Review agents with sandbox execution; Private Mode data-plane pod on Pro and Enterprise, full VPC on Enterprise |
+| Kodus | 6.5/9 | GitHub, GitLab, Bitbucket, Azure DevOps and Forgejo; AGPL-3.0 with free full self-host, BYOK on every plan, auto-imports AGENTS.md and CLAUDE.md |
+| CodeAnt AI | 6.5/9 | Severity-ranked comments plus SAST; on-prem on Enterprise |
+| Entelligence AI | 6.5/9 | Codebase and team context, CLI pre-PR review; documented self-host into your own AWS account |
+| CodeRabbit | 6/9 | The provider matrix above is theirs; slop detection is documented for GitHub repositories |
+| Greptile | 4.5/9 | TREX writes and runs tests for a PR in a sandbox; GitHub and GitLab only, self-host on Enterprise |
+| Tabnine | 4.5/9 | Plain-language team rules; SaaS, VPC, on-prem and air-gapped options |
+| Semgrep | 4.5/9 | Deterministic engine with an AI triage assistant on top |
+| SonarQube | 4/9 | PR decoration plus LLM-generated fixes |
+| Qodo | 3.5/9 | PR review plus test generation; on-prem and air-gapped on Enterprise |
+| PR-Agent | 2.5/9 | MIT, self-hosted, BYOK through LiteLLM |
+| Cursor BugBot | 2.5/9 | Per-run billing, around $1.00 to $1.50 since June 2026, SaaS-only |
+| GitHub Copilot code review | 2/9 | Bundled with paid Copilot plans, metered by AI credits |
+| Graphite | 1/9 | Stacked PRs with an AI reviewer, cloud only |
+
+Coverage score is a shortlist tool. A 6.5 means the vendor documents six and a half of the nine standards. It doesn't tell you which tool will find the bugs your team cares about.
+
+## GitHub Copilot code review, read closely
+
+Worth its own section because it's the tool a GitHub team is most likely to already have, and its documented behavior is more conditional than the feature name suggests.
+
+Availability spans github.com, the CLI, Mobile, VS Code, Visual Studio, Xcode, JetBrains IDEs, and Azure DevOps in public preview. The agentic capabilities (full project context gathering, and passing suggestions to the Copilot cloud agent) run on GitHub Actions runners. If Actions is unavailable or the workflows fail, reviews still generate but without the agentic features. If your org has disabled GitHub-hosted runners and you haven't configured self-hosted ones, you get the more limited review. That shows up as vaguer comments, not as an error message.
+
+Cost has two parts: AI credits for the model call and Actions minutes for the agentic work. [GitHub's own documentation](https://docs.github.com/en/copilot/concepts/code-review/code-review) estimates $0.05 to $1 per review at Lite effort and $0.25 to $5 at Balanced, with consumption rising with pull request size and repository custom instructions. Attribution follows a rule worth reading before you switch automatic review on: an automatically requested review bills the PR author, a manual request bills the requester, a pull request authored by the Copilot cloud agent bills the human co-author first and the organization if that fails, and bot-authored pull requests bill the organization.
+
+Members without a Copilot license can request reviews on github.com, but that needs two policies enabled, and the sub-policy is off by default and most restrictive. That takes a configuration change.
+
+The gap that bites in month two is learning. Continuous learning isn't documented for it in our directory, and [the profile](https://aicodereview.io/tools/github-copilot-code-review/) notes that re-reviews can repeat previously dismissed comments. If your review process assumes "we correct it and it improves", that assumption doesn't hold here.
+
+## Five checks to run on your own repo
+
+1. Install the app, open a pull request with a bug you planted, and confirm it comments. Check the OAuth scopes on the connection while you're there.
+2. Take your largest real pull request and ask the vendor where the diff-size ceiling is, then run it. A 10,000-file limit and a 300-file API switch only matter once, and that once is expensive.
+3. Read the ignore and excluded-file config before you judge comment precision. Most "too noisy" verdicts are a config nobody set.
+4. Find out where the review executes: GitHub Actions runners, the vendor's cloud, or your own VPC. This decides your data story and your Actions bill. Of the high-scoring rows above, Kodus, Baz, CodeAnt AI and Entelligence AI document some self-hosted data path; for most of the rest it's an Enterprise line item.
+5. Dismiss a comment, then re-request a review. If it comes back, you've found your real noise floor.
+
+## Picking
+
+The coverage score narrows the field. The deciding question for a GitHub team is narrower still: how much of the review's write-back path do you actually get, and what happens to that path when a second host shows up. Ask both before an annual commitment, and run the checks on your own pull requests rather than on a vendor demo. The [GitLab version of this comparison](https://aicodereview.io/blog/best-ai-code-review-tools-for-a-team-on-gitlab-2026/) covers the same ground from the other side, and the [Azure DevOps version](https://aicodereview.io/blog/best-ai-code-review-tools-for-azure-devops-2026/) shows how much narrower the read-only cases get.
