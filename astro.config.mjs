@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
+import { sitemapSerialize } from './scripts/sitemap-lastmod.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -34,5 +35,8 @@ export default defineConfig({
   integrations: [mdx(), sitemap({
     // Keep non-HTML endpoints (feeds, llms.txt, raw-markdown mirrors) out of the sitemap.
     filter: (page) => !/\.(xml|txt|md|json)$/.test(new URL(page).pathname) && !page.includes('/api/'),
+    // Per-URL <lastmod>: blog frontmatter, tool lastVerified, or the git date
+    // of the file that renders everything else. See scripts/sitemap-lastmod.mjs.
+    serialize: sitemapSerialize,
   })]
 });
