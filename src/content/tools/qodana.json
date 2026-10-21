@@ -8,7 +8,7 @@
   "pricing": "Community linters free; Ultimate $5/contributor/mo (annual; $6 monthly); Ultimate Plus $15/contributor/mo (annual; $18 monthly); 3-contributor minimum",
   "pricingUrl": "https://www.jetbrains.com/qodana/buy/",
   "selfHosted": "full",
-  "selfHostedNote": "Linters always run in your CI; Qodana Self-Hosted puts the report server on-prem (license requested via JetBrains support).",
+  "selfHostedNote": "Linters always run in your CI; Qodana Self-Hosted is a separately-priced, custom-quoted on-prem plan (minimum 5 active contributors) deployed via the Qodana CLI installer or a Kubernetes Helm chart.",
   "platforms": [
     "github",
     "gitlab",
@@ -16,7 +16,7 @@
     "azure-devops"
   ],
   "modelControl": "No LLM component; deterministic JetBrains IDE inspections",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-21",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",

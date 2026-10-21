@@ -8,12 +8,13 @@
   "pricing": "Included from Copilot Pro $10/mo ($15 AI credits), Pro+ $39 ($70), Max $100 ($200); Business $19 and Enterprise $39/user/mo; metered AI credits since June 1, 2026 plus Actions minutes",
   "pricingUrl": "https://github.com/features/copilot/plans",
   "selfHosted": "none",
-  "selfHostedNote": "Cloud service; agentic checks can run on self-hosted Actions runners (ARC, Ubuntu x64), but that is compute placement, not self-hosting.",
+  "selfHostedNote": "Cloud service; agentic checks can run on self-hosted Actions runners (ARC, Ubuntu x64) for GitHub repos, but that is compute placement, not self-hosting. The Azure Repos integration (public preview since Aug 26, 2026) is Microsoft-hosted only, billed through Azure Cost Management instead of GitHub AI credits.",
   "platforms": [
-    "github"
+    "github",
+    "azure-devops"
   ],
-  "modelControl": "No model choice; GitHub-managed models with Lite/Balanced review effort levels",
-  "lastVerified": "2026-08-11",
+  "modelControl": "No model choice; GitHub-managed models with Lite/Balanced review effort levels (Balanced default since Sept 28, 2026); reviews can also be requested via REST/GraphQL API with an effort override",
+  "lastVerified": "2026-10-21",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "no",

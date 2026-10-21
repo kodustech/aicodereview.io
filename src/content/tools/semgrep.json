@@ -5,7 +5,7 @@
   "category": "security",
   "openSource": true,
   "license": "LGPL-2.1 (CE engine); AppSec Platform proprietary",
-  "pricing": "Free for up to 10 contributors; Teams from $30/contributor/mo per product (Code SAST; Secrets $15) with 20 AI credits/dev/mo; Enterprise custom with 50 AI credits/dev/mo",
+  "pricing": "Free Edition: $0, up to 10 contributors/10 repos (Code + Supply Chain), 60 AI credits included; Teams from $30/contributor/mo per product (Code SAST, Supply Chain SCA; Secrets $15), 20 AI credits/dev/mo, SSO, up to 500 private repos; Enterprise custom, unlimited repos/contributors, 50 AI credits/dev/mo",
   "pricingUrl": "https://semgrep.dev/pricing/",
   "selfHosted": "full",
   "selfHostedNote": "CE engine (LGPL-2.1) runs fully local or in your CI; the AppSec Platform and Assistant are SaaS-only.",
@@ -15,8 +15,8 @@
     "bitbucket",
     "azure-devops"
   ],
-  "modelControl": "Assistant uses OpenAI with Amazon Bedrock fallback; custom AI model provider available on Enterprise",
-  "lastVerified": "2026-08-11",
+  "modelControl": "Assistant/Multimodal defaults to Semgrep-managed OpenAI + AWS Bedrock keys; BYO now available (own OpenAI key, own Bedrock account, Azure OpenAI, Gemini, or xAI, configured per-org), though AI-powered detection scans stay on OpenAI/Bedrock only",
+  "lastVerified": "2026-10-21",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",

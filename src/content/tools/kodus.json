@@ -17,7 +17,7 @@
     "forgejo"
   ],
   "modelControl": "BYOK on every plan: OpenAI, Anthropic, Gemini, Vertex, Novita, or any OpenAI-compatible endpoint (vLLM/Ollama); zero token markup",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-21",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "yes",

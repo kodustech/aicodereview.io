@@ -15,8 +15,8 @@
     "bitbucket",
     "azure-devops"
   ],
-  "modelControl": "AI CodeFix: Sonar-hosted GPT-5.1/GPT-4o, your Azure OpenAI/Bedrock, or a self-hosted OpenAI-compatible gateway; core analysis has no LLM",
-  "lastVerified": "2026-08-11",
+  "modelControl": "AI CodeFix: Sonar-hosted GPT-5.1 (upgraded from GPT-4o), your Azure OpenAI/Bedrock, or a self-hosted OpenAI-compatible gateway; core analysis has no LLM",
+  "lastVerified": "2026-10-21",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",
