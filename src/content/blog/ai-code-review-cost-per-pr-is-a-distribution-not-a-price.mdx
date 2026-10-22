@@ -1,0 +1,101 @@
+---
+title: "AI code review cost per PR is a distribution, not a price"
+description: "Cloudflare's 131,246 review runs give AI code review a real cost curve: $0.98 median, $3.25 per merge request, and 85% of spend in one tier."
+pubDate: 2026-10-22
+category: "guide"
+tags: ["aicodereview", "evaluation", "cost", "benchmarks"]
+faq:
+  - q: "What does AI code review actually cost per pull request?"
+    a: "Cloudflare's published telemetry puts the median review at $0.98 and the average at $1.19, with 2.73 reviews per merge request. That works out to roughly $2.67 to $3.25 per merge request, which is the unit you should budget against. Vendor seat prices don't tell you this because they don't include the re-review multiplier."
+  - q: "Is per-review or per-seat pricing better for an engineering team?"
+    a: "Neither is inherently better. Compare the unit, the included volume, the overage rate, and the re-review policy. Per-review pricing hurts teams with many small diffs if there's no risk tiering. Per-seat pricing hurts teams where the bot re-reviews aggressively, because you pay for every pass on the same merge request."
+  - q: "How do I measure cost per accepted finding for an AI reviewer?"
+    a: "Sample findings from each reviewer across a fixed two-week window, have a human label each one accepted or rejected, and divide total review spend by the accepted count. That gives you a precision-weighted cost you can compare across tools, which raw cost per review cannot do."
+---
+
+Vendor pricing pages answer the cost question in seats per month. The number that decides whether a rollout survives a budget review is cost per pull request, and hardly anyone publishes it. Cloudflare did, in [Orchestrating AI code review at scale](https://blog.cloudflare.com/ai-code-review/), and the interesting part is not the headline figure. It's the shape of the distribution underneath it.
+
+Over a 30-day window (March 10 to April 9, 2026) their internal reviewer completed 131,246 review runs across 48,095 merge requests in 5,169 repositories. Average cost per review $1.19, median $0.98, P99 $4.45. Median duration 3 minutes 39 seconds.
+
+The number worth dividing is the runs by the merge requests.
+
+## The per-review average hides the re-review multiplier
+
+131,246 divided by 48,095 is 2.73 reviews per merge request. At the average per-review cost, that's about **$3.25 per merge request**. At the median it's about $2.67.
+
+Cloudflare states the 2.7 figure openly. It just never makes it into a comparison table, because a per-review rate is the number that fits in a pricing page cell.
+
+The multiplier comes from re-reviews. When an engineer pushes new commits, the coordinator receives the full text of its own previous review comment plus the inline comments it posted and their resolution status. Fixed findings get omitted and auto-resolved. Unfixed findings must be re-emitted so the thread stays alive. A developer replying "won't fix" gets treated as resolved; a developer replying "I disagree" gets an argument back.
+
+That's a sensible design for signal quality. It also means one merge request pays for review N times, and N grows with how much you iterate. A harness that re-reviews on every push looks cheaper per review and costs more per merge request than one that reviews once. If two tools both quote a per-review rate, you are comparing rates on different denominators. Ask for cost per merge request.
+
+Median against average matters here too. A median of $0.98 with an average of $1.19 and a P99 of $4.45 tells you large refactors drag the mean. Budget against P95, not the mean, because the tail is where the budget review happens.
+
+There's a harness lesson in the token table as well. They processed roughly 120 billion tokens in the month with an 85.7% cache hit rate, dominated by cache reads. That isn't a model property. Sub-reviewers read from a shared cached context file instead of each pulling its own copy of the MR metadata, and the base prompts are byte-identical across every run and every merge request. Rebuild your prompt from scratch each run and your cost per review is structurally worse at the same model.
+
+## Cost concentrates in one risk tier
+
+Their risk assessment picks the agent set per diff. The spend split is lopsided:
+
+| Tier | Reviews | Avg cost | Median | P95 |
+| --- | --- | --- | --- | --- |
+| Trivial | 24,529 | $0.20 | $0.17 | $0.39 |
+| Lite | 27,558 | $0.67 | $0.61 | $1.15 |
+| Full | 78,611 | $1.68 | $1.47 | $3.35 |
+
+Multiply it out and the full tier is 60% of runs but roughly **85% of the spend** (about $132k of the $155k total across tiered reviews). Trivial reviews are 19% of runs and about 3% of spend.
+
+So the cost per review you quote is largely a routing decision. If you buy a tool with flat per-review pricing, you pay full-tier money on a typo fix. If you buy metered credits, you pay for the trivial ones regardless. The routing question is worth reading alongside [why reviewing the volume of AI-generated code is a routing problem before it is a speed problem](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/), since the same diff-size distribution that drives your cost curve drives your queue.
+
+Model tiering compounds it. The coordinator, the agent that deduplicates findings and writes the final comment, runs exclusively on top-tier models (Claude Opus 4.7 and GPT-5.4) and accounts for 51.8% of all tokens. Standard-tier models handle three sub-reviewers. Kimi K2.5 burns 11.7B input tokens at no marginal cost because it runs through Workers AI.
+
+## The denominator nobody publishes
+
+The system produced 159,103 findings across those 131,246 reviews, about 1.21 per review. That puts a finding at roughly **$0.80 to $1.00** depending on which cost figure you use.
+
+A finding is not the same thing as a defect. The number you actually want is cost per accepted finding, or further out, cost per escaped defect. Cloudflare publishes a trust signal instead: engineers broke glass 288 times, 0.6% of merge requests, which is a floor on how often a human overrode the reviewer on something serious. There's no acceptance rate per reviewer and no false-positive rate.
+
+The severity split is visible, though. Security produced 11,985 findings, 484 of them critical (4%). Code quality produced 74,898 findings, 6,460 critical (8.6%), so it accounts for nearly half of all findings by volume. The loudest reviewer is not the highest-severity one. That's the same asymmetry I wrote about in [AI code review's absence blindness](https://aicodereview.io/blog/ai-code-reviews-absence-blindness-measure-what-it-misses/), approached from the cost side.
+
+Cost without a precision denominator is a spend report. Any evaluation that reports dollars per review and stops there has told you what the tool costs and nothing about whether it is right.
+
+## Cheap until the billing surface moves
+
+The [Hacker News thread on that post](https://news.ycombinator.com/item?id=48276152) has the most useful counterexample I've read. One commenter built a comparable system with roughly 15 Copilot subagents, ran about 4,000 reviews over two months at about $0.90 per review using Opus 4.6 with Sonnet and Haiku on the cheap parts, and did it on 300 premium requests, because subagents were allowed and a single request had no duration cap. At API pricing that would have been $5,000 to $8,000 a month. His words: "starting in June, it will be dead because it will be API pricing."
+
+Another commenter in the same thread runs the opposite configuration, one strong model for the entire review: "the ROI here is so high that I don't mind using the strongest model available."
+
+Both are rational. They are on different billing surfaces. Your cost per review is a property of your billing arrangement as much as your harness, and two identical setups, one on a flat premium-request quota and one on API pricing, differ by an order of magnitude. That's the same trap as a "free" tier that turns out to be metered credits, which I dug into in [what free actually costs you](https://aicodereview.io/blog/free-ai-code-review-tools-what-free-actually-costs-you/).
+
+There's a budget objection in that thread worth taking seriously too. A nondeterministic system sits awkwardly inside a deterministic CI gate. From the cost angle the problem is variance: a mean cost per review is easy to absorb, a P99 is what breaks a cap. Cloudflare emits a warning when the coordinator prompt exceeds 50% of the estimated context window, and their circuit breakers walk per-family failback chains rather than crossing model families when a provider degrades. That kind of bounded behavior is what makes a hard per-merge-request cap possible.
+
+## Measure your own cost curve
+
+The protocol, five steps:
+
+1. **Fixed two-week window, every merged MR.** Tag each MR with the harness version that reviewed it. If you're comparing two tools, both arms run in the same window with the same reviewer pool.
+2. **Count reviews per MR before you count cost.** Report cost per merge request at the median and P95. Per-review rates from two vendors are not comparable.
+3. **Bucket by diff size or risk tier and report spend share, not just count share.** The full tier number above is the entire reason.
+4. **Get token accounting from a proxy you control, not the vendor dashboard.** JSONL `step_finish` events carry token usage, which is how Cloudflare tracks spend in real time. Running your own LLM proxy is the only way to see which key called which model at what time, and it's the difference between a cost curve and a monthly bill.
+5. **Pair cost with a precision denominator.** Sample findings per reviewer, label accepted or rejected by hand, and report cost per accepted finding. Then cap it: a budget per MR, and defined behavior when the diff exceeds it.
+
+Report four numbers per bucket: cost per merge request, reviews per merge request, accepted findings per review, and P95 duration. Anything less and the vendor's number and your number are answering different questions.
+
+## Where the seat price sits
+
+Same billing-surface criteria across the tools in [the directory](https://aicodereview.io/tools/):
+
+- **CodeRabbit** has no perpetual free tier. [Essentials is $24 per user per month billed annually, $30 monthly](https://www.coderabbit.ai/pricing), Team $48, Enterprise $72. That includes 5 PR reviews per developer per hour, and continued reviews bill at $0.25 per reviewed file. CodeRabbit Agent is $0.40 per agent minute.
+- **Greptile** is free for one active developer with 50 credits per month, then [$30 per seat with 50 credits per seat](https://www.greptile.com/pricing). Extra credits are $1 each, and a TREX review costs 3 credits. Pre-Series A startups get 50% off.
+- **GitHub Copilot code review** bills as premium requests, which is the surface the $0.90-per-review setup above was riding.
+- **Kodus** is AGPLv3 with a free self-hosted Community plan against any OpenAI-compatible model and no per-seat meter. Your cost is your model bill plus the deployment, which makes per-MR cost legible because you can see every token.
+
+Cloudflare's own stack is the same shape at a larger scale: AI Gateway for routing and cost tracking, Workers AI for open-weight inference, and a GitLab CI component teams include with one line. Their [internal AI engineering stack writeup](https://blog.cloudflare.com/internal-ai-engineering-stack) has the platform layout, including the 241 billion tokens routed through their gateway in a month.
+
+The comparison rule is to line up four things: the unit (per review, per merge request, per seat, per credit), the included volume, the overage rate, and the re-review behavior. A $24 seat with a $0.25 per-file overage is not the same product as a $30 seat with 50 credits, even when both land near $30 a month on the invoice.
+
+## What to put in the procurement doc
+
+Ask for cost per merge request at median and P95, reviews per merge request, spend share by diff size, and cost per accepted finding. A vendor who can only produce a seat price does not instrument their own harness, and you'll be the one discovering what their P99 looks like.
+
+Cloudflare's post is the most useful thing published in this category this year because it ships a distribution with a denominator attached. Their specific numbers don't port to your repos, and they don't need to. The shape is the lesson, and it's reproducible against your own telemetry in a two-week slice.
