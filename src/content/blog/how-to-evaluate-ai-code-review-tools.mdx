@@ -35,7 +35,7 @@ Most teams evaluate AI code review the way they evaluate a linter: install it on
 
 **Nobody measures.** "The team seems to like it" is not an evaluation. Without a baseline for time-to-merge, a count of actionable versus noise comments, and a recall number against known bugs, you are choosing based on vibes — and you will re-run the whole evaluation in six months when the vibes wear off.
 
-The fix is to treat the evaluation like an engineering problem: define the criteria up front, instrument the trial, and let the numbers decide.
+The fix is to treat the evaluation like an engineering problem: define the criteria up front, instrument the trial, and let the numbers decide. If you only have time to fix one blind spot, make it this one: a tool that is [fluent but structurally wrong](/blog/fluent-but-structurally-wrong-ai-code-review-failure-mode) is more dangerous than one that is obviously wrong, because fluent output is the kind you stop checking.
 
 ## The nine standards, and how to test each one
 
