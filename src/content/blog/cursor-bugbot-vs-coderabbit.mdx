@@ -1,16 +1,17 @@
 ---
 title: "Cursor BugBot vs CodeRabbit: 2026 Comparison"
-description: "Cursor BugBot vs CodeRabbit: review philosophy, pricing, platform support, and self-hosting compared — plus when neither fits. Verified August 2026."
+description: "Cursor BugBot vs CodeRabbit: review philosophy, pricing, platform support, and self-hosting compared — plus when neither fits. Re-verified October 2026."
 pubDate: 2026-08-11
+updatedDate: 2026-10-22
 category: "comparison"
 tags: ["cursor-bugbot", "coderabbit", "comparison", "ai-code-review", "pricing"]
 faq:
   - q: "Is Cursor BugBot a full replacement for CodeRabbit?"
     a: "No — and it doesn't try to be. BugBot is deliberately scoped to bugs, security issues, and rule violations, with no PR summaries, walkthroughs, or docstring generation. CodeRabbit is a full review platform with linters, SAST, summaries, and ticket integration. BugBot replaces CodeRabbit only if bug detection is all you actually wanted."
   - q: "How much does Cursor BugBot cost per review?"
-    a: "Cursor estimates the average BugBot run costs $1.00-1.50 depending on PR size and complexity, under the usage-based billing introduced at renewals after June 8, 2026. Individual Cursor plans include some BugBot usage; teams pay on-demand spend. The old $40/seat/month subscription is being phased out at renewal."
+    a: "Cursor estimates the average BugBot run costs $1.00-1.50 depending on PR size and complexity, under the usage-based billing introduced at renewals after June 8, 2026. As of October 2026, BugBot is included only from Cursor's $30/month Premium plan up (Free and Plus exclude it); teams pay on-demand spend. The old $40/seat/month subscription has been fully retired."
   - q: "Do I need a Cursor subscription to use BugBot?"
-    a: "Effectively yes. BugBot is part of Cursor's plans rather than a standalone product — individual Pro plans (from $20/month) include usage-based BugBot, and Teams plans include agentic code reviews with BugBot. If your team doesn't use Cursor, you're buying into its ecosystem to get the reviewer."
+    a: "Effectively yes. BugBot is part of Cursor's plans rather than a standalone product, and as of October 2026 it's gated to the $30/month Premium plan and above (the cheaper Free and Plus plans exclude it) — individual Premium usage is billed on-demand, and Teams plans include agentic code reviews with BugBot. If your team doesn't use Cursor, you're buying into its ecosystem to get the reviewer."
   - q: "Which is noisier, BugBot or CodeRabbit?"
     a: "CodeRabbit, by design. Its default output includes summaries, walkthroughs, and inline comments spanning style to security, and nitpick complaints are common (though its quieter profile and custom instructions help). BugBot's narrow scope means fewer comments overall — it hunts bugs rather than commenting on everything reviewable."
   - q: "Which platforms do BugBot and CodeRabbit support?"
@@ -21,14 +22,14 @@ faq:
     a: "Yes, and some teams do: CodeRabbit for summaries, standards enforcement, and linter aggregation, BugBot as a second opinion on bugs. It doubles review spend and comment volume, so most teams treat it as an evaluation phase — run both for two weeks, count which comments engineers act on, keep the winner."
 ---
 
-Cursor BugBot and CodeRabbit sit at opposite ends of the AI code review spectrum: BugBot is a deliberately narrow bug hunter with usage-based pricing (around $1.00-1.50 per run, per Cursor's estimates), while CodeRabbit is a full review platform — summaries, linters, SAST, standards — at $24-48 per developer per month. Pick BugBot if you want high-signal bug detection with minimal ceremony; pick CodeRabbit if you want one tool to run your whole review process; pick neither if you need self-hosting or model control without an enterprise contract. Facts below verified as of August 2026.
+Cursor BugBot and CodeRabbit sit at opposite ends of the AI code review spectrum: BugBot is a deliberately narrow bug hunter with usage-based pricing (around $1.00-1.50 per run, per Cursor's estimates), while CodeRabbit is a full review platform — summaries, linters, SAST, standards — at $24-72 per developer per month across four tiers. Pick BugBot if you want high-signal bug detection with minimal ceremony; pick CodeRabbit if you want one tool to run your whole review process; pick neither if you need self-hosting or model control without an enterprise contract. Facts below re-verified as of October 2026.
 
 ## TL;DR comparison
 
 | | Cursor BugBot | CodeRabbit |
 |---|---|---|
 | **Scope** | Bugs, security issues, rule violations | Full review: summaries, walkthroughs, linters/SAST, standards, inline comments |
-| **Pricing model** | Usage-based (~$1.00-1.50/run, vendor estimate), bundled with Cursor plans | Per-seat: Free / $24 / $48 per dev/month (annual); Enterprise custom |
+| **Pricing model** | Usage-based (~$1.00-1.50/run, vendor estimate), included only from Cursor's $30/mo Premium plan up | Per-seat: Free / $24 / $48 / $72 per dev/month (annual); Enterprise custom |
 | **Git platforms** | GitHub (incl. GHES), GitLab (incl. self-hosted), Bitbucket (incl. Data Center), Azure DevOps (limited) | GitHub, GitLab, Azure DevOps, Bitbucket |
 | **Rules/customization** | `.cursor/BUGBOT.md` files, learned repo rules, org-wide team rules | Review profiles, path filters, custom instructions, learnings |
 | **Fix loop** | "Fix in Cursor" opens findings in the editor | IDE extensions (VS Code, Cursor, Windsurf) + CLI pre-commit reviews |
@@ -67,13 +68,13 @@ The pattern to notice: both vendors converged on plain-language, path-scoped rul
 
 ## Pricing: metered runs vs flat seats
 
-As of August 2026:
+As of October 2026:
 
-**BugBot** moved from $40/seat/month to usage-based billing, effective at each customer's renewal after June 8, 2026 ([announcement](https://cursor.com/blog/may-2026-bugbot-changes)). Cursor estimates the average run at **$1.00-1.50 depending on PR size and complexity**. BugBot isn't sold standalone: individual [Cursor plans](https://cursor.com/pricing) (Pro from $20/month) include usage-based BugBot, and Teams plans ($40/user/month) include agentic code reviews with BugBot, with on-demand spend beyond included usage. Fair warning: the transition confused Cursor's own customers ([forum thread](https://forum.cursor.com/t/i-find-new-bugbot-pricing-difficult-to-understand/122143)), so model your PR volume before assuming it's cheaper.
+**BugBot** moved from $40/seat/month to usage-based billing, effective at each customer's renewal after June 8, 2026 ([announcement](https://cursor.com/blog/may-2026-bugbot-changes)). Cursor estimates the average run at **$1.00-1.50 depending on PR size and complexity**. BugBot isn't sold standalone, and the bundling has narrowed further since: it's now included only from [Cursor's](https://cursor.com/pricing) $30/month Premium plan up (the cheaper Free and Plus plans exclude it entirely), and Teams plans ($40/user/month) include agentic code reviews with BugBot, with on-demand spend beyond included usage. Fair warning: the transition confused Cursor's own customers ([forum thread](https://forum.cursor.com/t/i-find-new-bugbot-pricing-difficult-to-understand/122143)), so model your PR volume — and which Cursor plan you actually need — before assuming it's cheaper.
 
-**CodeRabbit** is flat per-seat ([pricing](https://www.coderabbit.ai/pricing)): Free tier with PR summaries and IDE/CLI reviews; **Pro at $24/dev/month** billed annually (linters/SAST, Jira/Linear, analytics, 5 PR reviews per dev per hour); **Pro Plus at $48** (pre-merge checks, unit test generation, 10 reviews/hour); Enterprise custom with self-hosting. The cheaper Lite plan was [retired in June 2026](https://kb.coderabbit.ai/articles/2508018126-sunset-of-lite-and-pro-legacy-subscription-plans).
+**CodeRabbit** is flat per-seat ([pricing](https://www.coderabbit.ai/pricing)), and has renamed and expanded its tiers since: Free tier (public/open-source repos) with PR summaries and IDE/CLI reviews; **Essentials at $24/dev/month** billed annually, formerly "Pro" (linters/SAST, Jira/Linear, analytics, 5 reviews per dev per hour); **Team at $48**, formerly "Pro Plus" (pre-merge checks, unit test generation, 8 reviews/hour); a newer **Advanced tier at $72** (10 reviews/hour); Enterprise custom with self-hosting (12 reviews/hour). Every tier now also carries a $0.25-per-reviewed-file overage charge above its hourly cap. The cheaper Lite plan was [retired in June 2026](https://kb.coderabbit.ai/articles/2508018126-sunset-of-lite-and-pro-legacy-subscription-plans).
 
-**The crossover math:** at $1.25 per average run, a developer merging 15 PRs a month costs roughly $19 in BugBot runs — under CodeRabbit Pro's $24 seat. At 25 PRs it's ~$31 and CodeRabbit is cheaper, before counting the Cursor subscription you need anyway (which many teams already pay for the editor). High-volume teams favor flat seats; low-volume or spiky teams favor metering. Also compare *what you get* per dollar: CodeRabbit's seat buys summaries, linters, and process tooling BugBot simply doesn't produce.
+**The crossover math:** at $1.25 per average run, a developer merging 15 PRs a month costs roughly $19 in BugBot runs — under CodeRabbit Essentials' $24 seat. At 25 PRs it's ~$31 and CodeRabbit is cheaper. But factor in the Cursor plan BugBot now requires: Premium runs $30/month on its own, so a team that doesn't already pay for Cursor's pricier tier is really comparing a $30+ BugBot floor against a $24 CodeRabbit seat, not BugBot's per-run cost in isolation. High-volume teams favor flat seats; low-volume or spiky teams favor metering, but only if Cursor Premium was already in the budget. Also compare *what you get* per dollar: CodeRabbit's seat buys summaries, linters, and process tooling BugBot simply doesn't produce.
 
 ## Integrations and ecosystem
 
@@ -109,7 +110,7 @@ At the end you'll have something a pricing page can't give you: each tool's acte
 
 - **Your team already pays for Cursor.** The reviewer is bundled, the fix loop is native, and there's no new vendor to onboard.
 - **You want signal, not ceremony.** If your review culture is healthy and you just want escaped-bug insurance, BugBot's narrow scope is a feature.
-- **Your PR volume is modest or spiky.** Metered pricing beats a $24-48 seat when developers merge a handful of PRs monthly.
+- **Your PR volume is modest or spiky.** Metered pricing beats a $24-72 seat when developers merge a handful of PRs monthly — as long as you're not paying for a pricier Cursor plan just to unlock BugBot.
 - **You're on self-hosted git.** GHES, self-hosted GitLab, and Bitbucket Data Center support without an enterprise contract is unusual.
 
 ## When to pick CodeRabbit

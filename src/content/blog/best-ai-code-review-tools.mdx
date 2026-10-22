@@ -2,6 +2,7 @@
 title: "Best AI Code Review Tools (2026): 12 Tools Compared"
 description: "The best AI code review tools 2026 offers, compared honestly: Kodus, CodeRabbit, Greptile, Copilot and more — context depth, pricing, self-hosting."
 pubDate: 2026-08-11
+updatedDate: 2026-10-22
 category: "best-of"
 tags: ["ai-code-review", "code-review-tools", "best-of", "comparison", "developer-tools"]
 faq:
@@ -10,20 +11,20 @@ faq:
   - q: "Are there free AI code review tools?"
     a: "Yes. Kodus has a free Community cloud tier (bring your own API key) and a free self-hosted AGPL version. Greptile gives individuals 50 free review credits per month, Sourcery and DeepSource are free for open-source repos, and GitHub Copilot code review is included from the $10/month Pro plan. Most other tools offer 14-day trials rather than permanent free tiers."
   - q: "Which AI code review tools can be self-hosted?"
-    a: "Kodus is self-hostable on its free AGPL license via Docker Compose or Helm. CodeRabbit, Greptile, Sourcery, DeepSource, and Qodo offer self-hosted or on-prem deployments, but only on custom-priced enterprise plans. Cursor BugBot, GitHub Copilot, Graphite, and Codacy are cloud-only."
+    a: "Kodus is self-hostable on its free AGPL license via Docker Compose or Helm. CodeRabbit, Greptile, Sourcery, DeepSource, and Qodo offer self-hosted or on-prem deployments, but only on custom-priced enterprise plans. Bito now publishes self-hosting too, starting at its Professional tier (+$5/seat/month) rather than enterprise-only. Cursor BugBot, GitHub Copilot, Graphite, and Codacy are cloud-only."
   - q: "Do AI code review tools replace human reviewers?"
     a: "No. They replace the mechanical part of review — catching bugs, style drift, and missed edge cases before a human looks at the PR. Humans still own architectural judgment, product context, and the final approve. The practical win is that human review time shifts from nitpicks to design."
   - q: "How is AI code review different from static analysis?"
     a: "Static analysis matches code against predefined patterns and rules, so it's deterministic but blind to intent. AI code review reads the diff in context and reasons about what the change is trying to do, which catches logic bugs and cross-file contract breaks that rules can't express. The best setups run both — several tools on this list (Codacy, DeepSource, CodeRabbit) combine them."
   - q: "How much do AI code review tools cost in 2026?"
-    a: "Per-seat pricing runs roughly $10–48 per developer per month: Kodus at $10 plus your own token costs, Sourcery from $12, Codacy at $18, CodeRabbit at $24–48, Greptile and Qodo around $30. The notable 2026 shift is toward usage-based billing — Cursor BugBot now charges roughly $1.00–1.50 per review run instead of $40/seat, and GitHub Copilot moved to metered AI credits."
+    a: "Per-seat pricing runs roughly $10–72 per developer per month: Kodus at $10 plus your own token costs, Sourcery from $12 (annual), Codacy at $18, CodeRabbit at $24–72 across four tiers, Qodo around $30/month base plus credits. Greptile dropped its $30/seat base fee in late 2026 for pure usage billing at $1/credit. The notable 2026 shift is toward usage-based billing generally — Cursor BugBot charges roughly $1.00–1.50 per review run and is now bundled only from Cursor's $30/month Premium plan, and GitHub Copilot moved to metered AI credits."
   - q: "Can AI code review tools enforce my team's coding standards?"
     a: "The good ones can. Kodus lets you write plain-language Kody Rules and auto-imports existing rule files like .cursorrules, CLAUDE.md, and copilot-instructions.md. CodeRabbit, Greptile, Qodo, BugBot, and Sourcery all support custom rules in some form, while Copilot reads a repository instructions file. Rule quality and enforcement depth vary a lot, so test with your real standards before committing."
 ---
 
 The best AI code review tools in 2026 are Kodus (open source, self-hosted, bring-your-own-key), CodeRabbit (most polished hosted SaaS), Greptile (deepest codebase-wide context), and Cursor BugBot (best pure bug-finder on GitHub). Which one is right for you comes down to three questions: how much of your codebase the tool actually reads, whether your code can leave your infrastructure, and whether the pricing model survives contact with a team that ships 40 PRs a day.
 
-We compared 12 tools on exactly those axes. Every price and claim below was checked against vendor pricing pages and docs in August 2026 — and where a vendor doesn't publish a number, we say so instead of making one up.
+We compared 12 tools on exactly those axes. Every price and claim below was checked against vendor pricing pages and docs in October 2026 — and where a vendor doesn't publish a number, we say so instead of making one up.
 
 ## How we evaluated these tools
 
@@ -39,22 +40,22 @@ If you want to score your current review process against these criteria, take th
 
 ## Comparison table
 
-All pricing verified on vendor sites as of August 2026. Annual billing where both are offered.
+All pricing re-verified on vendor sites as of October 2026. Annual billing where both are offered.
 
 | Tool | Context depth | Self-hosted? | Pricing | Best for |
 |---|---|---|---|---|
 | [Kodus](https://github.com/kodustech/kodus-ai) | Deep — repo + linked sibling repos, rule inheritance | Yes (free, AGPL) | Free tier; Teams $10/dev/mo + your token costs | Teams that want control: open source, BYOK, no token markup |
-| [CodeRabbit](https://www.coderabbit.ai/pricing) | Medium-deep — repo, linked repo analysis, linter integration | Enterprise only | Pro $24/user/mo; Pro Plus $48/user/mo | Teams that want a polished, batteries-included SaaS |
-| [Greptile](https://www.greptile.com/pricing) | Deep — indexes the full codebase | Enterprise only | Pro $30/seat/mo (50 credits/seat, $1/extra) | Large codebases where cross-file context matters most |
+| [CodeRabbit](https://www.coderabbit.ai/pricing) | Medium-deep — repo, linked repo analysis, linter integration | Enterprise only | Essentials $24/user/mo; Team $48/user/mo; Advanced $72/user/mo | Teams that want a polished, batteries-included SaaS |
+| [Greptile](https://www.greptile.com/pricing) | Deep — indexes the full codebase | Enterprise only | $1/credit, no seat fee (Base review = 1 credit, up to 10 for the deepest mode) | Large codebases where cross-file context matters most |
 | [Cursor BugBot](https://cursor.com/bugbot) | Medium — PR-focused logic-bug hunting | No | Usage-based, avg $1.00–1.50 per run | Cursor-heavy teams that want a low-noise bug-finder |
 | [Qodo](https://www.qodo.ai/pricing/) | Medium-deep — repo-aware, RAG-based | Enterprise (on-prem/air-gapped) | Pro Team $30/mo + credit packs ($0.012/credit) | Teams wanting review + test generation in one platform |
 | [GitHub Copilot code review](https://github.com/features/copilot/plans) | Shallow-medium — diff + instructions file | No | From Pro $10/mo (metered AI credits) | GitHub-native teams that want good-enough for cheap |
-| [Graphite Diamond](https://graphite.com/pricing) | Medium — stack-aware | No | Team $40/user/mo for unlimited AI reviews | Teams already committed to stacked PRs |
-| [Sourcery](https://sourcery.ai/pricing) | Shallow-medium — PR-level | Enterprise only | Pro $12/seat/mo; Team $24/seat/mo | Small teams and open-source projects on a budget |
+| [Graphite](https://graphite.com/pricing) | Medium — stack-aware | No | Team $40/user/mo for unlimited AI reviews | Teams already committed to stacked PRs |
+| [Sourcery](https://sourcery.ai/pricing) | Shallow-medium — PR-level | Enterprise only | Pro $12/seat/mo (annual); Team $24/seat/mo (annual) | Small teams and open-source projects on a budget |
 | [Codacy](https://www.codacy.com/pricing) | Rule-based static depth + AI layer | No (cloud-only) | Free tier; Team $18/dev/mo | Teams that want static analysis first, AI second |
 | [DeepSource](https://deepsource.com/pricing) | Static analyzers + metered AI review | Enterprise only | Team $24/user/mo; AI review $8–15 per 10K LOC | Quality/security coverage with AI as an add-on |
-| [Panto](https://www.getpanto.ai/) | Medium — pulls business context from Jira/Confluence | Yes (on-prem offered) | Not clearly published — verify with vendor | Teams that want requirement-aware reviews |
-| [Bito](https://bito.ai/pricing/) | Medium — repo-aware | Check with vendor | Team $12/seat/mo; Pro $20/seat/mo (5K LOC/seat incl.) | Budget-conscious teams on GitHub/GitLab/Bitbucket |
+| [Panto](https://www.getpanto.ai/) | Medium — business-context review, shifting toward mobile QA | Yes (on-prem offered) | Not clearly published for code review — verify with vendor | Teams that want requirement-aware reviews |
+| [Bito](https://bito.ai/pricing/) | Medium — repo-aware | Yes (Professional +$5/seat; Enterprise on-prem) | Team $12/seat/mo; Pro $20/seat/mo (5K LOC/seat incl.) | Budget-conscious teams on GitHub/GitLab/Bitbucket |
 
 ## The 2026 pricing shift: from seats to usage
 
@@ -78,7 +79,7 @@ Kodus is an AI code reviewer ([kodus-ai on GitHub](https://github.com/kodustech/
 
 **Real deep context.** Beyond repo-level analysis, [linked repositories](https://docs.kodus.io/how_to_use/en/code_review/configs/linked_repositories.md) let the reviewer read sibling repos to catch cross-repo contract mismatches — the frontend PR that breaks against the backend API it doesn't live next to. This is the [multi-dimensional context standard](/standards/01-multi-dimensional-context) implemented, not just marketed.
 
-Pricing (verified August 2026): free Community cloud tier with unlimited PRs on your own API key and up to 10 Kody Rules; Teams at $10/dev/month plus token costs; Enterprise custom with SSO, RBAC, and audit logs. Self-hosting via Docker Compose, generic VM, or Kubernetes/Helm is free under AGPL with no seat minimums — see our [self-hosted AI code review guide](/blog/self-hosted-ai-code-review). Kodus states it doesn't store source code or train models on customer data; self-hosted instances send one anonymous daily heartbeat you can disable.
+Pricing (re-verified October 2026): free Community cloud tier with unlimited PRs on your own API key; Teams at $10/dev/month plus token costs (annual billing from $8/dev/month); Enterprise custom with SSO, RBAC, and audit logs. Self-hosting via Docker Compose, generic VM, or Kubernetes/Helm is free under AGPL with no seat minimums — see our [self-hosted AI code review guide](/blog/self-hosted-ai-code-review). Kodus states it doesn't store source code or train models on customer data; self-hosted instances send one anonymous daily heartbeat you can disable.
 
 **Pros**
 
@@ -99,7 +100,7 @@ Pricing (verified August 2026): free Community cloud tier with unlimited PRs on 
 
 **The most polished hosted SaaS.** CodeRabbit is probably the most widely adopted dedicated AI code reviewer, and the product shows it: PR summaries, line-level comments, agentic chat, docstring generation, integrated linters and SAST tools, and Jira/Linear connections.
 
-Pricing (verified on [their pricing page](https://www.coderabbit.ai/pricing), August 2026): free tier with PR summaries; Pro at $24/user/month billed annually; Pro Plus at $48/user/month adding pre-merge checks, unit test generation, and merge-conflict resolution. Worth knowing: Pro is rate-limited to 5 PR reviews per developer per hour (10 on Pro Plus), and cross-repo context is capped — 1 linked repository analysis on Pro, 10 on Pro Plus. Self-hosting exists but only on custom-priced Enterprise.
+Pricing (re-verified on [their pricing page](https://www.coderabbit.ai/pricing), October 2026): free tier scoped to public/open-source repos; Essentials (formerly Pro) at $24/dev/month billed annually ($30 monthly); Team (formerly Pro Plus) at $48/dev/month ($60 monthly) adding pre-merge checks, unit test generation, and merge-conflict resolution; a new Advanced tier at $72/dev/month. Worth knowing: rate limits now run 5/8/10/12 reviewed PRs per developer per hour across Essentials/Team/Advanced/Enterprise, plus a $0.25-per-reviewed-file overage charge above that with an admin-set cap. Self-hosting exists but only on custom-priced Enterprise.
 
 **Pros**
 
@@ -109,7 +110,7 @@ Pricing (verified on [their pricing page](https://www.coderabbit.ai/pricing), Au
 
 **Cons**
 
-- $48/user/month for the full experience is the most expensive per-seat price on this list
+- $72/dev/month for the top SaaS tier is the most expensive per-seat price on this list
 - Hourly review rate limits on paid tiers can bite high-velocity teams
 - Closed source; self-hosting gated behind enterprise sales
 - Linked-repo context is capped by plan tier
@@ -120,17 +121,17 @@ If CodeRabbit's pricing or closed-source model doesn't fit, we wrote a full brea
 
 **The context specialist.** Greptile's pitch is simple: it indexes your entire codebase, so reviews are informed by how your code actually fits together, not just the diff. On large, tangled codebases that depth genuinely shows up in review quality — catching a change that violates a pattern established three directories away.
 
-Pricing (verified August 2026): free Starter tier for individuals with 50 credits/month; Pro at $30/seat/month including 50 credits per seat, extra credits at $1 each. One credit buys a standard review; their heavier "trex" review costs 3 credits. Enterprise adds self-hosting in your own infrastructure and SSO/SAML. Open-source projects with MIT/Apache licenses can apply for free access, and early-stage startups (pre-Series A, under $2M revenue) get 50% off.
+Pricing (re-verified October 2026): Greptile dropped its $30/seat/month base fee — it's now pure pay-per-credit at $1/credit with unlimited developers/agents included, plus a free Starter tier (50 credits/month, one developer). Credit cost scales with review depth: a Base review costs 1 credit, up to 10 credits for its deepest (Apex) review mode — TREX, the sandbox test-writing agent, is still marketed by name but Greptile's pricing page no longer breaks out its exact credit cost. Enterprise adds self-hosting (GitHub Enterprise Server, GitLab Self-Managed, Bitbucket Data Center, Gitea, or Perforce) plus SSO/SAML. Open-source projects under any OSI-approved license can apply for free access, and qualifying pre-Series A startups (under $2M revenue) get 500 free credits/month for six months.
 
 **Pros**
 
 - Full-codebase indexing is a real quality edge on large repos
-- Custom rules on Pro; clean credit model that maps to actual usage
+- Custom rules; a pure usage-based credit model that maps directly to review volume instead of seats
 - Generous OSS and startup programs
 
 **Cons**
 
-- Credits add friction: heavy teams will buy overage at $1/review beyond included credits
+- No more flat allotment — every review draws down credits at $1 each, so cost tracks volume and review depth directly
 - Closed source; self-hosting is enterprise-only
 - Narrower feature surface than CodeRabbit (deliberately — it does review, not everything)
 
@@ -159,7 +160,7 @@ Pricing changed materially in 2026: the old $40/seat/month subscription was [rep
 
 **Review plus test generation.** Qodo spans three products — IDE assistant (Gen), CLI, and Qodo Merge for PR review — under one subscription. Qodo Merge does agentic PR review with a rules system, dashboards, and git plus IDE integrations. Historical footnote that matters for open-source folks: Qodo built PR-Agent, the original open-source PR reviewer, and transferred it to a community-owned org in 2026 — details in our [open source AI code review guide](/blog/open-source-ai-code-review-tools).
 
-Pricing (verified August 2026): Pro Team at $30/month covering teams up to 30 users, with pooled credit packs at $0.012/credit (a 2,500-credit pack maps to roughly 18 reviews). Unused credits expire monthly. Enterprise adds SSO/SAML, audit logs, and on-prem or air-gapped deployment. Qualified open-source projects can apply for free access.
+Pricing (re-verified October 2026): Pro Team at $30/month covering teams up to 30 users, with pooled credit packs starting at 2,500 credits (~18 reviews/month) up to 20,000 credits at $0.012 each; overage billed at the same rate up to a customer-set cap. Unused credits expire monthly. A free 14-day trial requires no credit card. Enterprise adds SSO/SAML, audit logs, and on-prem or air-gapped deployment.
 
 **Pros**
 
@@ -177,7 +178,7 @@ Pricing (verified August 2026): Pro Team at $30/month covering teams up to 30 us
 
 **The default.** If your team is on GitHub and already pays for Copilot, code review is the checkbox you flip on. Copilot reviews PRs on request (or automatically), leaves comment-only reviews in under 30 seconds, and reads repo-level custom instructions from `.github/copilot-instructions.md` ([docs](https://docs.github.com/en/copilot/using-github-copilot/code-review/using-copilot-code-review)).
 
-Pricing (verified on [GitHub's plans page](https://github.com/features/copilot/plans), August 2026): code review is included from Pro at $10/month (with $15/month of AI credits), Pro+ at $39 ($70 credits), and Max at $100 ($200 credits); the free tier doesn't include it. Business and Enterprise org plans exist with sales-led pricing. Since June 1, 2026, usage is metered through AI credits at model token rates, so heavy review usage draws down your monthly credit pool.
+Pricing (re-verified on [GitHub's plans page](https://github.com/features/copilot/plans), October 2026): code review is included from Pro at $10/month (with $15/month of AI credits), Pro+ at $39 ($70 credits), and Max at $100 ($200 credits); the free tier doesn't include it. Business and Enterprise org plans exist with sales-led pricing. Usage is metered through AI credits at model token rates, so heavy review usage draws down your monthly credit pool. Two changes since launch: Balanced is now the default review effort level (Lite is opt-in), and the feature reached public preview on Azure Repos in August 2026 — billed through Azure Cost Management, not GitHub AI credits, and without self-hosted-agent support.
 
 **Pros**
 
@@ -194,11 +195,11 @@ Pricing (verified on [GitHub's plans page](https://github.com/features/copilot/p
 
 For where diff-level review falls short, see [AI code review vs static analysis](/blog/ai-code-review-vs-static-analysis) — Copilot sits closer to the middle of that spectrum than vendors admit.
 
-## 7. Graphite Diamond
+## 7. Graphite
 
-**AI review for stacked-PR teams.** Graphite is a code review platform built around stacked PRs; Diamond is its AI reviewer. If your team already works in stacks, Diamond's awareness of the stack context is a real advantage — most tools review each PR as an island.
+**AI review for stacked-PR teams.** Graphite is a code review platform built around stacked PRs, with an AI reviewer (rebranded from "Diamond" to "Graphite Agent"/"AI Reviews" in late 2025) layered on top. If your team already works in stacks, its awareness of the stack context is a real advantage — most tools review each PR as an island. Worth knowing: Anysphere (Cursor's parent company) acquired Graphite in December 2025, so Graphite and Cursor BugBot — both on this list — now share a parent company, though they still operate as separate products.
 
-Pricing (verified August 2026): free Hobby tier with limited AI reviews; Starter at $20/user/month; Team at $40/user/month unlocks unlimited AI reviews and chat plus merge queue; Enterprise adds SAML, audit logs, and GitHub Enterprise Server support.
+Pricing (re-verified October 2026): free Hobby tier with limited AI reviews; Starter at $20/user/month; Team at $40/user/month unlocks unlimited AI reviews and chat plus merge queue; Enterprise adds SAML, audit logs, and GitHub Enterprise Server support.
 
 **Pros**
 
@@ -209,20 +210,20 @@ Pricing (verified August 2026): free Hobby tier with limited AI reviews; Starter
 **Cons**
 
 - $40/user/month for unlimited AI review is premium pricing
-- Buying Diamond means buying the Graphite workflow — poor fit if you don't stack
+- Buying the AI reviewer means buying the Graphite workflow — poor fit if you don't stack
 - GitHub-centric; closed source, cloud-only
 
 ## 8. Sourcery
 
 **The budget pick with an OSS heart.** Sourcery started as a Python refactoring tool and grew into a general AI reviewer for GitHub and GitLab with line-by-line reviews, change summaries and diagrams, and customizable rules.
 
-Pricing (verified August 2026): free for open-source repos; Pro at $12/seat/month; Team at $24/seat/month adds repo analytics, 3x review rate limits, daily security scans, and — notably — the option to bring your own LLM. Enterprise adds self-hosting. Annual billing saves 20%.
+Pricing (re-verified October 2026): free for open-source repos; Pro at $15/seat/month ($12 billed annually); Team at $30/seat/month ($24 annually) adds repo analytics, higher review rate limits, and nightly security scans across up to 50 repos (every tier, including free, now gets a security check on each PR). Bring-your-own-LLM moved: it's no longer on Team — it's now an Enterprise-only feature alongside self-hosting and SSO. Annual billing saves 20%.
 
 **Pros**
 
-- $12/seat is among the cheapest paid entry points for private repos
+- $12/seat (annual) is among the cheapest paid entry points for private repos
 - Free Pro for open source, no application hoops
-- BYO-LLM on Team tier is rare at this price
+- Per-PR security checks on every tier, including free
 
 **Cons**
 
@@ -232,9 +233,9 @@ Pricing (verified August 2026): free for open-source repos; Pro at $12/seat/mont
 
 ## 9. Codacy
 
-**Static analysis first, AI second.** Codacy is a code-quality platform — 49 languages, 12,000+ configurable rules, SAST, secrets detection, SCA, IaC scanning — that has layered AI on top: an AI code reviewer for PRs, one-click fixes, and "guardrails" that check AI-generated code in the IDE as it's written.
+**Static analysis first, AI second.** Codacy is a code-quality platform — 40+ languages, 12,000+ configurable rules, SAST, secrets detection, SCA, IaC scanning — that has layered AI on top: an AI code reviewer for PRs, one-click fixes, and "guardrails" that check AI-generated code in the IDE as it's written.
 
-Pricing (verified August 2026): free Developer tier (IDE plugin); Team at $18/developer/month billed annually ($21 monthly) for up to 30 devs and 100 private repos; Business is custom. Free for open source. Cloud-only — Codacy's pricing page confirms no self-hosted option for the current cloud product.
+Pricing (re-verified October 2026): free Developer tier (IDE plugin); Team at $18/developer/month billed annually ($21 monthly) for up to 30 devs and 100 private repos; Business is custom. Free for open source. Cloud-only — Codacy's pricing page confirms support for GitHub Cloud, Bitbucket Cloud, and GitLab Cloud only (no self-hosted git providers; Azure Repos is waitlist-only).
 
 **Pros**
 
@@ -254,7 +255,7 @@ If you're weighing a rules engine against an LLM reviewer, read [AI code review 
 
 **Quality platform with metered AI.** DeepSource pairs its static analyzers (code quality, coverage, secrets) with Autofix and a metered AI Review product. It's free for open source — unlimited public repos and 1,000 PRs/month reviewed.
 
-Pricing (verified August 2026): Team at $24/user/month billed yearly, which includes a $100 annual AI Review credit per user; AI review itself is metered at $8–15 per 10K lines of code depending on tier. Enterprise adds self-hosted and air-gapped deployment plus BYOK — bring your own Anthropic, OpenAI, or Gemini keys.
+Pricing (re-verified October 2026): Team at $24/user/month billed yearly, which includes a $100 annual AI Review credit per user; AI review itself is metered at $8–15 per 10K lines of code depending on tier. Enterprise adds self-hosted and air-gapped deployment plus BYOK — bring your own Anthropic, OpenAI, or Gemini keys.
 
 **Pros**
 
@@ -270,15 +271,15 @@ Pricing (verified August 2026): Team at $24/user/month billed yearly, which incl
 
 ## 11. Panto
 
-**Business-context reviews.** Panto's differentiator is pulling business context into review: it aligns PR analysis with requirements from Jira and Confluence, on top of line-by-line review across 30+ languages and a large security-checks library. It supports GitHub, GitLab, Bitbucket, and Azure DevOps, with self-hosted/on-prem deployment offered. In 2026 Panto also expanded into autonomous mobile QA testing, so the company now runs two product lines.
+**Business-context and security review.** Panto's differentiator was pulling business context into review — aligning PR analysis with requirements from project-management tools — on top of line-by-line review and a 30,000+-check security library (SAST, IaC, secrets). It supports GitHub, GitLab, Bitbucket, and Azure DevOps, with self-hosted/on-prem deployment offered. In 2026 Panto repositioned around autonomous mobile QA testing, and its current site no longer surfaces the specific Jira/Confluence integration it previously documented — worth confirming directly with the vendor if that's why you're evaluating it.
 
-Pricing: as of August 2026 we could not find a clearly published price list for the code review product on Panto's site (the pricing page is dominated by the QA product); third-party trackers list around $15/dev/month with a higher tier around $40, but verify directly with the vendor before budgeting.
+Pricing: as of October 2026, Panto's own pricing page publishes prices only for its mobile QA product, not code review. Third-party listings disagree with each other on the code-review number — estimates range from roughly $12 to $50/dev/month, plus a separate ~$999/month QA tier — so treat any figure as unconfirmed until the vendor quotes you directly.
 
 **Pros**
 
-- Requirement-aware review (Jira/Confluence context) is a genuinely different angle
+- Security-check coverage (30,000+ checks) is a genuine strength
 - Broad platform support including Azure DevOps; on-prem available
-- Strong security-check coverage
+- Business-context framing is still a different angle, if the integrations you need are confirmed with the vendor
 
 **Cons**
 
@@ -290,19 +291,19 @@ Pricing: as of August 2026 we could not find a clearly published price list for 
 
 **The budget all-platformer.** Bito's AI Code Review Agent covers GitHub, GitLab, and Bitbucket with repo-aware reviews, custom review guidelines, Jira integration, and review analytics.
 
-Pricing (per [Bito's billing docs](https://docs.bito.ai/help/billing-and-plans/overview), August 2026): Team at $12/seat/month billed annually ($15 monthly); Professional at $20/seat annually ($25 monthly) with a 14-day trial. Both include 5K lines of code reviewed per seat per month, then $5 per additional 1K lines — read that overage clause carefully, because a busy team can blow through 5K LOC per seat quickly.
+Pricing (re-verified against [Bito's billing docs](https://docs.bito.ai/help/billing-and-plans/overview), October 2026): Team at $12/seat/month billed annually ($15 monthly); Professional at $20/seat annually ($25 monthly) with a 14-day trial. Both tiers' feature tables list 5K lines of code reviewed per seat per month, then $5 per additional 1K lines — read that overage clause carefully, because a busy team can blow through 5K LOC per seat quickly (Bito's own pricing page and billing docs aren't fully consistent on whether Professional's quota is capped the same way, so confirm your exact allotment at signup). Self-hosting is now explicitly published: Professional adds it for +$5/seat/month, and Enterprise includes on-prem deployment outright.
 
 **Pros**
 
 - Low headline price with multi-platform support
 - Custom guidelines and Jira integration at the Professional tier
-- Reasonable analytics for the price
+- Self-hosting is available from Professional, not just a custom Enterprise deal
 
 **Cons**
 
 - The LOC-based overage ($5 per 1K lines past the cap) can quietly multiply the effective price
 - Less context depth than the leaders; closed source
-- Self-hosting story unclear from public materials — ask before assuming
+- Professional's exact LOC quota is unclear where Bito's own pages disagree — confirm before budgeting
 
 ## Which tool should you actually pick?
 
