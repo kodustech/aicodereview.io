@@ -1,6 +1,6 @@
 ---
-title: "How to Actually Evaluate an AI Code Review Tool"
-description: "The failure mode that matters in AI review is not missing a bug, it is fluent output that is structurally wrong and easy to trust. How to benchmark for it."
+title: "Fluent but Structurally Wrong: The AI Code Review Failure Mode That Matters"
+description: "The failure mode that matters in AI review is not missing a bug, it is fluent output that is structurally wrong and easy to trust. How to benchmark for that one specific failure mode."
 pubDate: 2026-09-08
 category: "guide"
 tags: ["aicodereview", "evaldesign", "codereviewtools"]
@@ -24,3 +24,5 @@ So when comparing review tools, weigh structural validation over apparent readab
 A tool that is fluent but structurally blind is more dangerous than a conservative one that says "not sure" often. The conservative one makes you look closer. The fluent one makes you stop.
 
 Benchmark the worst case, not the average. A mean bug-catch rate hides the region that decides whether you can trust the tool: the slice of changes where it produces plausible, authoritative, wrong feedback. Build your eval to surface exactly that, then decide.
+
+This is one specific failure mode, not a full evaluation process — for the nine-standard rubric, the two-week trial protocol, and the vendor questions, see our playbook on [how to evaluate AI code review tools](/blog/how-to-evaluate-ai-code-review-tools).
