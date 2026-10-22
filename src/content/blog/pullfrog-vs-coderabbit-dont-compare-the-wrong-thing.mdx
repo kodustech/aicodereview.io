@@ -4,6 +4,17 @@ description: "Pullfrog is a BYOK harness over Claude Code and Codex, not a first
 pubDate: 2026-09-22
 category: "comparison"
 tags: ["pullfrog", "coderabbit", "aicodereview", "byok"]
+faq:
+  - q: "Is Pullfrog a direct competitor to CodeRabbit?"
+    a: "Not really, they're different categories. CodeRabbit is a first-party reviewer with its own models and evaluation layer, while Pullfrog is a harness that runs whatever model you plug into it. Most of what people compare between them, review quality above all, is actually decided by the frontier model you hand the harness, not by the harness itself."
+  - q: "Who built Pullfrog and what does it run on?"
+    a: "Colin McDonnell, who built Zod, described Pullfrog on InfoQ as a harness over OpenCode and Claude Code meant to be run in CI. It's a GitHub bot that runs AI agents inside your own GitHub Actions, triggered by PRs, issues, reviews, and CI events, with a purpose-built MCP server for git and GitHub operations, bash isolation, and a headless browser."
+  - q: "How much does Pullfrog cost compared to CodeRabbit?"
+    a: "Pullfrog is free for personal accounts and public repos, and its Pro tier is a flat $30 a month for the whole organization with no per-run or per-seat billing, on top of bring-your-own-key model costs. CodeRabbit is the opposite: host-managed and priced per seat, serving around 17K customers across 6M repositories per its own landing page."
+  - q: "How does Pullfrog protect credentials when agents run inside CI?"
+    a: "It uses a short-lived GitHub App installation token that's revoked when the run completes, runs shell commands in an isolated subprocess that doesn't see sensitive environment variables, and routes GitHub operations through a dedicated MCP server that enforces permission checks so the agent can't push to protected branches or touch repos it shouldn't."
+  - q: "What should you actually measure when comparing Pullfrog and CodeRabbit?"
+    a: "Skip the review-accuracy bake-off since the model you choose decides that. Instead measure permission and credential handling, verification (does it prove suggestions build and pass tests, not just emit comments), harness reproducibility on a fixed set of PRs with recall measured alongside precision, and cost normalized separately for model versus orchestration."
 ---
 
 Pullfrog landed on the AI code review scene in May 2026 and everyone did the lazy thing: filed it next to CodeRabbit, ran the feature-grid comparison, called it a day. That framing is wrong, and it produces the wrong buying decision, because Pullfrog and CodeRabbit are not the same category of thing.

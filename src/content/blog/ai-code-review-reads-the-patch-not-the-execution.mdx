@@ -4,6 +4,17 @@ description: "When AI writes 30% of your lines, patch-text review hits a ceiling
 pubDate: 2026-09-11
 category: "explainer"
 tags: ["aicodereview", "evaldesign", "verification", "codevolume"]
+faq:
+  - q: "What data shows that diff-reading code review is breaking down?"
+    a: "Salesforce's own numbers show code volume up about 30%, with PRs routinely past 20 files and 1,000 lines. Nobody is reading diffs that size cover to cover anymore."
+  - q: "Does switching to an AI code reviewer fix the patch-reading problem?"
+    a: "No. An AI reviewer reads the patch text too, so nobody ends up watching the execution either way. The deeper AI writes the code, the wider the gap grows between a patch being reviewed and it being verified."
+  - q: "What kinds of bugs does reading patch text fail to catch?"
+    a: "Three main ones: the happy path works but a boundary input is unhandled, the change is correct in isolation but breaks an integration three layers up, and the diff looks sound simply because the model wrote it to sound sound. Reading the patch text can catch style and obvious bugs, but not these."
+  - q: "What's the practical fix instead of building a bigger AI reviewer?"
+    a: "A separate layer that doesn't depend on review bandwidth: a build gate, a real test suite run on the actual change, or a runtime assertion at the entry point. That layer scales with code volume instead of collapsing under it."
+  - q: "What question should you ask a code review tool that claims high confidence or coverage?"
+    a: "Not how many lines it read, but whether it ever logged on after the patch and watched it run. If the answer is no, it's just another reader, and readers are what the review bottleneck already has too many of."
 ---
 
 Every guide I read this month on reviewing AI-generated code has the same shape. GitHub's checklist, Salesforce's re-architecture story, Sonar's how-to. Start with functional checks. Verify context and intent. Scrutinize dependencies. It's all reading the diff, in some order.

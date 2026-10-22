@@ -4,6 +4,17 @@ description: "Atlassian says Rovo cut PR cycle time 45%. The number is real but 
 pubDate: 2026-09-14
 category: "guide"
 tags: ["prreview", "codereview", "atlassianrovo", "metrics"]
+faq:
+  - q: "Is Atlassian's 45% PR cycle time reduction claim trustworthy?"
+    a: "The number is real but self-attested: no harness, no fixed window, no control group, and nothing a reader can reproduce against their own repo. That makes it a floor from one team's dogfooding, not a forecast for yours."
+  - q: "Why can average PR cycle time improve while the real problem gets worse?"
+    a: "A mean drops when a tool clears the easy PRs even if the hard ones slow down. One observed case showed a 30% drop in mean cycle time that was really the tool clearing 90-line single-file PRs while 2,000-line cross-module changes got slower in the tail."
+  - q: "What's the right way to measure whether an AI reviewer actually cuts review time?"
+    a: "Pick a fixed two-week slice of PRs from the same team, compare before and after with the same reviewer pool, split the comparison by size and risk instead of looking at the total, and track p90 and p95 cycle time alongside the mean."
+  - q: "What is 'reviewer load' and why does it undercut a cycle-time win?"
+    a: "If a tool hands every reviewer forty new inline comments a day, it hasn't reduced review time, it has moved the time from merge latency to reading time. Reviewers spending more time unscrolling AI nitpicks means the cycle-time number is misleading."
+  - q: "How do I avoid crediting the AI tool for a cycle-time drop it didn't cause?"
+    a: "Keep attribution clean: time-to-merge also captures linter speed, CI queue delays, and reviewer availability. A drop that lines up with a CI speedup isn't evidence for the AI tool, so check what else changed at the same moment before crediting it."
 ---
 
 When a team asks how to cut pull request review time with AI, the answer they get is usually a vendor number. Atlassian says Rovo cut PR cycle time by 45% in their dogfooding. That number is real, but it's self-attested: no harness, no fixed window, no control group, nothing you can reproduce against your own repo.

@@ -4,6 +4,17 @@ description: "How Martian's Code Review Bench separates reproducible fixed-datas
 pubDate: 2026-08-20
 category: "guide"
 tags: ["aicodereview", "benchmark", "llmasajudge", "evals"]
+faq:
+  - q: "What's in Martian's offline Code Review Bench dataset?"
+    a: "Fifty PRs across five open-source projects: Sentry (Python), Grafana (Go), Cal.com (TypeScript), Discourse (Ruby), and Keycloak (Java). Each has human-verified golden comments carrying a severity label, and an LLM judge decides whether a tool's comment matches a golden one."
+  - q: "What's the main weakness of a fixed-dataset offline benchmark like this one?"
+    a: "Training data leakage, flagged in Martian's own README. Tools have almost certainly seen Sentry or Discourse during training, so a tool could score well without having learned a general bug-catching skill."
+  - q: "How does the online benchmark avoid the training-data-leakage problem?"
+    a: "It streams real, recent PRs from GitHub where review bots commented, extracts the bot's suggestions and what the developer actually fixed in post-review commits, then judges how many suggestions map to real fixes. The PRs are too fresh to have been memorized."
+  - q: "What's the hidden assumption in the online benchmark's recall metric?"
+    a: "That developer action is evidence a comment was correct. A developer can merge a suggested fix because it's low-risk and they were already refactoring, or reject a correct comment for lack of time, so recall is really a proxy for comments people acted on, not a clean measure of comments that were right."
+  - q: "How should you actually use these benchmark numbers when picking a reviewer?"
+    a: "Skim the offline results to confirm a tool doesn't embarrass itself on a held-out set you can inspect, then trust the online time series for real-world signal since fresh PRs can't be gamed by memorization. Also check which judge model produced the numbers; if a vendor won't say, treat the score as marketing."
 ---
 
 Every AI code review vendor now publishes a benchmark where they win. Most of them are "we tested our own tool and it's great" documents. Martian took a different route with Code Review Bench, and the split between its two evals is worth understanding, because it exposes a real tension in how we grade these tools.
