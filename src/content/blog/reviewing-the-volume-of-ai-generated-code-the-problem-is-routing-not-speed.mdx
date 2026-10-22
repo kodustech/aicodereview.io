@@ -4,6 +4,15 @@ description: "AI made PRs smaller but much more numerous. Reviewing the volume i
 pubDate: 2026-09-09
 category: "guide"
 tags: ["aicodereview", "aigeneratedcode", "prreview", "reviewvolume"]
+faq:
+  - q: "Why doesn't reviewing AI-generated PRs faster solve the volume problem?"
+    a: "Because the volume grows from more, smaller PRs rather than fewer big ones, and each small PR still carries the same fixed overhead of loading context and deciding whether it's worth attention. Reading faster doesn't reduce that overhead. The fix is routing most PRs away from a human before anyone looks at them."
+  - q: "What are the three buckets AI-generated PRs fall into during review?"
+    a: "Style and convention noise, local correctness (a broken caller, a missing null check, a silently changed contract), and design intent. Only design intent reliably needs a human, because whether the author intended the API to change this way lives outside the diff, in product context and codebase history."
+  - q: "How should a team evaluate an AI review tool for a high-volume AI-code pipeline?"
+    a: "Build a small eval set of PRs you already reviewed by hand, label each as auto-pass, auto-flag with a one-line reason, or escalate to a human, then measure how the candidate tool routes them. Report two numbers: how many escalate-worthy cases it caught, and how much noise it pushed at humans."
+  - q: "Why can style-and-convention noise be automated away but design intent can't?"
+    a: "Style and convention violations are automatable, but only if the tool reads your team's actual conventions as input, such as a config or rules file, instead of guessing the generic popular version the model learned. Design intent can't be judged from diff text alone because that question depends on product context and history no diff-only tool sees."
 ---
 
 The standard story on AI-generated code volume is that you need to review each pull request a little faster. That's the wrong framing, and it's why most teams stay stuck.

@@ -4,6 +4,17 @@ description: "Anthropic made claude.ai 3x faster in two weeks by putting a model
 pubDate: 2026-09-25
 category: "explainer"
 tags: ["evaldesign", "measurement", "agents", "claude"]
+faq:
+  - q: "How did Anthropic make claude.ai faster in two weeks?"
+    a: "They put Claude inside a measure-build-steer loop: a single Slack channel with a standing brief, usage data analyzed through the Datadog MCP server, four user journeys covering about 95% of activity broken into thirteen measurements, then iterative fixes checked against those same numbers under human approval gates."
+  - q: "How much faster did claude.ai get after the performance sprint?"
+    a: "At the 75th percentile, a fresh claude.ai load went from 3,085ms to 550ms (5.6x), loading a Claude Cowork cloud session went from 2,566ms to 728ms, and sending a message on desktop chat went from 140ms to 64ms. The geometric mean across all thirteen measurements was 3.1x faster, achieved across more than three thousand merged changes with no customer-facing incident or rollback."
+  - q: "Why didn't Anthropic let the agent run the whole sprint autonomously?"
+    a: "Anthropic's own post concedes the limit directly: today we know that isn't yet possible. Instead the model stayed inside a loop where a human approved every change and watched every deploy, which is also why three thousand changes could ship without a rollback."
+  - q: "Why is it a problem to have an AI review its own code changes?"
+    a: "A benchmark that measures a model's output through that same model is not independent evidence, it's a mirror. The article points to work on dependence-aware label aggregation showing correlated judges aren't independent, so an AI reviewing its own patch is really one model's opinion counted several times."
+  - q: "What's the difference between an offline eval and an online eval in this context?"
+    a: "An offline eval uses a fixed dataset that's clean and reproducible but static. An online eval uses live, drifting metrics from a real system. Anthropic's sprint lived at the online end: it measured production directly through Datadog rather than optimizing against a pre-built benchmark."
 ---
 
 The most useful line in Anthropic's engineering post about its performance sprint is almost an aside. "Once Claude can measure something, it can make it faster." Then the authors say the rest of it: "So we kept finding more things to measure."

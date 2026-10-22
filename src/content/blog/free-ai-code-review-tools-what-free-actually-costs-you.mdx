@@ -4,6 +4,17 @@ description: "A hands-on look at what \"free\" really means across AI code revie
 pubDate: 2026-09-24
 category: "comparison"
 tags: ["aicodereview", "freetools", "codereview", "opensource"]
+faq:
+  - q: "Is CodeRabbit actually free?"
+    a: "No. CodeRabbit's pricing page lists no perpetually free tier — it offers roughly a 14-day trial, not a free plan. The cheapest tier, Essentials, costs $24 per developer per month billed annually ($30 monthly), with extra reviews above the included allowance at $0.25 per file and CodeRabbit Agent billed at $0.40 per agent minute. Once the trial ends you either subscribe or lose the bot from your repo."
+  - q: "How many free reviews do you actually get with Greptile?"
+    a: "Greptile's Starter tier is free for one active developer with unlimited repositories and 50 review credits per month. A standard review costs 1 credit and a TREX review, which writes and runs targeted tests in a sandbox, costs 3 credits — so that's roughly 50 standard reviews or about 16 TREX reviews a month. Pro is $30 per seat, and extra credits cost $1 each. Greptile is also free for non-commercial projects under MIT or Apache licenses, plus a 50 percent discount for pre-Series A startups."
+  - q: "What does it mean to run a bring-your-own-LLM open source code reviewer?"
+    a: "Kodus is an AGPLv3 open source reviewer with a free, self-hostable Community plan that runs via Docker Compose against any OpenAI-compatible model. There's no credit cap and no per-developer seat fee — you pay only for your own LLM API usage, and you own the deployment, upgrades, and reliability yourself rather than depending on a vendor's trial period."
+  - q: "What is Refact.ai's free code review widget, and what can't it do?"
+    a: "Refact.ai offers a free web widget where you paste code or upload a file and get a review with no registration required. It defaults to GPT-4o-mini, auto-detects the language, and covers 25-plus languages. But it's a code paste checker, not a PR reviewer — it doesn't automatically review diffs on pull requests with repository context, so it's useful only as a supplementary spot-check, and its own cloud product is shutting down."
+  - q: "What actually determines whether a free AI code review tool is worth using?"
+    a: "Two things the price tag hides: which model is doing the review, since quality is model-attributed rather than harness-attributed, and how the output gets verified, meaning whether it points to a concrete flagged line and reason rather than a vague vibe like 'this could be cleaner.' Greptile's TREX mode, which runs sandboxed tests to check an edge case, is given as an example of a review that carries its own proof."
 ---
 
 ## The word "free" is doing a lot of work

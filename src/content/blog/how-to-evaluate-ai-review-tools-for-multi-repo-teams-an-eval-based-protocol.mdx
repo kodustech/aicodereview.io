@@ -4,6 +4,17 @@ description: "Stop comparing marketing claims. An eval-based protocol for pickin
 pubDate: 2026-09-15
 category: "comparison"
 tags: ["multirepo", "aicodereview", "evalprotocol", "crossrepocontext"]
+faq:
+  - q: "What are the three things to test when evaluating AI code review tools across multiple repos?"
+    a: "Cross-repo context fetching, verification (whether the tool actually fetches referenced code or just reasons from the diff text), and the permission boundary — what repos and read/write access the tool's credentials cover."
+  - q: "How do you test whether a review tool actually fetches cross-repo context?"
+    a: "Plant a cross-repo bug: change a function signature in repo A, call it with the old signature in repo B, and see whether the reviewer flags the mismatch. That single test reveals more about context fidelity than any vendor feature claim."
+  - q: "Why shouldn't you trust vendor claims like '400,000+ files analyzed' or 'learns your codebase'?"
+    a: "Because they can't be verified in your own setup. AugmentCode, Greptile, and CodeAnt all make claims like these, but none show how to confirm them, so you need to build your own harness and test cross-repo fetching, verification, and permission scope directly."
+  - q: "What should the test protocol include for picking a multi-repo AI review tool?"
+    a: "Pick three cross-repo bug scenarios — one touching 2 repos, one touching 3, one touching a repo the PR doesn't touch, to catch over-fetching — run the same PR and repo state across every tool, check whether the tool shows what it actually loaded, enumerate its credential surface, and have a human engineer grade the outputs blind."
+  - q: "Why does the permission boundary matter for AI reviewers that span repos?"
+    a: "A coding agent reviewing across repos holds credentials to read, and sometimes write, each connected repository. If it's tricked by malicious instructions in a dependency, write access to your monorepo turns a review tool into a real security risk, not a theoretical one."
 ---
 
 Most "best AI code review tool for large teams" pages are vendor brochures. AugmentCode advertises "400,000+ files analyzed", Greptile says it "learns your codebase", CodeAnt targets monorepos. None of them tell you how to verify any of that in your own setup. If you run a benchmark the way we do, you don't compare those claims against each other. You build a harness and test three specific things.

@@ -4,6 +4,17 @@ description: "Netlify ran the same build prompt across 11 AI models using their 
 pubDate: 2026-08-14
 category: "comparison"
 tags: ["aicodingmodels", "modelcomparison", "netlify", "axis"]
+faq:
+  - q: "What did Netlify test in its AXIS model comparison?"
+    a: "Netlify ran 11 AI models on the same three coding prompts — a static coffee-shop site, a to-do list app with a database, and a recipe app that calls an AI inference API — each run three times per prompt, scored with their open-source AXIS evaluation tool."
+  - q: "How much did AI model cost vary for the same coding task in Netlify's test?"
+    a: "On the simple coffee-shop site, average credit cost ranged from 103 (Gemini 3.6 Flash) to 519 (Claude Opus 5) — a 5x difference for a static one-pager."
+  - q: "What does Netlify's AXIS evaluation framework actually check?"
+    a: "AXIS defines pass/fail checks programmatically, such as whether the site uses a database when needed, whether it calls the right API, and whether the output is over-engineered, catching regressions that manual review would miss."
+  - q: "Where can you see the actual sites generated in Netlify's model comparison?"
+    a: "The full results, including links to each generated site, are published at the-coffee-shop-brief.netlify.app."
+  - q: "What's the practical takeaway from Netlify's multi-model coding test?"
+    a: "Model selection for code generation should be an empirical choice, not a brand preference. Run your own prompts on 3-5 models and measure pass rates and cost rather than relying on reputation."
 ---
 
 Netlify published an experiment this week that more teams should run. They tested 11 different AI models on the same three coding prompts, using their open-source AXIS evaluation tool to score the results. Same task, same agent framework, same evaluation criteria. Only the model changed.

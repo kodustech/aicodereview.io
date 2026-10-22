@@ -4,6 +4,17 @@ description: "Ask the right question: AI review tools cut how long PRs WAIT, not
 pubDate: 2026-09-19
 category: "guide"
 tags: ["aicodereview", "prreview", "metrics", "llm"]
+faq:
+  - q: "What's the difference between PR 'wait time' and 'read time'?"
+    a: "Time-to-first-review is the interval between when a PR opens and when a human first looks at it — that's wait. Review turnaround is the interval between when a reviewer starts and when they respond — that's read. Almost all of an AI reviewer's speedup comes from the wait half."
+  - q: "How long do AI-assisted PRs actually wait for review compared to human-authored ones?"
+    a: "LinearB's analysis of 8.1 million pull requests found AI-assisted PRs waiting 16 hours for first review versus 200 minutes for human-authored ones, and merging at 32.7% versus 84.5%."
+  - q: "What protocol can I use to reproduce a vendor's PR cycle-time claim myself?"
+    a: "Pick a fixed two-week PR window, split merged PRs into AI-reviewer-enabled and reviewer-disabled buckets with the same reviewer pool, split both by size and risk, and measure time-to-first-review, review turnaround, and merge rate/revision count per bucket rather than one mean."
+  - q: "Does an AI reviewer help as much on large PRs as on small ones?"
+    a: "No. In the worked example, PRs under 300 lines saw door-to-door time drop from about 11.7 hours to 2.6 hours, but in a bucket of PRs over 800 lines, turnaround stayed around 95 minutes in both the enabled and disabled groups because nobody reads an 800-line diff faster just because a bot annotated it."
+  - q: "Why is a single 'X% faster' cycle-time headline misleading?"
+    a: "A headline like '78% faster' is often true only because it fixed the waiting, which the tool is good at, while saying nothing about whether reviewers decide any faster. Salesforce reported PR volume climbing roughly 30% with PRs regularly exceeding 20 files and 1,000 lines, and a commenter tool doesn't fix that bottleneck."
 ---
 
 Every vendor selling an AI code reviewer has a number for how fast it makes your PRs. Atlassian says its Rovo Dev reviewer [cut PR cycle time internally by up to 45% and by 32% for customers](https://www.atlassian.com/blog/rovo/how-we-cut-pr-cycle-time-with-ai-code-reviews). Others quote single time-saved percentages that look great on a pricing page. None of them publish the harness they measured on.

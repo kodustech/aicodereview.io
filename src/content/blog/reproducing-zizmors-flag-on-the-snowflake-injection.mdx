@@ -4,6 +4,17 @@ description: "I ran zizmor 1.29.0 against the exact Snowflake GitHub Actions wor
 pubDate: 2026-08-18
 category: "explainer"
 tags: ["githubactions", "sast", "zizmor", "aicodereview"]
+faq:
+  - q: "What exact finding did zizmor produce on the Snowflake GitHub Actions workflow?"
+    a: "Running zizmor 1.29.0 against the vulnerable workflow produced rule template-injection, described as 'code injection via template expansion,' at High confidence and High severity, pointing at jira_issue.yml:24:29 and naming github.event.issue.title as attacker-controllable input."
+  - q: "What is the escape-ordering bug in the vulnerable workflow?"
+    a: "The workflow's sed escaping runs after GitHub's ${{ }} template expansion, not before. Because the sanitizer runs after the value has already been interpolated into an execution context, a single quote in the issue title can break out of echo '...' and reach the shell."
+  - q: "Did GitHub Advanced Security catch this same injection?"
+    a: "No. The same workflow was scanned by GH Advanced Security and not flagged, while an AI autofix was associated with the same pull request in a different, unrelated file — a clean A/B where the deterministic rule caught the dangerous line and the AI-assisted layer did not."
+  - q: "Were there other structural bugs in the workflow besides the injection itself?"
+    a: "Yes, two: the escape-ordering bug where sanitization runs too late to matter, and a protective if: guard that doesn't actually match the invocation path it's meant to protect. Both are fully statically checkable without needing a model to explain them."
+  - q: "Does this result mean static analysis should replace AI code review?"
+    a: "No. The piece frames it as a layering and test-selection question: a deterministic analyzer flagging ${{ }} interpolation into run: at High confidence is reproducible evidence that a specific line needs a human or AI read, not proof that static tools alone are sufficient."
 ---
 
 The public Snowflake incident is a useful test case for one question I keep coming back to: in a mixed workflow with both deterministic static analyzers and AI review, which one actually catches the injection?

@@ -4,6 +4,17 @@ description: "Two vendors posted \"#1 on Martian's Code Review Bench.\" Both sti
 pubDate: 2026-10-05
 category: "guide"
 tags: ["aicodereview", "benchmark", "evaluation", "codereviewtools"]
+faq:
+  - q: "Is CodeRabbit still #1 on Martian's Code Review Bench?"
+    a: "No. CodeRabbit's March 2026 post cited 51.2% F1 and first place across ten tools, but on the live board it now sits at 61.0% F1 in fifth place — the score improved by roughly ten points and it still lost four spots."
+  - q: "What's the difference between Martian's offline and online code review benchmarks?"
+    a: "The offline benchmark is a fixed dataset of 50 PRs from five repos — Sentry, Grafana, Cal.com, Discourse, and Keycloak — with 173 human-curated golden comments. The online benchmark continuously samples fresh PRs and measures precision and recall against the developer's actual post-review fixes, so it moves every day."
+  - q: "Which AI code review tool currently ranks #1 on Martian's live leaderboard?"
+    a: "Cubic Dev AI, at 65.5% F1 with 72.4% precision and 59.8% recall on a sample of 1,551 PRs, out of 17,466 scored PRs total on the board as pulled for this article."
+  - q: "Why did Alibaba's Open Code Review score so differently across different test runs?"
+    a: "A Hacker News commenter ran it on 10 of Martian's benchmark PRs and got about 20% F1, near the bottom of the board. An Alibaba maintainer traced it to a critical tool call misbehaving in the tested version, reproduced the false-positive spike, and fixed it — showing how much a single broken call can swing a score."
+  - q: "Is Kodus included in Martian's Code Review Bench?"
+    a: "Yes, Kodus is part of the offline benchmark list alongside tools like CodeRabbit, Greptile, Cursor Bugbot, and GitHub Copilot, so it can be run on the same 50 PRs and judged with the same prompts as any other self-hosted option."
 ---
 
 A blog post from March 2026 still surfaces when you go looking for AI code review benchmarks. In it, CodeRabbit announces the top F1 score on Martian's Code Review Bench: 51.2%, first place across ten tools, measured over nearly 300,000 pull requests. I opened the live board. CodeRabbit sits at 61.0% F1, in fifth place, behind Cubic Dev AI, Greptile, GitHub Copilot, and Claude.

@@ -4,6 +4,17 @@ description: "A reviewer that loads your rules file is not a reviewer that enfor
 pubDate: 2026-10-08
 category: "guide"
 tags: ["ai", "codereview", "evaluation", "engineering"]
+faq:
+  - q: "What is the Harness-IF study and why does it matter for AI code review?"
+    a: "Harness-IF is a study by ByteDance Seed and Tsinghua covering 60 multi-turn coding items drawn from a library of 642 rules, run across twelve frontier models on five configurable surfaces. Raw compliance accuracy ranges 72.1% to 85.9%, but once you isolate the rules a model would not have followed on its own, Against-Prior Accuracy drops to 66.1% to 78.6% — a 3.6 to 7.4 point fall, averaging 5.81 points. It shows that an aggregate compliance number overstates how well a reviewer enforces rules that actually differ from the model's default behavior."
+  - q: "How do you test whether an AI reviewer actually loaded your rules file?"
+    a: "Use a canary test: put a made-up marker in your rules file, like a line requiring every review to begin with a specific string, then open real pull requests and check for it. Run the test twice on separate sessions with a different token each time, since a reviewer that fetches once and caches the file will pass a single canary and then run stale indefinitely. Passing the canary only proves the file arrived, not that the model applies it."
+  - q: "What is the against-prior test and how do you run it?"
+    a: "Build two small rule sets: one of against-prior rules, which a model would not follow unprompted (like requiring all DB access through a repository layer), and one of free-compliance rules the model would satisfy anyway (like descriptive function names). Run both sets and compare the scores. A tool that scores 90% overall but 55% on the against-prior set has a reviewer with a good demo and a weak gate on your actual standards."
+  - q: "Does rule compliance hold up over a long coding session?"
+    a: "No. MTAC-IFBench, from Tsinghua's CoAI group, Zhipu AI, and UESTC, tested 11 code agents across 100 multi-turn instances with 7.04 turns each and found that strict per-turn constraint compliance (C-ISR) is mostly below 10% on average and collapses toward zero by turn six for most models, even though functional success stays high. GLM-5.2, the best model tested, dropped from 12.7% average C-ISR to 2.6% on turns nine and ten."
+  - q: "Does it matter whether rules live in a config file versus a chat instruction?"
+    a: "Yes. MTAC-IFBench found that constraints held in repository policy files held up better over a long session than the same constraints delivered as user instructions, and that updating an existing constraint mid-session was harder for agents to track than adding a new one. A rule file on disk gets re-read and re-anchored; a correction given at turn nine has to be held in working memory while the agent does everything else."
 ---
 
 ## The number that should make you suspicious of any compliance claim

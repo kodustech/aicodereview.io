@@ -4,6 +4,17 @@ description: "Eval-grounded guide to comparing AI code review tools for large mu
 pubDate: 2026-09-17
 category: "comparison"
 tags: ["aicodereview", "multirepo", "evaluation", "devtools"]
+faq:
+  - q: "What three things should you actually compare between AI code review tools for multi-repo teams?"
+    a: "Context fetching across repos, how the tool verifies what it finds, and where its permission boundary sits. Most multi-repo tools round up to the same underlying model, so these three axes are what actually differ and are measurable."
+  - q: "What is the correlated-judge problem in AI code review?"
+    a: "It's when a model reviews its own output against its own memory of the code, so the correctness signal is really just the model agreeing with itself counted multiple times, not independent consensus. It shows up hard across repos where a wrong assumption about a shared API can be self-consistent."
+  - q: "What are the two architectures tools use to reach across connected repos?"
+    a: "Some tools wrap an external agent, like a Claude Code or Codex class agent, and give it access to your connected apps and sessions, where review quality is mostly the underlying model and the wrapper's job is limiting what the agent can touch. Others push the permission boundary differently, but the same question applies: which sessions does the reviewer hold, and what can each read or write?"
+  - q: "How does the Baseten GitHub token exposure relate to AI code review tools?"
+    a: "It's the same risk shape one level up: a service holding a credential derived from crawling its own registry. A code reviewer holding repo credentials across your connected repos means its own dependencies and login are part of your threat model, not just the review quality."
+  - q: "How should you actually test multi-repo AI code review tools before buying?"
+    a: "Pick three to five PRs that genuinely span repos, such as a change to a shared package, a TypeScript type consumed elsewhere, or a config that affects CI. Run each tool on the set and score only whether it pulled cross-repo context correctly, whether its claims were verifiable by execution rather than its own memory, and what its exact permission boundary is per repo."
 ---
 
 Large teams live in many repos. One team owns 40, another sprawls across a monorepo with a half-dozen shared packages. When those teams shop for an AI code review tool, the listicle approach stops working: "best overall" rankings are tuned for single-repo shops and tell you nothing about whether a reviewer can cross a repo boundary.

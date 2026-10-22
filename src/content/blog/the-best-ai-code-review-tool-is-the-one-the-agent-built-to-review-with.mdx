@@ -4,6 +4,17 @@ description: "Trail of Bits spent six months having agents build an LSP, decompi
 pubDate: 2026-09-26
 category: "explainer"
 tags: ["aicodereview", "agents", "formalverification", "miden"]
+faq:
+  - q: "What did Trail of Bits actually have their AI agents build before reviewing the Miden zkVM?"
+    a: "Over six months, the agents built an LSP server, a decompiler, a static analysis engine, and a Lean formal model of the VM executor from scratch, all before the audit of the code itself even started."
+  - q: "What vulnerability did the agent-built tooling find in Miden?"
+    a: "An unvalidated prover-supplied input that let a malicious prover forge Falcon signatures and drain Miden account funds."
+  - q: "Why was MASM, Miden's assembly language, hard to decompile?"
+    a: "Procedures rarely declare signatures, the calling convention is loose, while-loop conditions can sit in a different stack slot each iteration, and conditional branches can have different stack effects. Trail of Bits settled for a well-defined decompilable subset and verified it by having agents decompile randomized procedures and diff the result against the original MASM."
+  - q: "What came out of the Lean formal verification effort on Miden?"
+    a: "The model produced 95 machine-checked correctness proofs covering a large part of Miden's core library, a machine-checked argument that the code behaves correctly for all inputs, not just a reviewer's opinion that it looks fine."
+  - q: "What's the practical takeaway for a normal team without a zkVM to audit?"
+    a: "Spend some of your agent budget on building the harness, such as a linter, type checker, data-flow pass, or test oracle specific to your own codebase, rather than only using the agent as a reviewer, then point review at the output of that tooling."
 ---
 
 There is a standard story about AI in code review now. A security firm points its agent harness at a codebase, the agent reads the code, and it surfaces a stack of bugs. The harness is the reviewer. Trail of Bits wrote the post that should be the private model most teams keep missing: in their Miden zkVM audit, the agent was not the reviewer at all. It was the tool builder.

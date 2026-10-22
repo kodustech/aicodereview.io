@@ -4,6 +4,15 @@ description: "Qodo folded PR-Agent/Merge into one platform. For teams comparing 
 pubDate: 2026-09-18
 category: "alternatives"
 tags: ["qodomerge", "pragent", "aicodereview", "codereviewtools"]
+faq:
+  - q: "Does Qodo Merge still exist as its own product?"
+    a: "Barely. PR-Agent became Qodo Merge, and Qodo Merge has since been folded into a single code quality infrastructure platform alongside rules, agentic workflows, and a risk software map. Consolidation is the direction of travel, so today's standalone alternative could be a platform feature next year."
+  - q: "What's the self-review blind spot in AI code review tools?"
+    a: "If the same model writes the code and reviews it, you get one model's opinion measured multiple times, a correlated-judge problem. It applies to Qodo and most alternatives equally, and bringing in a second, independent model or a non-model pass is called out as the single highest-leverage fix."
+  - q: "What axes should I actually compare when evaluating Qodo Merge alternatives?"
+    a: "Five: model attribution (what happens to quality when the underlying model updates), context handling across repos and how deep the permission boundary goes, whether rules are deterministic or fuzzy-matched across IDE/CLI/PR, verification and false-positive noise rather than comment volume, and the self-review blind spot."
+  - q: "How should I test a Qodo Merge alternative instead of trusting vendor claims?"
+    a: "Run the shortlist against a fixed slice of two weeks of your own real PRs, measure how many comments were actually acted on versus noise, and re-run the comparison when the underlying model bumps. Vendor review-time percentages are self-attested; a fixed-slice measurement on your own repo isn't."
 ---
 
 If you're shopping Qodo Merge alternatives, the first thing to notice is that Qodo Merge barely exists as its own product anymore. The live Qodo site now talks about PR review as one sliver of a single "code quality infrastructure" platform, alongside rules, agentic workflows, and a risk software map. PR-Agent became Qodo Merge, and Qodo Merge got folded into the platform. Consolidation is the direction of travel in this space, and it matters for how you should evaluate the alternatives.

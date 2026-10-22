@@ -4,6 +4,17 @@ description: "Teams drowning in AI-generated code often let an LLM review the LL
 pubDate: 2026-09-16
 category: "guide"
 tags: ["aicodereview", "llmjudge", "evaldesign", "aigeneratedcode"]
+faq:
+  - q: "Why is it a problem to use the same LLM to generate and review code?"
+    a: "The reviewer shares the author's priors, blind spots, and sometimes its exact weights, so it reliably agrees with its own reasoning. It will not catch the confident-but-wrong pattern it just emitted because it does not know the pattern is wrong — the pipeline reports 'LLM review passed' when really the generator voted on itself."
+  - q: "What did the Amazon researchers find about panels of LLM judges?"
+    a: "Krishna Balasubramanian and Sasha Podkopaev's paper, 'Dependence-aware label aggregation for LLM-as-a-judge via Ising models' (ICML 2026), found that a plain vote count across LLM judges is misleading because the judges are correlated — models like Qwen, DeepSeek, and GPT inherit the same training distributions and evaluation habits. Once you discount for that correlation, the panel's confidence drops and some decisions flip."
+  - q: "How should teams pick a model to review AI-generated code?"
+    a: "Use a different model family for review than for generation, ideally a different paradigm — for example, if a GPT-family code agent writes the patch, have a non-reasoning or deliberately strict small model, or better, a deterministic analyzer, flag it. The goal is to avoid correlation between generator and judge."
+  - q: "What counts as a truly independent signal on an AI-reviewed pull request?"
+    a: "Only sources that do not share the author's weights: a test that actually runs the code, a dependency scanner, or a human reading the diff under time pressure. An AI reviewer's 'pass' should be treated as a prior, never a verdict, and a '2 LLMs agreed' claim is really one correlated signal plus noise."
+  - q: "Does this mean AI code review isn't worth using?"
+    a: "No — the article argues the cost economics are real and a cheap reviewer that catches early mistakes still saves more than it costs. The fix isn't abandoning AI review but an evaluation-design change: check whether the generator and reviewer are the same model family before trusting the green checkmark, and measure how often your reviewer's flags just overlap with its own generator's mistakes."
 ---
 
 Teams are drowning in AI-generated code, and the buzziest answer is to hand the review to another LLM. That feels clean, but it has a structural blind spot most how-to checklists never mention: the reviewer and the author often share the same priors, the same blind spots, and sometimes literally the same weights. You are not getting an independent signal, you are getting one model's opinion measured N times.
