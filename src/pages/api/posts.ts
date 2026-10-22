@@ -6,6 +6,10 @@ export const prerender = false;
 const CATEGORIES = ['best-of', 'alternatives', 'comparison', 'guide', 'explainer', 'review'];
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const BLOG_DIR = 'src/content/blog';
+// Catches an unresolved "$VendorName" template token (e.g. "$AugmentCode", "$CodeRabbit")
+// that a generator was supposed to interpolate into a display name before handing off content.
+// Matches dollar-sign-prefixed PascalCase words; excludes all-caps tickers like "$AWS".
+const UNRESOLVED_TEMPLATE_TOKEN_RE = /\$[A-Z][a-z]+(?:[A-Z][a-z]+)*\b/;
 
 function env(name: string): string | undefined {
   return process.env[name] ?? (import.meta.env as Record<string, string | undefined>)[name];
@@ -57,11 +61,17 @@ function validate(input: unknown): { ok: true; value: PostInput } | { ok: false;
 
   if (typeof body.title !== 'string' || body.title.trim().length < 5) errors.push('title: required string (min 5 chars)');
   else if (body.title.length > 90) errors.push('title: max 90 chars (aim for ≤60 for SEO)');
+  else if (UNRESOLVED_TEMPLATE_TOKEN_RE.test(body.title)) errors.push(`title: looks like an unresolved template token (${JSON.stringify(body.title.match(UNRESOLVED_TEMPLATE_TOKEN_RE)?.[0])}) — fix the generator's vendor-name interpolation before publishing`);
 
   if (typeof body.description !== 'string' || body.description.trim().length < 20) errors.push('description: required string (min 20 chars)');
   else if (body.description.length > 220) errors.push('description: max 220 chars (aim for ≤155 for SEO)');
+  else if (UNRESOLVED_TEMPLATE_TOKEN_RE.test(body.description)) errors.push(`description: looks like an unresolved template token (${JSON.stringify(body.description.match(UNRESOLVED_TEMPLATE_TOKEN_RE)?.[0])}) — fix the generator's vendor-name interpolation before publishing`);
 
   if (typeof body.content !== 'string' || body.content.trim().length < 100) errors.push('content: required markdown string (min 100 chars)');
+  else {
+    const unresolvedToken = body.content.match(UNRESOLVED_TEMPLATE_TOKEN_RE);
+    if (unresolvedToken) errors.push(`content: looks like an unresolved template token (${JSON.stringify(unresolvedToken[0])}) — fix the generator's vendor-name interpolation before publishing`);
+  }
 
   if (typeof body.category !== 'string' || !CATEGORIES.includes(body.category)) errors.push(`category: must be one of ${CATEGORIES.join(', ')}`);
 
