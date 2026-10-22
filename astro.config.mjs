@@ -27,6 +27,9 @@ export default defineConfig({
     '/tools': '/',
     '/blog/pullfrog-vs-coderabbit-the-harness-not-the-model-is-the-review': '/blog/pullfrog-vs-coderabbit-dont-compare-the-wrong-thing/',
     '/blog/pullfrog-vs-coderabbit-what-a-byok-bot-actually-changes-for-ai-code-review': '/blog/pullfrog-vs-coderabbit-dont-compare-the-wrong-thing/',
+    // Renamed to disambiguate from the "How to Evaluate AI Code Review Tools"
+    // playbook — the old title was a near-duplicate of that post's title.
+    '/blog/how-to-actually-evaluate-an-ai-code-review-tool': '/blog/fluent-but-structurally-wrong-ai-code-review-failure-mode/',
   },
   vite: {
     plugins: [tailwindcss()]
