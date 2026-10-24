@@ -1,0 +1,80 @@
+---
+title: "GitHub Copilot code review skips a documented list of files"
+description: "Copilot code review ships a documented excluded-file list. Every AI reviewer has a coverage boundary, and it changes what your eval measures."
+pubDate: 2026-10-24
+category: "guide"
+tags: ["aicodereview", "githubcopilot", "codereview", "evaluation"]
+---
+
+Open a pull request with two changes in it. One touches `src/api/handlers.ts`. The other touches `src/generated/client.ts`, the file your protobuf build writes on every codegen run. Ask Copilot code review to look at it.
+
+Copilot reviews the handler. The generated file is on a list, and by default the reviewer does not consider it. You get no skip notice, no "could not assess" note, no marker in the summary. The review comes back looking normal, with a normal comment count.
+
+That list is the part of AI code review that almost never makes it into a benchmark, and it decides what your evaluation is even measuring.
+
+## The exclusion list is longer than most teams assume
+
+GitHub publishes which files Copilot code review will not look at, in [Files excluded from GitHub Copilot code review](https://docs.github.com/en/copilot/reference/review-excluded-files). Dependency management files (package-lock.json, yarn.lock, go.sum, Cargo.lock, requirements.txt, Gemfile.lock, and roughly fifty more), log files, SVG files, and anything matching these patterns:
+
+```
+**/*.lock        **/go.sum          **/*.d.ts
+**/*.map         **/*.min.js        **/*.bundle.js
+**/dist/**/*     **/out/**/*        **/coverage/**/*
+**/vendor/**/*   **/generated/**/*  **/generated-sources/**/*
+**/node_modules/**/*                **/bin/**/*
+```
+
+If a file matches, the reviewer does not consider it, and nothing in the review output tells you that happened.
+
+Some of those paths are boring to skip. `node_modules` is fine. `coverage` is fine. The interesting entries are `.d.ts`, `**/*.lock`, `**/generated/**/*`, `**/generated-sources/**/*` and `**/vendor/**/*`, because those are exactly where code generators write, and code generators are what agents reach for. A migration file, a generated API client, a TypeScript declaration emitted by `tsc`, a bundled frontend asset. All of it is code that ships to production, and all of it sits outside the review scope by default.
+
+The `.d.ts` case is the one I keep coming back to. Excluding `**/*.d.ts` means the published contract of a library you consume, or the ambient types your own build emits, are not reviewed. If a change narrows a type in a way that breaks consumers at compile time, review of the `.ts` file that emits it may catch the intent. The declaration consumers actually import is skipped.
+
+There is a note in the same doc that a few files under `**/bin/**/*` are included again: Rust files matching `**/bin/**/*.rs`, and SAP Commerce Cloud files under `**/hybris/bin/custom/**`. Two carve-outs in a list of exclusions is a good reminder that these are product decisions with history behind them, not a clean model of what matters.
+
+## Two GitHub docs disagree about dependencies
+
+The [Copilot code review concept page](https://docs.github.com/en/copilot/concepts/agents/code-review) points you at [GitHub Code Quality](https://docs.github.com/en/code-security/concepts/code-quality/code-quality) for rules-based analysis and test coverage metrics, and GitHub's own tutorial on [reviewing AI-generated code](https://docs.github.com/en/copilot/tutorials/review-ai-generated-code) tells you to scrutinize dependencies. Its example prompt asks Copilot to list every dependency in a `package.json` and check whether each is actively maintained. It warns about hallucinated packages and slopsquatting, where a model invents a plausible name and someone registers it.
+
+Put the two docs next to each other. The tutorial says the highest-risk artifact of AI-assisted development is a dependency nobody read. The exclusion list says dependency management files are out of scope for the reviewer. Both statements describe the same feature, and the exclusion list wins by default, because it is the configuration the review actually runs under.
+
+The gap is coverable. You can turn on GitHub Code Quality, run a dependency scanner, or use Dependabot. The point is that the dependency check lives outside the code review, as a separate tool you have to add and maintain. A team that reads "Copilot reviews your pull requests" and stops there is relying on a check the docs never claimed was in scope.
+
+## Rules for the review come from the branch being reviewed
+
+One more detail from the same concept page. When Copilot reviews a pull request, it reads repository custom instructions, agent instructions such as `AGENTS.md`, and agent skills from the head branch, the branch with your changes. The docs frame it as a feature, and it is one: you can test a change to your rules file in the same PR that changes it.
+
+It also means a pull request can edit the instructions that govern its own review. If a contributor, human or agent, weakens the review rules in the same diff, the review runs under the weakened rules. That is testable. Open a PR that edits `.github/copilot-instructions.md` to say the opposite of what it says today and see which version the review obeys. It is the same canary test I use for [verifying that a reviewer follows your team's rules](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/), pointed at the config file instead of a code convention.
+
+One more fact worth knowing before you design a repeatable test: Copilot reviews a pull request once, unless "Review new pushes" is enabled. If your protocol assumes a fresh review per push, you are measuring one run and calling it a series. The [configuration doc](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/configure-code-review) covers the per-user, ruleset and organization settings, and they are evaluated independently rather than as a hierarchy, so a review can be triggered by a source you did not configure yourself.
+
+The approval path has the same shape. Copilot can submit an approving review that satisfies a required-approval rule, and the repository setting that limits which PRs count toward merge requirements is a list of up to 15 file globs. Your merge gate's coverage is itself a glob list.
+
+## Same tools, opposite results
+
+GitHub published a trace-level account of a regression in this reviewer, and it is the most useful eval artifact in the category so far. They replaced the review agent's own exploration tools with the shared `grep`, `glob` and `view` tools from Copilot CLI, expecting an upgrade. In their offline benchmarks, average review cost went up and fewer useful comments came back. The [write-up](https://github.blog/ai-and-ml/github-copilot/better-tools-made-copilot-code-review-worse-heres-how-we-actually-improved-it/) explains why: the tool instructions, written for a general coding assistant, made the agent browse the repository instead of investigating a diff. It guessed paths and read broadly, then carried that context forward. After the instructions were rewritten for a reviewer's workflow, average review cost dropped roughly 20% with no quality regression.
+
+Two things matter there for anyone comparing tools. The score alone would have sent them the wrong way. They needed the traces, the tool calls and their outputs, to see the loop. And they tried the same instruction change in Copilot CLI, where it did not produce the same win, because the CLI has no diff anchor. A reviewer and a coding agent can share a tool surface and still behave differently, and the instructions decide which one you get.
+
+Stack that on top of what you already know about reviewer variance. Effort level changes the analysis depth (Lite and Balanced are selectable, Balanced is the default), and the model behind Copilot code review is selected automatically and not disclosed. Same diff, different effort level, different result, and you cannot inspect the model choice. A benchmark that holds the model constant and ignores the workflow around it is measuring a configuration rather than a tool.
+
+## A coverage test you can run before a quality test
+
+You do not need a labeled dataset to find out what your reviewer covers. You need two defects and one PR.
+
+1. Pick a file your reviewer is likely to skip. A lockfile with a bumped transitive dependency, a generated client, a `.d.ts`. Seed a defect there that a human reviewer would flag on sight. For a lockfile, a dependency pinned to a version with a known advisory is a clean case.
+2. Seed a defect of the same severity in an included path, in the same PR.
+3. Run the review. Record which of the two it comments on, and whether it says anything about the file it skipped.
+4. Repeat with the excluded defect alone, in its own PR. If the review comes back clean with no note about coverage, you have a blind spot that no amount of reading feature tables will reveal.
+
+Do the same against your own reviewer's config before comparing two tools. If reviewer A skips generated paths and reviewer B reviews them, a head-to-head on defects found is comparing two different file sets.
+
+## Start with one PR that has two defects in it
+
+Keep four fields per review run: the files in the diff, the files the reviewer actually considered, the defects you seeded, and the effort or profile setting in use. Without the second field, a false negative and an out-of-scope file look identical in your results.
+
+That record is what makes a shortlist defensible. [CodeRabbit's configuration reference](https://docs.coderabbit.ai/reference/configuration) shows how much of this is exposed as settings, including a review profile (quiet, chill, assertive, defaulting to chill) that decides how much feedback lands inline versus in the summary. [Kodus](https://github.com/kodustech/kodus-ai) sits at the other end: self-hosted, AGPLv3, bring your own model, and review rules that can be scoped to an organization, a repository, or a path. That means the scope is something you define and can test, rather than something you inherit. If you are weighing self-hosting for that reason, the same questions apply as with any [self-hosted reviewer deployment](https://aicodereview.io/blog/self-hosted-ai-code-review-tools-what-to-verify-before-you-deploy/).
+
+On Azure Repos, note that enabling Copilot code review takes three separate toggles (organization, project, repository) and it is still in limited preview, which I covered in the [Azure DevOps comparison](https://aicodereview.io/blog/best-ai-code-review-tools-for-azure-devops-2026/). The scope question applies there too, and the enablement path makes it easy to believe a repo is covered when only the organization toggle is on.
+
+The general problem is that a reviewer's misses are hard to see, which is what the [absence blindness protocol](https://aicodereview.io/blog/ai-code-reviews-absence-blindness-measure-what-it-misses/) is for. The excluded-file list is the easy subset of that problem, because the vendor told you which paths are out of scope. Read it before you read the feature page, seed one defect in a skipped path and one in an included path, and let a single PR tell you more than a week of feature tables.
