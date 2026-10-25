@@ -1,0 +1,72 @@
+---
+title: "AI code review for large PRs: check the input distribution"
+description: "Vendor benchmarks rank AI code reviewers for large pull requests without reporting the diff sizes they tested. Measure your own PR distribution first."
+pubDate: 2026-10-25
+category: "guide"
+tags: ["aicodereview", "pullrequests", "benchmarking", "github"]
+---
+
+Every few weeks another ranking of AI code reviewers lands, and the section on large pull requests reads the same: a table of catch rates and a note that the tool handles large diffs. The rankings aren't fake, and what they leave out is the size of the diffs they measured.
+
+Greptile's 2025 benchmark is the most transparent version of this I've found. It compares 5 tools on 50 real bug-fix PRs pulled from 5 open-source repos, with two branches per case (one before the bug, one after the fix), the same PR reopened across 5 clean forks, one per tool, all on hosted plans with default settings. A bug counted as caught only when the tool left a line-level comment naming the faulty code and its impact. The leader came in at 82%.
+
+Buried in the methodology is the sentence that decides whether any of this applies to you: "Extremely large or single-file changes were excluded to keep the set realistic."
+
+That exclusion is defensible. A benchmark wants a clean signal, and a 900-line refactor muddies it. The consequence is that the published catch rate describes the middle of the input distribution. If you're shopping because your queue is full of 30-file agent PRs, the table you're reading has no rows for those.
+
+Vendor listicles are worse. A typical "8 best AI code review tools for 2026" page ranks tools on features and price, and its benchmark section is a ranking rather than a distribution. You can't tell whether the test set was 3-file fixes or 40-file migrations.
+
+## What "large" actually looks like in merged pull requests
+
+So I measured it. I pulled recently merged PRs from three repos with different shapes (microsoft/vscode, kubernetes/kubernetes, django/django) through GitHub's public API, and sampled 50 merged PRs in total.
+
+One implementation note if you want to reproduce this: the list endpoint `/repos/{owner}/{repo}/pulls` does not return `changed_files`. You have to fetch `/repos/{owner}/{repo}/pulls/{number}` per PR to get the file count and the churn numbers. That's one request per PR against your rate limit, so budget about 60 calls for a sample this size.
+
+| repo | merged PRs sampled | files median | files p90 | churn median | churn p90 | PRs at 10+ files |
+| --- | --- | --- | --- | --- | --- | --- |
+| microsoft/vscode | 20 | 7 | 19 | 259 | 1,213 | 8 of 20 |
+| kubernetes/kubernetes | 20 | 2.5 | 13 | 136 | 464 | 5 of 20 |
+| django/django | 10 | 4 | 8 | 95 | 564 | 1 of 10 |
+
+Two things fall out of that. The median merged PR in these repos is 2.5 to 7 files and 95 to 259 lines of churn, which is roughly where a benchmark sample of "realistic" small fixes sits. A tool tuned on a 3-file sample is being tested at or below your median, and the test tells you very little about your p90.
+
+The second thing is the shape of the tail. The 40-file monster from the war stories is rare. In vscode the p90 is 19 files and about 1,200 lines of churn. That is your large bucket, and in that repo it's 40% of merged PRs. Not an edge case, the part of the queue you keep hearing about.
+
+Caveat: three repos, one afternoon, a recent window of merged PRs. That's enough to show the shape. It is not your number. Run it on your own repos before you make a purchase decision on it.
+
+## Size has two axes and the benchmarks report one
+
+Google's own engineering practices documentation treats size as a pair of dimensions. It puts a reasonable change at around 100 lines and 1,000 lines as usually too large, then adds: "The number of files that a change is spread across also affects its size. A 200-line change in one file might be okay, but spread across 50 files it would usually be too large."
+
+That's the human baseline, and it matches what reviewers complain about. A 200-line change in one file is a reading task. The same 200 lines across 15 files is a context-reconstruction task, because the reviewer has to hold more of the repo in their head to judge whether each edit is right.
+
+Benchmarks publish one number for a sample of unknown size. If the sample skews small and single-file, and by Greptile's own description it does, then the axis where review actually breaks is the axis the benchmark filtered out.
+
+## The file-count axis is where review breaks
+
+The best field account I've read this year is a tech lead's handbook on freeCodeCamp about building a codebase-aware reviewer. His review queue doubled, then tripled. The defects that reached him were small and plausible: three new endpoints importing the v1 auth middleware instead of the v2 one the team had just spent a quarter migrating to, an inline fetch call instead of the shared hook, a literal "completed" string instead of the `Status.Completed` enum. Tests passed in every case because the code ran.
+
+All of those are small diffs whose correctness depends on code the diff doesn't contain. That dependency grows with file spread and repo size, and it's the thing a diff-only reviewer cannot see. I wrote about that mechanism separately in [AI code review's absence blindness](https://aicodereview.io/blog/ai-code-reviews-absence-blindness-measure-what-it-misses/), where the point is that a reviewer reading only the patch can't flag the code that should have been reused.
+
+CircleCI's [2026 State of Software Delivery report](https://circleci.com/resources/2026-state-of-software-delivery/) puts the volume side on the record: across more than 28 million CI workflows and over 22,000 organisations, feature branch throughput grew 59% year over year, the largest jump they've measured, while median main branch throughput fell 7% and build success dropped to 70.8%, the lowest in five years. More diffs are being written and fewer are reaching production. If your repo looks like the vscode distribution above, 40% of the new diffs are 10 files or more.
+
+## Stratify the input before you compare tools
+
+Here's the protocol I'd run before signing anything. It's an afternoon of work and it makes every vendor number comparable to your repo.
+
+1. Measure your distribution. Same API calls as above, 30 to 50 merged PRs, bucketed by `changed_files` and churn.
+2. Cut three buckets: at or below your p75, between p75 and p90, and above p90.
+3. Weight each bucket by its share of merged PRs. If the 10+ file bucket is 40% of your load, a tool that's quiet on those is failing on 40% of your queue no matter what it scores on small diffs.
+4. Sample at least 10 merged PRs per bucket from your own repos, including one where the right review comment is a reuse decision rather than a bug report.
+5. Add a control file to each PR: a file the PR didn't touch that must not be commented on. Track comments per PR, not just catches.
+6. Report every score with its bucket attached. A single number with no bucket is not a result.
+
+Steps 2 and 3 are the ones people skip, and they're the ones that change the decision. If you want the measurement discipline behind this, I've written up a [reproducible protocol for measuring review time](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/) and a broader [playbook on evaluating a reviewer](https://aicodereview.io/blog/how-to-actually-evaluate-an-ai-code-review-tool/), plus a comparison of [offline and online evals](https://aicodereview.io/blog/ai-code-review-benchmarks-offline-vs-online-evals/) for when the vendor's test set and your repos disagree.
+
+## What changes once you stratify
+
+The differences between tools compress on small diffs and open up on the tail. Greptile's own severity breakdown makes the point even inside their filtered set: at Critical the tools cluster at 58%, 58%, 50%, 33% and 17%, while at High they separate to 100%, 64%, 57%, 36% and 0%. A single overall percentage hides that.
+
+[Kodus](https://kodus.io) is worth putting in the stratified run for a practical reason. It's open source and self-hostable, so you can point it at the same 30 PRs from your own repos, keep the diffs on your infrastructure, change the rules file, and re-run the whole set. That re-run property is what this test needs, because you're going to discover your first bucket boundaries were wrong. Per-PR pricing differences matter much less than being able to iterate on the input.
+
+Whatever you end up evaluating, the ask of the vendor is the same: send me the size distribution of your test set. If they have one, you can check whether it covers your p90. If they don't, you're not stuck. You just have to build the distribution yourself, which as of this afternoon takes about 60 API calls.
