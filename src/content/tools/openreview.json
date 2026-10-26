@@ -4,8 +4,8 @@
   "tagline": "Vercel Labs' self-hosted GitHub review bot: mention @openreview for Claude-powered inline suggestions; dormant beta since March 2026.",
   "category": "ai-pr-review",
   "openSource": false,
-  "license": "None (no LICENSE file as of Aug 2026; README says MIT)",
-  "pricing": "Free to run; you pay your own Anthropic API and Vercel hosting. Beta with no commits since March 2026 (~1.5K stars, not archived)",
+  "license": "None (no LICENSE file as of Oct 2026; README says MIT)",
+  "pricing": "Free to run; you pay your own Anthropic API and Vercel hosting. Beta with no commits since March 6, 2026 (~1.7K stars, not archived)",
   "pricingUrl": "unknown",
   "selfHosted": "full",
   "selfHostedNote": "Self-hosted only: deploy the Next.js app to Vercel with your own GitHub App credentials and Anthropic key.",
@@ -13,7 +13,7 @@
     "github"
   ],
   "modelControl": "BYOK Anthropic key on your own deployment; model hardcoded (Claude Sonnet 4.6), no provider choice without forking",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",

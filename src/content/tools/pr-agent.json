@@ -17,7 +17,7 @@
     "gitea"
   ],
   "modelControl": "Full BYOK via LiteLLM: OpenAI, Claude, Gemini, Mistral, DeepSeek, Azure OpenAI, Bedrock, Vertex, OpenRouter, local Ollama",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "no",

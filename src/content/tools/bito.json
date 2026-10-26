@@ -7,15 +7,15 @@
   "license": "Proprietary",
   "pricing": "Team $12/seat/mo annual ($15 monthly); Professional $20/seat annual ($25 monthly), 14-day trial; both include 5K LOC reviewed/seat/mo, then $5 per extra 1K lines",
   "pricingUrl": "https://bito.ai/pricing/",
-  "selfHosted": "unknown",
-  "selfHostedNote": "Supports self-managed git (GHES, GitLab self-managed, Bitbucket Data Center); agent deployment model unclear from public materials - verify with vendor.",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "bito.ai/pricing confirms self-hosted deployment of the review agent from the Professional tier (+$5/seat/mo, vs. Bito-hosted by default); Enterprise adds full on-prem/multi-org deployment. Docs also detail self-managed-git guides for GitHub Enterprise Server 3.0+, GitLab Self-Managed 15.5+, and Bitbucket self-managed.",
   "platforms": [
     "github",
     "gitlab",
     "bitbucket"
   ],
-  "modelControl": "BYOK advertised but details unverified - confirm scope with vendor",
-  "lastVerified": "2026-08-11",
+  "modelControl": "No BYOK documented for AI Code Reviews specifically; vendor-managed models (built on Claude per Bito's case studies), with free Basic vs. paid-tier Advanced (GPT-4o/Claude) model tiers in the IDE/CLI extensions. BYOK exists on Bito's separate Governor product, not confirmed for Code Reviews.",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",
@@ -42,8 +42,8 @@
       "note": "Sandbox or test-run validation not documented."
     },
     "07-economic-transparency": {
-      "status": "partial",
-      "note": "BYOK advertised but unverified; LOC metering ($5/1K lines over cap) rather than token transparency."
+      "status": "no",
+      "note": "No BYOK confirmed for AI Code Reviews (vendor-managed models); LOC metering ($5/1K lines over cap) rather than token-level transparency."
     },
     "08-actionability": {
       "status": "unknown",

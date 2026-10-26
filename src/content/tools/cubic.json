@@ -5,7 +5,7 @@
   "category": "ai-pr-review",
   "openSource": false,
   "license": "Proprietary",
-  "pricing": "Free: 20 PR reviews/mo; Team $30/dev/mo annual ($40 monthly); Pro $79/dev/mo annual ($99 monthly); Enterprise custom. Free for OSS teams",
+  "pricing": "Free: 20 PR reviews/mo, 5 custom agents; Team $30/dev/mo annual ($40 monthly); Pro $79/dev/mo annual ($99 monthly, recommended); Max $160/dev/mo annual (double Pro's review allowance, new tier); Enterprise custom. Free for OSS teams",
   "pricingUrl": "https://cubic.dev/pricing-plans",
   "selfHosted": "unknown",
   "selfHostedNote": "No self-hosted or VPC deployment published; Enterprise details gated behind a demo (lists GitHub Enterprise support only).",
@@ -13,7 +13,7 @@
     "github"
   ],
   "modelControl": "Fixed vendor models (OpenAI, Anthropic); BYOK listed only as an Enterprise plan feature",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "yes",
