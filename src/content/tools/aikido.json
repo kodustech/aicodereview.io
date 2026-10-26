@@ -16,7 +16,7 @@
     "azure-devops"
   ],
   "modelControl": "Fixed vendor models (Claude via AWS Bedrock) for AutoFix and AutoTriage; no BYOK",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",

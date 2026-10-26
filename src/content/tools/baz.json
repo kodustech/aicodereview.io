@@ -15,7 +15,7 @@
     "azure-devops"
   ],
   "modelControl": "Fixed vendor models (managed AI services incl. OpenAI); no BYOK or model choice documented",
-  "lastVerified": "2026-08-11",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "yes",

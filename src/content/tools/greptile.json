@@ -5,16 +5,17 @@
   "category": "ai-pr-review",
   "openSource": false,
   "license": "Proprietary",
-  "pricing": "Free 50 credits/mo (1 dev); Pro $30/seat/mo with 50 credits/seat, $1 per extra credit; TREX review = 3 credits; Enterprise custom; OSS and startup programs",
+  "pricing": "Free Starter: 50 credits/mo (1 dev), unlimited repos; Pro: pure pay-per-credit at $1/credit, no seat fees, unlimited devs/agents, credits prepaid and shared org-wide (14-day free trial); Base review 1 credit, Plus review 3 credits, Apex review 10 credits; TREX test-run +3 credits on top of a review (charged only if a flow completes); Enterprise custom; OSS and startup programs",
   "pricingUrl": "https://www.greptile.com/pricing",
   "selfHosted": "enterprise-only",
-  "selfHostedNote": "Self-hosted deployment on custom-priced Enterprise tier, alongside SOC 2 Type II and SSO/SAML.",
+  "selfHostedNote": "Self-hosted deployment (Docker Compose or Kubernetes, license required) on custom-priced Enterprise tier, alongside SOC 2 Type II and SSO/SAML.",
   "platforms": [
     "github",
-    "gitlab"
+    "gitlab",
+    "bitbucket"
   ],
-  "modelControl": "Fixed vendor models; no BYOK on standard plans",
-  "lastVerified": "2026-08-11",
+  "modelControl": "Fixed vendor models; no BYOK on standard (cloud) plans; self-hosted deployments configure their own LLM provider (OpenAI, Anthropic, AWS Bedrock, Azure OpenAI, or GCP Vertex AI)",
+  "lastVerified": "2026-10-26",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "partial",
@@ -38,7 +39,7 @@
     },
     "06-sandbox-validation": {
       "status": "yes",
-      "note": "TREX writes and runs tests for each PR in a sandbox to demonstrate bugs (3 credits per review)."
+      "note": "TREX writes and runs tests for each PR in a sandbox to demonstrate bugs (+3 credits on top of the review, charged only if a test flow completes)."
     },
     "07-economic-transparency": {
       "status": "no",
@@ -64,6 +65,6 @@
     "ai-code-review-statistics",
     "what-is-ai-code-review"
   ],
-  "startingPrice": "$30/seat/mo",
+  "startingPrice": "$1/credit (Pro, no seat fee)",
   "freeTier": "limited"
 }

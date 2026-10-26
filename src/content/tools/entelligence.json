@@ -5,17 +5,16 @@
   "category": "ai-pr-review",
   "openSource": false,
   "license": "Proprietary",
-  "pricing": "Not published as of Aug 2026; sales-led with pricing tailored per organization. Homepage markets BYOK, self-hosted, no token markup",
+  "pricing": "Now published: Startup $750/mo (up to 15 engineers, 300 reviews/mo then $1/review); Scale $2,500/mo (16-50 engineers, 1,000 reviews/mo then $1/review); Enterprise custom (adds Agent Insights, Model Router, Knowledge Base, self-hosting)",
   "pricingUrl": "https://entelligence.ai/pricing",
-  "selfHosted": "full",
-  "selfHostedNote": "Documented AWS Marketplace self-host into your own AWS account/VPC via CloudFormation; plan availability not stated.",
+  "selfHosted": "enterprise-only",
+  "selfHostedNote": "Self-hosting is listed as an Enterprise-plan inclusion on the pricing page (not available on Startup/Scale); deploy in your own cloud with your own provider keys.",
   "platforms": [
     "github",
     "gitlab",
     "bitbucket"
   ],
   "modelControl": "BYOK documented for Model Router (AWS Bedrock, OpenRouter); model choice for Code Review itself not documented",
-  "lastVerified": "2026-08-11",
   "standards": {
     "01-multi-dimensional-context": {
       "status": "yes",
@@ -43,7 +42,7 @@
     },
     "07-economic-transparency": {
       "status": "partial",
-      "note": "Markets BYOK, self-hosted, no token markup; BYOK documented only for Model Router; no published pricing."
+      "note": "Markets BYOK, self-hosted, no token markup; per-seat pricing now published (Startup/Scale plus $1/review overage); BYOK documented only for Model Router (AWS Bedrock, OpenRouter), Enterprise-only."
     },
     "08-actionability": {
       "status": "partial",
@@ -55,5 +54,7 @@
     }
   },
   "relatedPosts": [],
-  "freeTier": "unknown"
+  "startingPrice": "$750/mo",
+  "freeTier": "trial",
+  "lastVerified": "2026-10-26"
 }
