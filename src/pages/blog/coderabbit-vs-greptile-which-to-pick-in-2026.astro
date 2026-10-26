@@ -1,0 +1,7 @@
+---
+// Renamed to a shorter slug. A static `redirects` entry in astro.config.mjs
+// can't cover the indexed trailing-slash URL (Astro collapses the key to the
+// no-slash form), so this SSR route issues a real 301 for both spellings.
+export const prerender = false;
+return Astro.redirect('/blog/coderabbit-vs-greptile/', 301);
+---
