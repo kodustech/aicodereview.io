@@ -7,6 +7,19 @@ import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 import { sitemapSerialize } from './scripts/sitemap-lastmod.mjs';
 
+// Old slugs that now live at src/pages/blog/<slug>.astro as SSR routes issuing
+// a real 301 (see those files for why: the static `redirects` map above can't
+// produce a true redirect for the indexed trailing-slash spelling). They're
+// real Astro pages, so the sitemap integration would otherwise list them
+// alongside the posts they redirect to.
+const REDIRECT_ONLY_BLOG_SLUGS = [
+  'coderabbit-alternatives-7-tools-compared',
+  'best-ai-code-review-tools-12-tools-compared',
+  'coderabbit-vs-greptile-which-to-pick-in-2026',
+  'cursor-bugbot-vs-coderabbit-2026-comparison',
+  'ai-code-review-statistics-2026-sourced-data',
+];
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://aicodereview.io',
@@ -36,8 +49,13 @@ export default defineConfig({
   },
 
   integrations: [mdx(), sitemap({
-    // Keep non-HTML endpoints (feeds, llms.txt, raw-markdown mirrors) out of the sitemap.
-    filter: (page) => !/\.(xml|txt|md|json)$/.test(new URL(page).pathname) && !page.includes('/api/'),
+    // Keep non-HTML endpoints (feeds, llms.txt, raw-markdown mirrors) and
+    // redirect-only routes out of the sitemap.
+    filter: (page) => {
+      const pathname = new URL(page).pathname;
+      if (/\.(xml|txt|md|json)$/.test(pathname) || pathname.includes('/api/')) return false;
+      return !REDIRECT_ONLY_BLOG_SLUGS.some((slug) => pathname === `/blog/${slug}/` || pathname === `/blog/${slug}`);
+    },
     // Per-URL <lastmod>: blog frontmatter, tool lastVerified, or the git date
     // of the file that renders everything else. See scripts/sitemap-lastmod.mjs.
     serialize: sitemapSerialize,
