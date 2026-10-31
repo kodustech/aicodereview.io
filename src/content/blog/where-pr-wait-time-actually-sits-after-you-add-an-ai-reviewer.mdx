@@ -1,0 +1,80 @@
+---
+title: "Where PR wait time actually sits after you add an AI reviewer"
+description: "A bot review lands in minutes and the PR still merges a day later. Here is where the wait really is, with the timestamps and a protocol you can run on your own repo."
+pubDate: 2026-10-31
+category: "guide"
+tags: ["aicodereview", "pullrequests", "engineeringmetrics", "evaluation"]
+faq:
+  - q: "Why does PR cycle time improve after adding an AI reviewer if the wait doesn't change?"
+    a: "Because the bot clears the 'nobody has touched this' state. Cycle time measures the whole interval, and an early automated comment removes some of the dead time in it. That is a real improvement, and it does not mean the human queue got shorter. Measure time-to-first-human-review and time-from-last-human-review-to-merge separately to see which clock actually moved."
+  - q: "How much of my PR wait is a merge policy rather than review speed?"
+    a: "It depends on your host's rules. In a sample of 80 merged PRs on nodejs/node, 26 landed inside a 3-hour band at 48 to 49 hours after opening, which matches the project's documented 48-hour minimum review window. If your merges cluster on a fixed hour mark, you are measuring policy, and no reviewer can improve that number."
+  - q: "Does bot review latency grow with pull request size?"
+    a: "Not in the sample I measured. On microsoft/vscode, a 66-line PR received its Copilot review object at about 16 minutes and a 1,211-line PR at about 19 minutes, so the latency was roughly flat. That is good for turnaround and a warning about depth: a 19-minute pass on a 1,200-line diff is not a proportional read."
+---
+
+Most teams add an AI reviewer, watch average cycle time fall, and move on. The number usually does fall. The part nobody checks is which clock moved.
+
+I keep timestamps from large repos that run a bot review on every pull request, and the pattern holds across all of them: the bot's comment lands early and the merge decision happens much later, next to a person. Making the bot faster does nothing to the part of the wait that people actually complain about.
+
+## Time-to-merge is more than one clock
+
+LinearB's [2026 software engineering benchmarks](https://linearb.io/resources/software-engineering-benchmarks), built from 8.1 million pull requests across 4,800 teams, splits the pipeline into separate metrics instead of one cycle-time number: Pickup Time, Review Time, and Merge Time. The thresholds are not close to each other. A team is in the top band when pickup is under an hour, and in the "needs focus" band when pickup runs past 16 hours. Review Time, the read half, sits under 3 hours for the top band and past 24 hours for the bottom one.
+
+That split is the whole argument. An AI reviewer can act on one of those clocks. It posts a comment. It cannot assign a human, and it cannot shorten a written merge policy.
+
+The same report notes that AI-assisted PRs wait 4.6x longer before review but are reviewed 2x faster once someone picks them up, and that agentic PRs have a pickup time 5.3x longer than unassisted ones. If the tool is already good at the fast half, buying more of that half does not move your number.
+
+## Where the bot review actually lands
+
+On [microsoft/vscode](https://github.com/microsoft/vscode), the 16 most recently updated closed PRs all carried a review object from the Copilot reviewer. Reading the timestamps per PR, the bot review object landed between about 1.5 hours and 15 hours after the PR opened, and the merge followed the last human review by 8 to 29 minutes.
+
+The merge fires right after a person signs off. The bot's comment sits hours upstream of that decision. Whatever a faster reviewer buys you, it does not buy you those hours back, because they are spent waiting for a reviewer slot.
+
+This is not specific to one vendor. It is what happens when you insert an automated step early in a pipeline whose last step is still a human approval.
+
+## Part of the wait is a written policy
+
+On [nodejs/node](https://github.com/nodejs/node), 26 of 80 merged PRs landed inside a 3-hour window at 48 to 49 hours after opening. That is not a review-speed distribution. That is a floor. Node documents a 48-hour minimum window before a PR can land, and a third of merges cluster right on top of it.
+
+The policy has a stated exemption for trivial or documentation-only changes, and it is mostly unused in practice. Doc-labeled PRs in the same sample had a median time-to-merge of about 103 hours, well above the floor. The label that actually moves a PR under the window is `fast-track`.
+
+If a third of your merges sit on a policy floor, no reviewer can improve that number. You are measuring your own rules, and the right fix is a policy change rather than a purchase.
+
+## Bot review latency doesn't scale with diff size
+
+One thing I expected to find and didn't: bot review time growing with the size of the diff. On the same vscode sample, a 66-line PR got its review object at about 16 minutes and a 1,211-line PR at about 19 minutes. Roughly flat across the range.
+
+That is a good property, and it also puts a ceiling on the speedup pitch. The bot already answers in minutes. You cannot save hours on a step that takes minutes. The hours live in the human queue and the merge gate, and neither of those gets shorter because a comment appeared sooner.
+
+The flip side is worth saying too. A flat review latency across sizes means the bot is not really reading proportionally more code as the diff grows. On a large PR, an annotation posted in 19 minutes is a shallow pass, and treating it as a substitute for the human read is how review debt accumulates.
+
+## A protocol you can run in an afternoon
+
+You do not need vendor telemetry for this. You need four timestamps per PR from your own host's API.
+
+1. Pick a fixed two-week slice of merged PRs from one team, and keep the reviewer pool identical across the window you compare against.
+2. For each PR, record four timestamps: opened, first bot review, last human review, merged.
+3. Derive four numbers: queue time (opened to first human review), review time (first to last human review), merge rate, and comment density per PR.
+4. Split every one of those by PR size and by risk label, then read medians and p90 instead of the mean.
+
+That last step is what separates a real result from a dashboard artifact. A mean improves when a tool clears the small easy PRs while the large cross-module changes get slower, and the regression hides in the tail. We walked through that failure mode in [what the 45% claim leaves out](https://aicodereview.io/blog/reduce-pr-review-time-with-ai-what-the-45-claim-leaves-out/).
+
+Before you credit any delta to a tool, check what else changed at the same moment: a CI speedup, a new merge policy label, a reviewer on vacation. A drop that lines up with something other than the reviewer is not evidence for the reviewer. The full measurement protocol, including the constant-pool requirement, is in [the reproducible protocol writeup](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/).
+
+## What to ask a vendor before you buy
+
+Once you accept that the wait is the target, the buying questions change. Ask any reviewer vendor for queue time and merge time separately, not a single "time saved" figure. If a tool reports only cycle-time reduction, you cannot tell which clock it moved.
+
+On capability, the tools differ in ways that matter for this problem:
+
+- **Kodus** is AGPL-3.0 and self-hostable on the free Community plan with no seat minimum, and it runs on your own model key on every plan. Teams are $10 per active developer per month plus provider tokens at no markup. If your reason for self-hosting is data residency, that path does not require an enterprise contract. We compared the two doors labeled "self-hosted" in [Kodus vs CodeRabbit](https://aicodereview.io/blog/kodus-vs-coderabbit-four-claims-worth-re-checking/).
+- **CodeRabbit** starts at $24 per user per month for Essentials, bundles model cost into the seat, and offers self-hosting only on Enterprise with 500 or more user seats.
+- **GitHub Copilot code review** is GitHub-only and scores 2/9 in our directory, with no documented learning loop and no model choice. It is cheap to try if you already pay for Copilot.
+- **PR-Agent**, the open-source reviewer Qodo donated to the community, self-hosts cleanly and reaches any model through LiteLLM.
+
+The verification steps for a self-hosted deployment, including the canary-word test that tells you whether your rules file even reaches the model, are in [what to verify before you deploy](https://aicodereview.io/blog/self-hosted-ai-code-review-tools-what-to-verify-before-you-deploy/). If your problem is queue depth across many repositories rather than review quality in one, [the multi-repo comparison](https://aicodereview.io/blog/ai-code-review-across-many-repos-what-to-actually-compare/) covers the axes that actually differ.
+
+## The part worth remembering
+
+A faster reviewer is not a faster pipeline. It is a faster comment. Before you buy anything, measure the gap between your last human review and your merge, and the gap between your PR opening and your first human review. If the first gap is minutes and the second is hours, you have a scheduling problem wearing a tooling costume, and no amount of review automation will fix it.
