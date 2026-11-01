@@ -1,0 +1,85 @@
+---
+title: "Your contribution graph can't measure review load"
+description: "A 471-comment thread argued about AI productivity using a metric that counts commits, reviews and issues as the same unit. Here are the four numbers that actually decompose, measured on vscode and node."
+pubDate: 2026-11-01
+category: "guide"
+tags: ["github", "ai", "codereview", "engineeringmanagement"]
+faq:
+  - q: "Why is a GitHub contribution graph a bad productivity metric?"
+    a: "It sums commits, pull requests, reviews and issues into one integer with no weighting, and it includes private work. A one-line fix and a large refactor count the same, and approving someone else's PR counts the same as writing a subsystem. Because the total never separated events from output, you cannot decompose it afterward to tell which one moved."
+  - q: "Which numbers should I measure instead of a contribution count?"
+    a: "Four, all reproducible from the public GitHub API: arrival rate (PRs per day from the creation span of 100 recent PRs), queue depth (open PR count), review actor mix (human vs bot review objects per PR, split by user.type plus an audited login allowlist), and merge latency (median open-to-merge plus the min and max)."
+  - q: "Does an AI code reviewer replace human review?"
+    a: "Not on the slice I measured. Across the 35 most recently closed microsoft/vscode PRs, every one carried a bot review object, 28 carried a human review object, and none of the 27 merged PRs merged without a human review object. Treat the claim as testable in your own repo rather than settled."
+---
+
+## What the graph actually counts
+
+Orestis Ioannou pulled his GitHub contribution calendar from January 2019 through October 2026 and laid it next to his job titles at Bold.org: full-stack engineer until August 2022, principal engineer until August 2025, VP of Technology since. The principal-engineer years averaged 114 contributions a month, down from 173 as a full-stack engineer. December 2025 was his quietest month since he joined, at 50.
+
+Then 2026. By October 27 he was at 2,102 contributions, more than any full year from 2021 through 2025. August hit 427, the busiest month in the whole timeline. His median weekday went from 3 or 4 contributions across 2022-2025 back to 7.
+
+He is careful about what that number is. His [post](https://oioannou.com/blog/ai-promised-less-work/) calls it "a rough signal of activity, not a measure of value," and notes it mixes commits, pull requests, reviews and issues with no weighting.
+
+The [Hacker News thread](https://news.ycombinator.com/item?id=50257325) under it did not stay that careful. 544 points, 471 comments. I pulled the nested tree through the Algolia items API: 470 comment nodes, 169,558 characters of comment text. "productivity" appears 75 times, "output" 21, "contribut" 8, "verif" 2, "reproduc" 0, "benchmark" 0.
+
+A very long thread debated whether AI makes engineers more productive without once asking what the metric in the post measures. That gap is worth closing, because the same number gets cited as evidence on both sides of the argument, and it cannot support either.
+
+## A contribution count is an unweighted sum
+
+The calendar adds commits, pull requests, reviews and issues into one integer, and it includes private work. A one-line typo fix and a 400-line refactor are the same unit. Approving someone else's PR scores the same as writing a new subsystem. That is a reasonable design for a streak game and a poor one for capacity planning.
+
+The problem is structural. You cannot decompose the total back into "more work shipped" and "more events recorded," because the metric never separated them in the first place. If agent-authored PRs are smaller and more frequent, the same shipping volume produces a larger number. If review counts rise because more PRs exist, the number rises again for a reason that has nothing to do with anyone's output. Two explanations, one direction, no way to tell them apart from the total.
+
+## Four numbers that do decompose
+
+If the question is whether review volume went up and whether the team absorbed it, the public GitHub API gives you four numbers, each reproducible from one script. I ran these on 2026-10-27 against `microsoft/vscode` and `nodejs/node` with unauthenticated requests, reading `X-RateLimit-Remaining` on every call. That budget (60 requests per hour per IP) is the real limit on how much you can sample in a single pass, so plan the widest scan first.
+
+### Arrival rate
+
+The 100 most recent PRs by creation date span 0.84 days on vscode, which works out to about 119.6 PRs/day. nodejs/node spans 4.86 days for the same 100, about 20.6 PRs/day. This is the input side, and it sets the load everything else has to absorb.
+
+### Queue depth
+
+Open PR count: 3,053 on vscode, 672 on node. Arrival rate tells you the load. Queue depth tells you whether the load is accumulating or draining.
+
+### Review actor mix
+
+Across the 35 most recently closed vscode PRs, all 35 carried at least one bot review object, 28 carried at least one human review object, and none of the 27 merged PRs merged without a human review object. One caveat on the sample: this is a recency slice sorted by update time, not a random draw, and 35 PRs is a slice rather than a distribution.
+
+### Merge latency
+
+Median open-to-merge across those 27 merged PRs was 10.13 hours, with a minimum of 0.23 and a maximum of 175.17. The spread is the interesting part. A single mean over that range hides the fact that some PRs land in fifteen minutes and others sit for a week.
+
+Those four answer questions the contribution count can't reach. Arrival rate is the load. Queue depth is whether the load is backing up. Actor mix is whether the reviewer population changed. Latency is whether any of it reached the merge path.
+
+## The bot shows up on every PR in the slice
+
+"AI review replaces human review" is a testable claim, and on this slice it does not hold. A bot review object was present on all 35 PRs, and a human review object was still present on 28 of them, including every single merge. Nobody merged anything past a human on the strength of a bot comment.
+
+That matters when you read vendor coverage numbers. A tool can report a large count of PRs reviewed while your first-human-review latency sits exactly where it was. In that case the tool is generating reading material and your queue is unchanged. [AI code review reads the patch, not the execution](https://aicodereview.io/blog/ai-code-review-reads-the-patch-not-the-execution/) covers the finding-quality version of the same gap.
+
+## The same ambiguity shows up in Wikipedia's cleanup numbers
+
+Ellia Lebleu, a founding member of WikiProject AI Cleanup, told [IEEE Spectrum](https://spectrum.ieee.org/wikipedia-wikiproject-ai-writing-cleanup) that an external detector flagged roughly 20 percent of new Wikipedia articles and drafts as AI-generated in late 2025, dropping to 15 or 16 percent in early 2026. Her own reading of that drop: "we don't yet know whether that's because our recent policies have had an effect or because models are getting more powerful and Pangram hasn't had time to adapt."
+
+One number, one direction, two live explanations. That is the same shape as the contribution graph, and the same shape as every "review time down 45 percent" slide. What makes Lebleu's figure usable is the calibration detail next to it: she tested the detector against pre-ChatGPT Wikipedia and found no false positives, so it stands as a conservative lower bound instead of a precise estimate. That note tells you what the number can and cannot support, which is more than most productivity claims do.
+
+## Why queue depth beats merged count
+
+Jan van den Berg's [2026 reading of Brooks's law](https://j11g.com/the-mythical-man-month-in-the-age-of-ai) lands on the right failure: "Adding agents to a project with unclear requirements gets you the wrong answer faster." The baby problem survives. Sequential work stays sequential, and somebody still has to define done and stitch the pieces together.
+
+If implementation is cheap, arrival rate moves first and the constraint lands on the queue. About 119 PRs per day flowing into a 3,053-deep open queue is a load question with a measurable answer. A contributor's monthly total is not.
+
+## A protocol you can run in an afternoon
+
+1. Fix the repo and the window. Take 100 recently closed PRs by update time, record the span in days, and write both down. A fixed window and a constant sample size are what make the second run comparable to the first.
+2. Record arrival rate and queue depth before you change anything. The open PR count plus the creation span of those 100 PRs gives you both from two API calls.
+3. Fetch reviews per PR and split actors by `user.type` plus a hand-audited login allowlist. Suffix filters break here: Copilot's PR reviewer is login `Copilot` with type `Bot` and no `[bot]` suffix, so a suffix check silently drops the whole inline surface. Count inline comments and review objects as separate things, since they come from different logins.
+4. Re-run the identical script two weeks later. Compare the four numbers, not a dashboard average.
+
+For the reviewer comparison specifically, this is where tool choice becomes measurable instead of argued. Kodus, CodeRabbit, Copilot code review and Qodo Merge all leave review objects and inline comments you can count the same way, so put them through the same four numbers on your own repo: how many PRs each one actually touched, how many inline findings it left, whether first-human-review latency moved, and whether any merge happened with no human review object at all. If coverage rises and latency stays flat, you bought reading material. Cost belongs in the same table, and it behaves like a distribution rather than a per-PR price: [AI code review cost per PR is a distribution, not a price](https://aicodereview.io/blog/ai-code-review-cost-per-pr-is-a-distribution-not-a-price/).
+
+For the full setup, including the fixed two-week slice, the constant pool, and the four-number output format, [reduce pull request review time with AI: a reproducible protocol](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/) has the whole thing. And if your problem is queue routing rather than review speed, [reviewing the volume of AI-generated code: the problem is routing, not speed](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/) is the closer read.
+
+The contribution graph is a fine thing to look at. It just doesn't carry the argument people keep loading onto it.
