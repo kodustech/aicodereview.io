@@ -1,0 +1,68 @@
+---
+title: "The bugs got cheap, the fixers did not"
+description: "Postgres 19 slipped past its usual release window because LLM-found bug reports outran the people who review and commit fixes. Here is how to count that gap in your own repo, using commit trailers."
+pubDate: 2026-11-02
+category: "explainer"
+tags: ["ai", "codereview", "benchmarking", "opensource"]
+---
+
+## What delayed Postgres 19
+
+For a decade, PostgreSQL major releases landed between mid-September and mid-October. This year the window closed with no release, and the October 15 announcement was an RC1 rather than a final. Robert Haas, a committer on the project, explained why in [Postgres 19 is late, and it's AI's fault](https://neon.com/blog/postgres-19-is-late-and-its-ais-fault): three large features were reverted between August 27 and September 15 (UPDATE/DELETE FOR PORTION OF, SQL Property Graph Queries, and ALTER TABLE MERGE/SPLIT PARTITION), and feature freeze had been April 8. Pulling features that late is unusual.
+
+His explanation is a claim about a ratio. Bugs in a 30-year-old code base have always been there. Finding them got cheap. Fixing and reviewing them did not. A ratio is testable, so I reran his numbers.
+
+## I reran the counts
+
+Haas published commit counts for two windows, April 8 through September 25 in 2025 and the same dates in 2026. I pulled both windows from the [commits API on postgres/postgres](https://github.com/postgres/postgres/commits/master) and paged the full result set.
+
+| branch | 2025 window | 2026 window |
+| --- | --- | --- |
+| master | 1,056 | 1,477 |
+| newest stable (REL_18 to REL_19) | 738 | 1,182 |
+| one release back (REL_17 to REL_18) | 250 | 437 |
+| two back (REL_16 to REL_17) | 194 | 348 |
+| three back (REL_15 to REL_16) | 170 | 302 |
+| four back (REL_14 to REL_15) | 145 | 265 |
+
+Haas reported 1,037 master commits for 2025 and 1,443 for 2026, with 724 and 1,169 on the newest stable branch and 248 and 433 one release back. My counts run 1 to 3% higher on every line. The deltas are small enough to come from the query date or a boundary rule, and the direction is identical. Quote either set, but quote the window along with it.
+
+The back-branch column is the one I would keep. Same branch names, same calendar window, and the load went up 39% to 68% across four releases that were not the release in progress. That is not new features being buggy. That is old code getting read harder.
+
+## The trailer field shows who is doing the reading
+
+Postgres records provenance in commit trailers, and the field is stable enough to count. In those two windows, `Reported-by:` appears 309 times across the 2025 master commits and 563 times across 2026's. Distinct reporter names: 182, then 249. Of the 2026 names, 202 never appear in the 2025 window at all.
+
+In 2025, not one of those strings named a model vendor, an agent product, or a security automation company. In 2026 the field contains "Xint Code" on 13 commits, "Claude Code (via Noah Misch)" on 4, "Ben Morris in collaboration with Claude and Anthropic Research" on 3, "Amy Burnett (OpenAI Codex Security)" on 3, and entries attributed to Aisle, DepthFirst, and the Anthropic OSS program. The security side moved harder: 5 commits carrying a `Security: CVE-...` trailer and 4 distinct CVEs in the 2025 window, 58 commits and 38 distinct CVEs in the 2026 window.
+
+That is the part that matters if you review code for a living. The senders are not one class of reporter anymore. One is a long-time committer who pointed an agent at the tree and put his own name on the result. Others are vendor security teams working a coordinated disclosure. Some look like a standing pipeline that files and moves on. All of them land in the same queue, and every item in that queue is read by a person.
+
+One caveat: trailers are voluntary and self-reported, so "Reported-by: Xint Code" is a claim about provenance rather than proof of it. The field is still worth counting, because everyone on the project uses it and it shows a change in who files without reading a single issue thread.
+
+## Discovery scaled, triage did not
+
+The number I would put on a slide is the share of master commits that carry a `Backpatch-through:` floor, meaning the commit fixes code that already shipped. 287 of 1,056 in the 2025 window, 665 of 1,477 in 2026. Raw volume up 40%, repair share up almost 18 points. Commits whose subject starts with "Revert": 15, then 23.
+
+Haas names the mechanism: LLMs can draft fixes, but those drafts still need a human to review and commit, and "those humans have not gotten any smarter between 2025 and 2026." The [Hacker News thread](https://news.ycombinator.com/item?id=50312408) reached the same place in one line, that discovery is no longer the bottleneck and a search task is far easier to verify than a code change.
+
+There is a second-order effect that hits product teams harder than foundations. A cheap patch is not a cheap review. When intake grows and reviewer headcount does not, queue time does not grow linearly, it grows in the tail, because the items at the end of a long queue are the ones people skim. That is the same shape as the AI-generated code volume problem, and I have argued before that it is a [routing problem rather than a speed problem](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/).
+
+## How to count this on your own repo
+
+The whole protocol fits in an afternoon.
+
+1. Fix a window and compare the same window a year earlier, same branch names, same dates. Master against a stable branch measures nothing.
+2. Page `GET /repos/{owner}/{repo}/commits` with `since` and `until`. Postgres has zero merge commits in both windows, which makes commits a clean unit. If your repo squash-merges or rebases, count merged pull requests instead.
+3. Count trailer lines per 100 commits: `Backpatch-through:`, `Reported-by:`, `Reviewed-by:`. The first gives you the repair share, the second gives you the discovery surface, and the third is where capacity shows up.
+4. Count CVE-tagged commits separately. If security fixes grow faster than your general fix rate, throughput is not your main problem.
+5. Compute intake acceptance, reports closed as fixed divided by reports opened, per week. A flat numerator with a growing denominator is a discovery and repair gap, and the fix is capacity rather than better scanning.
+
+What the numbers cannot tell you: commit counts are not effort, trailers are self-reported, and one window is one window. Postgres is an unusually clean target because its process is disciplined. Treat this as a floor on the effect rather than a precise estimate. If you want the general version of this kind of measurement, I wrote a [reproducible protocol for PR review time](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/) that uses the same fixed-window discipline.
+
+## What it changes in the review path
+
+Detection is the cheap half now, and every team that ships code will get more incoming claims per week, whether they arrive as bug reports or as agent-authored pull requests. Reading is the fixed cost, and the reading is what you have to budget.
+
+Tooling helps on one slice of this: the first pass. Kodus, an open source reviewer you can self-host with rules kept in the repository, sits in that layer alongside CodeRabbit and GitHub's Copilot code review, and the comparison that matters between them is what each one can verify. All of them read the patch. None reproduces the bug, so a tidy review comment on a report that never reproduces is worse than silence, because it moves the item forward in the queue and makes it look handled. That gap is why I keep making the point that [AI code review reads the patch, not the execution](https://aicodereview.io/blog/ai-code-review-reads-the-patch-not-the-execution/).
+
+The decision rule I would use: if incoming volume grew more than about 20% year over year and fix throughput did not move, put the next increment of budget into triage capacity or drop a supported branch. Another scanner changes the top of the funnel, and the top of the funnel is already working, which is the reason the queue looks the way it does.
