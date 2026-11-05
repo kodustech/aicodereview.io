@@ -1,0 +1,93 @@
+---
+title: "41.5% or 83.9%: the oracle decides your AI reviewer's score"
+description: "Two public AI code review benchmarks report recall 2.6x apart because one grades comments with a model and the other runs tests built from human review comments. Here is how to tell which number you are reading."
+pubDate: 2026-11-05
+category: "guide"
+tags: ["aicodereview", "benchmarks", "evals", "llmasjudge"]
+faq:
+  - q: "Why do AI code review benchmarks report such different scores?"
+    a: "They use different oracles. c-CRAB converts each human review comment into an executable test and credits a tool when its feedback leads a coding agent to a patch that passes, which tops out at 32.1% for the best single tool. MacroscopeBench credits a tool when an LLM judge decides its comment matches a catalogued bug, and its top entry reports 83.8% recall. An agreement rate and a resolution rate are different quantities."
+  - q: "What is the best AI code review score published today?"
+    a: "It depends on the oracle. On c-CRAB, the union of four review tools resolves 97 of 234 tests, 41.5%. On MacroscopeBench, Claude Opus 5.5 at max effort scores 83.9 at $11.58 per review. Comparing the two directly tells you nothing, because one is graded by running code and the other by a model reading comments."
+  - q: "How should a team measure an AI reviewer on its own code?"
+    a: "Take 20 merged PRs where a later commit fixed a real defect, feed the introducing diffs to each tool, and label whether the comment named that defect. That gives you a small, code-grounded oracle you own, and it costs an afternoon instead of a vendor trial."
+---
+
+Two public benchmarks, both about AI code review, both publishing a number called recall. c-CRAB says the best tool's feedback leads a coding agent to a verified fix 32.1% of the time. MacroscopeBench's top entry reports 83.8%. A team shopping for a reviewer can read both pages in ten minutes and come away with a 2.6x disagreement about how good these tools are.
+
+Neither number is wrong. What differs is the oracle, meaning the thing that decides whether a review comment counts as correct. One oracle runs code. The other asks a model. Same word on the label, different quantity underneath, and the choice of oracle moves the score further than the choice of tool does.
+
+## What c-CRAB does with a review comment
+
+[c-CRAB](https://arxiv.org/html/2603.23448v1) comes from the National University of Singapore with a SonarSource co-author, posted to arXiv in March 2026. The curation starts from 671 pull requests and 1,313 human review comments, filters them, builds an executable environment per PR, converts each comment into a test, and validates. What survives is 184 PR instances across 67 repositories and 234 validated comments, with a median of 123 modified lines per PR and 1.27 tests per instance.
+
+A comment becomes a test that fails on the original patch and passes once the reviewer's concern is addressed. Then a review tool reads the PR and emits comments. Those comments are handed to a coding agent, which revises the patch. The tests run against the revised patch. Passing means the comment steered a real change.
+
+No judge model decides whether a comment "matches" anything. The pass or fail is code execution. Of the public code review benchmarks I have read, this is the one where the oracle is not the same class of system as the thing under test.
+
+Here is their Table 5, with the comment counts kept in view:
+
+| Tool | Comments | Comments/PR | Behavioral | Structural | Overall |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code | 1336 | 7.3 | 35.5% | 30.8% | 32.1% |
+| Devin | 1344 | 7.3 | 30.6% | 22.7% | 24.8% |
+| PR-Agent | 524 | 2.8 | 33.9% | 19.2% | 23.1% |
+| Codex | 324 | 1.8 | 32.3% | 15.7% | 20.1% |
+| Human | 234 | 1.3 | 100% | 100% | 100% |
+
+Two things fall out of that table that the pass rates hide.
+
+First, the absolute counts. 32.1% of 234 tests is about 75 tests resolved, and 20.1% is about 47. That is a 28-test gap between the top two tools, not the 1.6x the percentages suggest. Across all four tools the union is 97 tests, 41.5%, which means three tools between them added 22 tests that the best single tool missed. If you are choosing between reviewers, that union figure is the honest ceiling for the category, and it sits below half.
+
+Second, the noise accounting. Divide comments emitted by tests resolved and you get 17.8 for Claude Code, 9.7 for PR-Agent, 6.9 for Codex, and 23.2 for Devin. Devin posts more comments than anything else on the board and resolves fewer tests than Claude Code. That is the shape of alert fatigue, quantified on a fixed diff set.
+
+Two caveats worth carrying. The patch revision step runs Claude Code with a Sonnet 4.6 backend, so c-CRAB measures usefulness to that agent, not usefulness to the humans on your team. And the human row is 100% by construction, because the tests were built from human comments. It is a ceiling made of the ground truth itself, and it says nothing about how good human reviewers are.
+
+## What MacroscopeBench does with one
+
+[MacroscopeBench](https://macroscope.com/content/ai-code-review-benchmark-best-models) takes the opposite route. Its dataset is over 12,000 validated bugs from more than 1,500 public repositories in 14 languages. A bug enters when the project itself later identified and fixed it. The task is the commit that introduced the defect. Control commits with no known defect are mixed in, which is the only reason precision is measurable at all: a reviewer that flags something on every diff gets caught by the commits where there was nothing to flag.
+
+Each model reviews the diff without being told whether a bug exists. Two independent LLM judges then decide whether a raised issue matches a catalogued bug. Score is the harmonic mean of recall and precision, averaged across three runs, because a single run of a nondeterministic system is an anecdote.
+
+| Model | Score | Recall | Precision | Signal/noise | Cost | Duration |
+| --- | --- | --- | --- | --- | --- | --- |
+| Claude Opus 5.5 max | 83.9 | 83.8% | 84.0% | 3.01 | $11.58 | 10m 8s |
+| GPT-6.1 Sol max | 78.5 | 69.2% | 90.7% | 6.42 | $1.05 | 3m 59s |
+| GLM 5.3 max | 77.4 | 76.4% | 78.4% | 2.24 | $3.86 | 12m 30s |
+| DeepSeek V4.1 Flash max | 72.0 | 83.1% | 63.5% | 1.27 | $0.75 | 16m 17s |
+| GPT-6 Luna max | 72.5 | 61.1% | 89.1% | 4.28 | $0.13 | 4m 1s |
+
+Cost spread across the [full board](https://macroscope.com/benchmark) runs from $11.58 per review to $0.02, a factor of 579. Duration runs from 10 minutes 8 seconds to 42 seconds.
+
+I recomputed the aggregate before trusting the ordering, since the harmonic mean is a choice. Reranked by the arithmetic mean of recall and precision, GPT-6.1 Sol at max effort moves from 4th to 3rd and its xhigh config moves from 8th to 5th, while Claude Opus 5.5 at xhigh drops from 3rd to 6th. Ranked by recall alone, DeepSeek V4.1 Flash at max effort goes from 19th to 2nd. The harmonic mean punishes whichever axis is lower, which favors balanced configurations and buries the recall-first ones. You can undo that with a spreadsheet and three columns.
+
+Then price it against your own arrival rate. A measurement I ran on microsoft/vscode earlier this month put the recent PR arrival rate near 119.6 per day. At that rate Claude Opus 5.5 at max effort is about $1,385 per day, GPT-6 Luna at max effort is $15.55 per day, and GPT-6.1 Sol at medium effort is $33 per day. That is the same benchmark, the same diff stream, and a 90x difference in the monthly bill, which is why the routing decision matters more than the model pick.
+
+One caveat, and it is the important one. Macroscope publishes this benchmark and sells a reviewer that routes across the models in it. Publishing precision next to recall and cost next to both is more than most vendor pages do, and the numbers still carry the oracle problem: the thing being graded is a model, and the grader is a model. That correlation is the same blind spot that shows up when [a reviewer judges its own output](https://aicodereview.io/blog/your-ai-reviewer-is-judging-its-own-output-thats-a-blind-spot/).
+
+## Why both numbers can be right
+
+MacroscopeBench credits a comment when a judge decides it matches a bug the project later fixed. That is comment, then agreement. c-CRAB credits a comment when a patch revised on that comment passes a test built from a human comment. That is comment, then action, then a verified change. An agreement rate and a resolution rate are different quantities wearing the same label.
+
+If you want the sharper version of the argument, c-CRAB's oracle can fail for reasons that have nothing to do with comment quality. A correct comment can point at an issue the agent fails to fix, and the test fails anyway. So 32.1% is a floor for comment quality and a direct measure of comment usefulness to one specific agent. MacroscopeBench's oracle can pass for reasons that have nothing to do with usefulness. A judge that agrees two descriptions refer to the same issue does not establish that the comment led anyone to change anything, and the same family of model doing the grading is [a known variance problem](https://aicodereview.io/blog/ai-code-review-benchmarks-offline-vs-online-evals/), where Martian's online eval goes further and uses developer action as the proxy for correctness.
+
+Executable oracles need auditing too. The [Terminal Bench 4 audit](https://preferencemodel.com/blog/terminal-bench-4-is-saturated) found that in 41 of 65 tasks, a model could do honest, correct work and still fail, because the grader checked a rule the instructions never stated. A grader can encode requirements nobody wrote down. Reading a pass rate without reading the grader is how you end up with a number that means something other than what you think.
+
+## The check I run before trusting a reviewer's number
+
+1. Find the oracle. Is the pass or fail decided by executing code, by a model judgment, or by what a developer did next? Everything else on the page is downstream of this.
+2. Look at the ceiling. If the ground truth came from human reviews, the human row is 100% by construction, and comparing tools to it is comparing them to the test's own definition.
+3. Divide the pass rate by the comment count. A tool that resolves 30% of issues while posting 1,300 comments is doing different work from one that resolves 25% with 300.
+4. Recompute the aggregate from the published per-axis numbers. Harmonic mean, arithmetic mean, and recall-first produce three different top fives from the same table.
+5. Price it at your arrival rate, not per review. Multiply cost per review by your real PRs per day, then look at the tail, because [cost per PR is a distribution](https://aicodereview.io/blog/ai-code-review-cost-per-pr-is-a-distribution-not-a-price/) and the mean is not the budget line.
+6. Run a 20-diff slice you own. Take 20 merged PRs from your repo where a later commit fixed a real defect, feed the introducing diffs to each candidate, and label whether the comment named that defect. It is a small code-grounded oracle, and it takes an afternoon.
+
+That last step is the one most teams skip. If you want to run it, you need a tool that will review a diff on demand and give you comments you can capture, rather than one that only comments inside a PR thread. PR-Agent, the open-source tool c-CRAB evaluated, runs from a CLI against a diff. Kodus works for this if you self-host it and point it at the same diffs twice. Copilot's review surface can be driven from a local branch if you accept the PR round trip. The criterion is the same for all of them: can you feed it the identical 20 diffs on two different days and compare the comments side by side.
+
+## What this changes about picking a tool
+
+A leaderboard score is the output of an oracle you did not inspect. The next time a vendor or a benchmark page puts a recall number in front of you, the first question is what ran the pass or fail, and the second is how many comments it took to get there. Those two answers will separate the tools that find real defects from the ones that find everything.
+
+If your risk is a defect shipping, you want the code-grounded oracle and the union-style ceiling, because that is the number that predicts whether the feedback changes the patch. If your risk is a review queue nobody reads, you want the signal-to-noise column and the comments-per-resolved-test ratio, since those predict whether people keep reading. Either way, [the volume question is a routing problem](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/) before it is a speed problem, and the routing decision is where the money and the noise both land.
+
+There is no single best AI code review score. There is a score produced by one oracle on one dataset, and your job is to work out whether that oracle resembles the way defects actually reach your main branch.
