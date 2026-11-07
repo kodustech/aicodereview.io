@@ -1,0 +1,75 @@
+---
+title: "Postgres 19 shipped late, and the review queue that grew was not the diff queue"
+description: "Postgres 19 slipped to November. Robert Haas blames LLMs. I re-ran his commit counts, and the numbers show the maintenance queue that grew is not the one your review dashboard measures."
+pubDate: 2026-11-07
+category: "explainer"
+tags: ["ai", "codereview", "postgresql", "benchmarking"]
+---
+
+PostgreSQL has shipped its major version inside the same window for a decade: no earlier than mid September, no later than mid October. This year the window moved. PostgreSQL 19 is expected in November, and a set of large features got pulled during late beta.
+
+Robert Haas, a Postgres committer, [put the explanation in one line](http://rhaas.blogspot.com/2026/10/postgres-19-is-late-and-its-ais-fault.html): "The short answer is that LLMs happened." His post is the most useful thing I've read this month about what AI does to a mature codebase, and it has almost nothing to do with generated code. That matters if your plan for AI-era review is to staff the diff queue harder.
+
+## The commit counts, and a recount
+
+Haas compares two identical windows, April 8 (feature freeze) through September 25, a year apart.
+
+| branch | 2025 | 2026 |
+| master | 1037 | 1443 |
+| release branch | 724 (REL_18_STABLE) | 1169 (REL_19_STABLE) |
+| one release back | 248 (REL_17_STABLE) | 433 (REL_18_STABLE) |
+
+His framing: master commits between freeze and September 25 "actually declined slightly", while the back-patched commits "jumped by more than 60%".
+
+I re-ran those windows against the GitHub mirror with the commits API, using the `since` and `until` parameters plus the Link header to get the last page. I got 1056 and 1477 on master, 738 and 1182 on the release branch, 250 and 437 one release back. The mirror is not authoritative and my counts run a few percent above his, which is what you expect from a mirror. The shape reproduces: master roughly flat, the release branch up about 60%, the older branch up about 75%.
+
+The useful property is that the claim is checkable. Two `git rev-list --count` calls with a date range and a branch name, and you either see the same jump or you don't. I ran it before writing this because a number I can't reproduce isn't evidence.
+
+## Discovery and repair didn't get cheaper at the same rate
+
+The mechanism in the post is worth quoting exactly. "It's become vastly easier to find those bugs. Fixing them has also gotten easier, but not to the same degree."
+
+And on why the fixes still queue up behind humans: "LLMs can draft fixes, but those fixes aren't always correct or compliant with PostgreSQL standards. So, they still need to be reviewed and committed by humans, and those humans have not gotten any smarter between 2025 and 2026."
+
+There's a second effect that teams miss. Time that would have gone into reviewing what was about to ship got spent on security issues and back-branch bugs, so the project worked out late which features had to come out. The [beta 4 release notes](https://www.postgresql.org/about/news/postgresql-19-beta-4-released-3386/) list what came out: UPDATE/DELETE FOR PORTION OF, SQL/PGQ, and ALTER TABLE ... MERGE PARTITION/SPLIT PARTITION. That list is what a spent review budget looks like from the outside.
+
+The [HN thread](https://news.ycombinator.com/item?id=50312408) has the pushback, and one comment is the sharpest thing in it. Simon Willison argues the most common error in a find-bugs task is omission, and omission is hard to spot: confirming that the thing which should have been in the answer was left out is much harder than confirming what is there. Finding is cheap to verify, because the reproducer either fires or it doesn't. Checking what a reviewer failed to notice is not. That asymmetry is the same one Haas describes from the maintenance side.
+
+## Which queue actually grew
+
+The instinct is that review load rises because agents write more code. That effect is real and there's field data on it. The Postgres case is a different queue: the inflow is reported findings about code that shipped years ago, sent by people running LLMs against the repo. Those reports land on triage before they land on review, and triage is where the capacity went.
+
+If your review metrics are comments per PR or time to first review, this queue is invisible to you. The Postgres numbers show the size it can reach: the release branch absorbing 60% more commits than the same window a year earlier while master stayed flat. None of that shows up in a diff review dashboard. It shows up as a slipping release date.
+
+I've [written before](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/) that routing, not speed, is the bottleneck when volume rises. This is the same argument with an outside source of input: the reports arrive faster than anyone can sort them, and the fix for sorting isn't a faster reviewer.
+
+## The one-window check on your own repo
+
+You can run the version of this that applies to you in about ten minutes, against a repo you maintain.
+
+```
+git rev-list --count --since=2025-04-08 --until=2025-09-25 origin/REL_18_STABLE
+git rev-list --count --since=2026-04-08 --until=2026-09-25 origin/REL_19_STABLE
+```
+
+Then the branch one release further back, then master. Six numbers, two windows, one table. If the back-branch count grows faster than master, discovery has outrun repair in your project too, and you have a trend line for the planning doc instead of an anecdote.
+
+Two cautions. Don't attribute churn to source versus test paths with the commit search API's `path:` qualifier, because it silently under-reports (I've had it return 0 for a directory that exists). Use the compare API and classify `files[].filename` yourself. And if you're counting through the API rather than a clone, page with the Link header and `per_page=1`, which turns the response into a count and avoids the total-count instability you get on unbounded queries.
+
+## What to evaluate in a reviewer if this is your problem
+
+An AI reviewer that only reads the diff can't do much here. The diff of a back-branch fix is three lines. The work is deciding which of forty incoming reports is the real one, and then producing a patch the maintainers will accept.
+
+That reframes the eval. Instead of "did it find the injected bug", the questions become: can it take a bug report plus a reproducer, reproduce the failure, classify it against existing issues, and draft a fix in the project's conventions. The tools to test on those criteria are the review platforms that already claim repo-wide context, CodeRabbit, Greptile, Qodo Merge, and Kodus among them, plus whatever CI check your team already owns. Most of them are built around the PR diff, so the honest first test is whether they can ingest a report and a reproduction at all, and whether the patch they produce survives your own suite.
+
+One constraint to keep: an LLM that drafts the fix isn't an independent check on that fix. Haas's line about the fixes not always being correct is the maintenance version of the problem I keep running into with [reviewers grading their own output](https://aicodereview.io/blog/your-ai-reviewer-is-judging-its-own-output-thats-a-blind-spot/). The committer stays in the loop, and the eval should measure how much work is left for them, rather than whether a patch appeared.
+
+If you want the measurement side in more detail, my [protocol for measuring review time with AI](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol/) covers the fixed-window approach and the four numbers worth reporting.
+
+## The open question
+
+Haas ends on forty years of bugs that humans couldn't find and LLMs can: "how are we ever going to catch up, and how will PostgreSQL continue to innovate? Right now, I'm not sure."
+
+The delay itself isn't the interesting part. What's interesting is that a project with an unusually disciplined review culture absorbed a 60% increase in repair load and responded by shipping late, which is the right call when quality is the constraint and also the call most teams can't make. If your release date is fixed, the extra triage capacity has to come from somewhere else in the process.
+
+Caveats, since this is the part people skip: this is one project, one committer's post, and two date windows. The causal story, LLM-assisted bug hunting, is Haas's reading of the data and he's careful to say so. The counts are verifiable, which is why I re-ran them. Check yours before any of this goes in a roadmap.
