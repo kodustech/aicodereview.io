@@ -1,0 +1,92 @@
+---
+title: "AI code review benchmark: read the ground truth first"
+description: "GitHub's ReviewBench publishes a leaderboard and a provenance table. The provenance table is the more useful artifact: 98.2% of its ground-truth findings came from LLM reviewers, and recall is the only column that moves."
+pubDate: 2026-11-08
+category: "guide"
+tags: ["aicodereview", "benchmarks", "evals", "codereview"]
+---
+
+GitHub launched ReviewBench on October 5, 2026, and it is the most serious public attempt so far at grading code review agents on the same pull requests with the same judge. Fifteen rows on the leaderboard, each with F1, precision, recall, comments per PR and duration. `intent-review-agent` sits at the top with 82.2% F1, then Laude RevEngine on Claude Opus 5.5 at 73.3%, then Copilot code review Balanced at 72.7%.
+
+If you are picking a reviewer for a team, the top row is the least interesting thing on that page. I pulled all fifteen rows and ran the arithmetic on the columns, because the shape of the columns tells you what the benchmark can and cannot decide for you.
+
+## The precision column spans 4.9 points
+
+Lowest precision on the board is 92.0%. Highest is 96.9%. Standard deviation across fifteen agents from different vendors, different models, and different harnesses is 1.42. A tool at 92.0% and a tool at 96.9% are the same tool on that axis for any purchase decision you are about to make.
+
+Recall is where the board actually separates. Bottom is 20.2%, top is 74.4%, standard deviation 13.11. Across the fifteen rows, the correlation between recall and F1 is 0.989. The correlation between precision and F1 is -0.075, which is to say there is no relationship at all.
+
+So the ranking you are reading is a recall ranking displayed in an F1 column. That matters because the two failure modes cost you different things. A reviewer with high precision and low recall is quiet and misses things. A reviewer with low precision and high recall floods your queue and trains reviewers to ignore it. Which one hurts depends on whether your problem is escaped defects or reviewer attention, and the leaderboard's F1 number collapses both into one figure that cannot answer that question.
+
+Comment volume does not buy score either, which kills the obvious workaround of just posting more. `diffox` emits 20.6 comments per PR and lands at 57.6% F1. Cursor emits 1.8 per PR and lands at 60.9%. Correlation between comments per PR and F1 is 0.289.
+
+One more thing about that table: it is not a single snapshot. The bottom two rows, Greptile at 33.4% and Cubic at 35.8%, are dated June 16 and June 29. The rows above them are dated through October 26. That is a 132-day spread inside one ranking, and the leaderboard's own footnote says the ReviewBench team ran the initial entries on each vendor's publicly available product, that vendors did not run or verify them, and that the products may have changed since. A four-month-old row for a product that ships weekly is a historical artifact sitting in a comparison table.
+
+## 98.2% of the ground truth was written by review agents
+
+The part of ReviewBench worth your time is the provenance table in [the repo's README](https://github.com/review-bench/ReviewBench). Every golden finding records which producer surfaced it. Across the full set of 219 pull requests there are 2,623 true-positive findings:
+
+- LLM review agents: 1,391, or 53.0%
+- Copilot code review (`ccr`): 1,185, or 45.2%
+- Human review comments: 39, or 1.5%
+- Deterministic tools: 8, or 0.3%
+
+That is 98.2% of the ground truth produced by models, and 1.5% produced by the humans who actually reviewed those pull requests. The test set is the same shape: 352 true positives, 98.6% machine-produced, 4 from human comments.
+
+I want to be fair to what this design is doing. The [methodology](https://review-bench.ai/methodology) is explicit that no single producer can find everything worth finding, that findings are semantically deduplicated so agreement between producers cannot inflate the golden set, and that a finding counts as a true positive only if it is true, relevant, and non-trivial, regardless of which producer surfaced it. The labels were then audited by humans: TP/FP agreement between the Claude Sonnet 5 classifier and senior engineers came out at 96.6%, with 47 findings manually corrected. That is a more honest construction than most vendor benchmarks, and the classifier prompt is published in the repo so you can read what it was told.
+
+The number that should stay in your head is the 96.6%, next to the severity figure. Severity agreement was 62.9% exact and 98.7% within one level, and the disagreements skew one way: humans rated an issue as more severe roughly nine times as often as they rated it less severe. Category agreement was 79.7% exact. Section 8 of the methodology names the consequence directly, saying the true-positive boundary "encodes our working group's taste" and that another team configuring the classifier differently would get different scores for the same agents.
+
+Put those two facts together. The ground truth is mostly other models' findings, validated by a classifier that agrees with humans 96.6% of the time on the binary and 62.9% of the time on severity. For high-severity slicing, which is exactly what a team buying a reviewer cares about, the label carries real uncertainty.
+
+## ReviewBench ships the tool that exposes the overlap
+
+Here is the detail I did not expect to find in a vendor-adjacent benchmark. The [judging docs](https://github.com/review-bench/ReviewBench/blob/main/docs/JUDGING.md) include a `--exclude-producer` flag, and the stated rationale is blunt: if your reviewer, or a system closely related to it, produced some of the golden findings, then its grounded metrics partly measure agreement with its own earlier output.
+
+Since 45.2% of the full-set ground truth carries the `ccr` producer prefix, that flag is doing real work for one entrant in particular. Run `--exclude-producer ccr:` and Copilot's grounded recall is computed against the golden findings it did not author. The docs also note the flag is off by default and cannot be combined with `--ingest`, and that a pull request whose golden set empties out is still scored, with a null grounded recall that gets skipped in the macro average.
+
+Read that as the benchmark author admitting the mechanism. A reviewer graded against a corpus that is 98% model-authored is partly being graded on whether it agrees with other models. Leave-producer-out scoring is the control for that, and it is not on the leaderboard. It is a diagnostic you run yourself.
+
+## Offline gains and online gains do not move by the same amount
+
+GitHub published its own offline-versus-online comparison for a lite-tier ensemble reviewer, and it is worth reading as a calibration exercise. ReviewBench predicted the direction every time. The magnitudes were not close:
+
+| Metric | ReviewBench offline | Production A/B |
+|---|---|---|
+| Precision (addressed rate) | +4.45% | +8.00% |
+| Recall | +12.88% | +13.58% |
+| Comment volume | +40.0% | +25.0% |
+| Cost per review | -23.7% | -8.00% |
+| Critical-severity comments | +227.4% | +262.0% |
+| Low-severity comments | -15.69% | -45.0% |
+
+Same sign in all six rows, which is a genuinely good result for an offline benchmark and better than most. The offline signal underestimated cost savings by roughly 3x and underestimated the drop in nit-level comments by roughly the same factor. If you are using an offline number to forecast a rollout, forecast the direction and refuse to forecast the size.
+
+I wrote about the general version of this split in [AI code review benchmarks: offline vs online evals](https://aicodereview.io/blog/ai-code-review-benchmarks-offline-vs-online-evals/), and about the training-leakage problem on fixed datasets in [Martian's Code Review Bench: the "#1" claim rots in months](https://aicodereview.io/blog/martians-code-review-bench-the-1-claim-rots-in-months/). The pattern across all three is the same: fixed-dataset evals are reproducible and stale-prone, streaming evals are fresh and label-noisy, and the number that gets quoted is never the one with the error bars attached.
+
+## A protocol you can run this week
+
+ReviewBench is MIT licensed with a published judge prompt, a public corpus manifest, a 25-PR test set and a Harbor path for the full 219. That means the useful move is not reading the leaderboard, it is running the part of it that applies to you.
+
+1. Score the two or three tools you are actually considering on the 25-PR test set with your own judge, and record the provider and model. The docs are explicit that judge choice changes the labels, so an unrecorded judge makes two runs incomparable.
+2. Re-run with `--exclude-producer ccr:` and compare. If a tool's grounded recall drops sharply, part of its score was agreement with the corpus author.
+3. Slice by severity. Because severity agreement is 62.9% exact, treat a small high-severity difference between two tools as noise and a large one as a signal. The published critical-comment movement in the ensemble experiment was in the hundreds of percent, so the resolution is there when the effect is real.
+4. Then measure your own input distribution, because a benchmark corpus tuned for reviewability is not your queue. I made this point with real diff sizes in [AI code review for large PRs: check the input distribution](https://aicodereview.io/blog/ai-code-review-for-large-prs-check-the-input-distribution/), where the p90 in microsoft/vscode was 19 files and about 1,200 lines of churn, and 40% of merged PRs sat in the 10-plus-file bucket.
+5. Keep the two axes separate when you report up. Precision tells you how much noise your reviewers will absorb. Recall tells you what still reaches production. Neither number is a summary of the other.
+
+## Where a self-hosted reviewer fits
+
+Everything above applies whether you buy a hosted reviewer or run your own. The difference is what you can inspect. A hosted tool gives you its published score and whatever it chooses to explain. A self-hosted reviewer like Kodus, which runs against your own model keys and keeps the review inside your infrastructure, lets you run the same corpus privately, swap the judge, and read the raw findings per pull request instead of a single aggregate.
+
+That is the practical trade. You give up the vendor's tuning and hosted model access, and you gain the ability to run leave-producer-out scoring on your own corpus, with your own severity definitions, on your own repos. For teams where the review bar is specific to one codebase, that trade tends to be worth it. For teams that want a reviewer installed this afternoon, a hosted tool with a documented evaluation story is the shorter path. I went through the deployment-side checks in [Self-Hosted AI Code Review Tools: What to Verify Before You Deploy](https://aicodereview.io/blog/self-hosted-ai-code-review-tools-what-to-verify-before-you-deploy/), and the corpus question is the first one on that list.
+
+## Four numbers to pull off any review benchmark
+
+The ReviewBench page is a good artifact and I will keep using it. What I will not do is quote the F1 column. Any review benchmark you are handed, from any vendor, is worth four numbers before you read the ranking:
+
+- Producer mix of the golden set. If it is mostly model-authored, the score includes agreement with other models.
+- Judge agreement on the label you care about. Binary agreement of 96.6% next to 62.9% exact severity means the two numbers are not equally trustworthy.
+- Precision and recall reported separately, with the spread across the field. A compressed precision column is not a ranking.
+- The date on each row. A ranking that mixes June and October runs is not a comparison of today's products.
+
+ReviewBench gets most of this right and publishes the parts that embarrass it, which is more than most. The leaderboard is still a table of recall, and the ground truth behind it is still mostly other models talking. Read the provenance table first, run the control the docs hand you, and treat the top row as a starting question rather than an answer.
