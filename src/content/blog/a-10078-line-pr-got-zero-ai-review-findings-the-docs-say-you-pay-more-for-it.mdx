@@ -1,0 +1,98 @@
+---
+title: "A 10,078-line PR got zero AI review findings. The docs say you pay more for it."
+description: "I measured findings-per-PR against diff size on 22 merged microsoft/vscode PRs. Findings stayed flat near 1 while cost scales with PR size. Here's the protocol to test it on your repo."
+pubDate: 2026-11-09
+category: "explainer"
+tags: ["ai", "codereview", "benchmarking", "github"]
+---
+
+A pull request landed in microsoft/vscode on 2026-11-06 that touched 259 files and 10,078 lines of churn. Copilot code review looked at it and returned a verdict of "Needs a closer look." Under that heading, the body reads "No open issues." Three human reviewers approved it and it merged.
+
+Four days earlier, in the same repo, an 11-line change to a single file came back with "Copilot wasn't able to review any files in this pull request."
+
+Two reviews at opposite ends of the size distribution, neither one producing a finding. That pattern shows up across the whole range I sampled, and it's the thing vendor benchmarks never plot, because a catch-rate table has no column for how much of the diff the reviewer actually engaged with.
+
+## What I measured, and the two API details that break a naive count
+
+I sampled 22 merged PRs from microsoft/vscode across two windows (created 2026-10-20 to 2026-10-27, and 2026-11-05 to 2026-11-06). For each PR I pulled the PR object for churn and file count, the reviews endpoint for the bot's review object, and the comments endpoint for its inline comments.
+
+Two things bit me on the way, and both would have produced a wrong answer:
+
+- The `/repos/{owner}/{repo}/pulls` list endpoint does not return `additions`, `deletions` or `changed_files`. Every size number has to come from a per-PR call to `/repos/{owner}/{repo}/pulls/{number}`, which is one request against your rate limit per PR. A 22-PR sample is 22 calls just for the size fields.
+- Copilot's inline comments are authored by the login `Copilot`, without a `[bot]` suffix, while its review object is authored by `copilot-pull-request-reviewer[bot]`. Filter top-level comments by `login.endswith('[bot]')` and you get zero rows, which reads as "the reviewer found nothing" on every PR.
+
+If you re-run this, also note that a bot review object always has `state: COMMENTED`. It never approves the PR. The verdict lives in the body, so `state` tells you nothing about what the reviewer concluded.
+
+## Findings do not scale with the diff
+
+Here's the sample split by churn. "Findings" is the count of open issues in the bot's review summary, which matches the number of inline comments it left.
+
+| Churn bucket | PRs | Median findings | Findings per 1,000 lines |
+| --- | --- | --- | --- |
+| under 50 | 3 | 0 | 0 |
+| 50 to 200 | 9 | 1 | 5.0 to 10 |
+| 200 to 1,000 | 6 | 2 | 2.0 to 3.3 |
+| over 1,000 | 4 | 1.5 | 0.0 to 0.6 |
+
+The correlation between churn and findings is -0.06. Between file count and findings, -0.13. Both are indistinguishable from zero at n=22, and the sign points the wrong way if you expected the reviewer to find more in bigger diffs. Overall: median 1 finding, mean 1.18, maximum 4, and 8 of the 22 PRs came back with zero.
+
+The per-line column is where it gets concrete. A 606-line PR returned 4 findings, about 6.6 per 1,000 lines. A 4,460-line PR returned 2, about 0.45. The 10,078-line PR returned none. That's a swing of two orders of magnitude in findings density, in the same repo, in the same week, on the same review effort level.
+
+That last part matters for the comparison. I could label 17 of the reviews from their footers, and every one read `<sub>Review effort: Balanced</sub>`, which is the documented default. So this isn't a case of someone turning the effort down on the big PRs. Same setting, wildly different output density.
+
+The mechanism is a bounded output budget. A review is one pass that will enumerate some number of issues, and that number looks roughly constant regardless of how much surface area it had to cover. On a 150-line diff, one pass covers most of the change. On a 10,000-line refactor, the same budget is a rounding error against the diff, so the reviewer either surfaces the few highest-salience items or declines to enumerate any. Greptile's benchmark has a name for the clean version of this problem: it [excluded "extremely large or single-file changes"](https://www.greptile.com/benchmarks) to keep the set realistic. Every published catch rate you've read describes the band where a single pass still covers the diff.
+
+## The verdict line is a coverage claim, not a findings count
+
+I saw three verdict shapes in the sample, plus a fourth that isn't a verdict at all:
+
+- `Approval recommended`, with zero findings (9 PRs)
+- `Changes recommended`, with 1 to 4 open issues (10 PRs)
+- `Needs a closer look`, with zero findings (2 PRs)
+- `Copilot wasn't able to review any files in this pull request` (1 PR)
+
+GitHub documents the first two as outcomes and the effort levels behind them in the [Copilot code review concept page](https://docs.github.com/en/copilot/concepts/agent-capabilities/agent-powered-workflows-and-operations/code-review). Lite for routine changes, Balanced as the default for security-sensitive or cross-service work, Max for release-critical PRs.
+
+The state that isn't in the catch-rate vocabulary is "Needs a closer look." On the 10,078-line PR the bot wrote that the change "needs maintainer validation of drag-and-drop, split-chat groups, and remote-host behavior, which the reported live checks did not cover and cannot be exercised here." That's the reviewer telling you it couldn't establish correctness, because the evidence to do so isn't in the diff.
+
+Treat that as a pass and your metrics lie to you. If your eval counts findings, zero findings reads as clean, and "I could not verify this" scores identically to "this is fine." Those two are the opposite signal. This is the same class of problem as [the documented list of files Copilot code review skips](https://aicodereview.io/blog/github-copilot-code-review-skips-a-documented-list-of-files/): the review comes back looking normal, and nothing in the summary tells you a portion of the change was never considered.
+
+## The bill does scale with the diff
+
+Same documentation page, different table. On estimated consumption, GitHub writes that consumption "generally increases with pull request size and repository custom instructions," and publishes an average cost per review of $0.25 at Lite, $1.50 at Balanced, and $10 at Max, with Balanced's typical range running to $5 and Max's to $25.
+
+So the input axis moves the price monotonically and the output axis doesn't move at all. Put those two curves next to each other and the unit economics invert as PRs get bigger. A 100-line PR that returns one finding costs about $1.50 per finding at the default level. A 10,000-line PR that returns none costs $1.50 for nothing, and if you've moved it to Max because it's a risky refactor, $10 for nothing.
+
+I've made the [distribution point about per-PR cost](https://aicodereview.io/blog/ai-code-review-cost-per-pr-is-a-distribution-not-a-price/) before. This is the same shape one level down: cost is driven by input size while findings are capped, so cost per finding is a function of how big your PRs are. If your team ships agent-generated 30-file PRs, your effective cost per useful comment is far worse than the vendor average implies, and no vendor reports it that way.
+
+The volume side makes it worse. CircleCI's [2026 State of Software Delivery report](https://circleci.com/resources/2026-state-of-software-delivery/), built on more than 28 million CI workflows, shows feature branch throughput up 59% year over year while median main branch throughput fell 7% and build success dropped to 70.8%, the lowest in five years. More diffs are being opened, and they're sitting in the queue longer. That's the population where the findings-flatness actually bites.
+
+## Run this on your own repos
+
+You can reproduce the shape in an afternoon, on a repo you actually care about:
+
+1. Pick a fixed creation window, not a "recently updated" sort. The updated sort surfaces long-lived PRs and turns any latency or size number into a tail estimate.
+2. Fetch each merged PR with the single-PR endpoint to get churn and file count. The list endpoint won't give you either.
+3. For each PR, record the bot's review body and its inline comment count. Parse the verdict from the body, and count comments by the exact login the bot uses, not a `[bot]` suffix match.
+4. Bucket by churn and compute findings per 1,000 lines per bucket, plus the Pearson correlation between churn and findings. Report the correlation, because the flatness is the finding.
+5. Count how many PRs came back with zero findings, and split that number by verdict. Zero findings with an approval and zero findings with a low-confidence verdict are different events.
+
+Run it before you buy, and run it again after you deploy. It takes a window of merged PRs and about one API call per PR, which for a 50-PR sample is under an hour of unauthenticated rate limit.
+
+## What to compare between tools on this axis
+
+Once you're measuring output-per-input, the differences between reviewers stop being about catch rate and start being about coverage reporting and degradation behavior. The questions that separate them:
+
+- Does the review state how much of the diff it covered? A "reviewed 12 of 47 files" line is worth more than any summary paragraph, because it tells you where the boundary is.
+- Is there a verdict state that means "I couldn't establish this," and does your dashboard read it as green? If the only states are approve and change-request, the uncertainty is invisible.
+- Does the reviewer chunk a large diff into multiple passes, or truncate to one? Ask directly. A tool that truncates will show the same flat findings curve you just measured.
+- Can you raise the effort per PR, and does raising it change the findings count or only the cost? Test both. If the count doesn't move, you're paying for a longer explanation of the same pass.
+- Can you change the behavior yourself? This is where self-hosting and model control matter. [Kodus](https://aicodereview.io/tools/kodus/) runs self-hosted or cloud with your own model keys and org-wide rules, so the per-PR behavior is a configuration you own. [CodeRabbit](https://aicodereview.io/tools/coderabbit/) and [Greptile](https://aicodereview.io/tools/greptile/) both index the repo for context, which is a different lever on the same problem. [GitHub Copilot code review](https://aicodereview.io/tools/github-copilot-code-review/) exposes the effort level but not the pass structure.
+
+Match those against how your queue actually looks. If your median PR is 6 files and 190 lines, which is what I measured here, the flatness barely matters and catch rate is the right metric. If your p90 is a 30-file agent PR, output-per-input is the metric, and a vendor that can't state its coverage can't be evaluated on it.
+
+## The decision criterion
+
+Findings density, not findings. Ask a vendor for findings per 1,000 lines of churn across three buckets of PR size, and ask whether the tool has a state that means "unable to assess" which is distinct from "clean." A single-pass reviewer will hit a ceiling on large diffs. That's a real limit of the approach, and it's fine as long as you know where it is.
+
+What isn't fine is a review that returns no findings and no coverage number, because in every dashboard built on top of it, that PR looks reviewed.
