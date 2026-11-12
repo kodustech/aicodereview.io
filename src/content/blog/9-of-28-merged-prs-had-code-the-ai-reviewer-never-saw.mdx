@@ -1,0 +1,77 @@
+---
+title: "9 of 28 merged PRs had code the AI reviewer never saw"
+description: "I compared every Copilot review's commit_id to the merged head across 28 vscode PRs. 12 verdicts were off-head, 9 of them had real code pushed after the review, and the unreviewed delta added up to 161 files."
+pubDate: 2026-11-12
+category: "explainer"
+tags: ["ai", "codereview", "github", "testing"]
+faq:
+  - q: "Does Copilot code review automatically re-review after a new push?"
+    a: "Not by default. GitHub's docs state that pushing changes to a PR Copilot has reviewed will not trigger a re-review unless you enabled automatic reviews and turned on the Review new pushes option in Copilot settings or a repository ruleset. Otherwise you have to re-request the review manually."
+  - q: "Why are human approvals always on the merged commit but bot reviews are not?"
+    a: "Protected branch rules dismiss stale approvals when the diff changes, so an approval is invalidated on a new push and must be re-issued. A bot review is submitted as a COMMENTED review, so the stale-approval rule does not apply and its commit binding can drift behind the merged head."
+  - q: "How do I measure how much of my merged code an AI reviewer actually covered?"
+    a: "For each merged PR, take the last bot review's commit_id, compare it to the merged head SHA, and count the single-parent commits between them plus the files and lines from the compare endpoint. Merge-only pushes move the head SHA without changing the PR's content, so exclude them to avoid overcounting."
+---
+
+Open a pull request, let the bot review it, read the green summary, merge. That is the workflow most teams run now. The part nobody checks is that the green summary is attached to a commit, and the commit you merged is often a different one.
+
+I pulled 28 merged pull requests from [microsoft/vscode](https://github.com/microsoft/vscode) that carried a review from `copilot-pull-request-reviewer[bot]`, and compared each bot review's `commit_id` against the SHA the PR actually merged at. Then I measured the gap: for every off-head verdict, I compared the reviewed commit to the merged head through the compare API and counted what got added in between.
+
+The result is a coverage boundary that no dashboard shows you. 12 of 28 verdicts were off-head. 9 of those 12 had ordinary code commits pushed after the review, not merge commits. Those 9 gaps contained 161 changed files and 4,762 added or removed lines that no bot review ever covered.
+
+## The verdict is bound to a commit, not to the pull request
+
+A GitHub review object has a `commit_id` field. Everything the reviewer said applies to that SHA. If a later commit changes the same lines, the verdict does not become wrong, it becomes about a different artifact.
+
+GitHub's own docs state the behavior plainly in [Using GitHub Copilot code review](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/use-code-review): when you push changes to a pull request that Copilot has reviewed, it will not automatically re-review unless you configured it to review new pushes after enabling automatic reviews. Manually re-requesting is a click. In my sample, 2 of 28 PRs got a second bot review at all.
+
+So the default state of a merged PR is a bot verdict pointing at a commit that may be several pushes old, still rendering as an approval in the timeline, still quotable in a retro as "the reviewer passed it."
+
+## 12 of 28 merged PRs had an off-head verdict, and 9 had real code in the gap
+
+Here is the sample, all merged between 2026-11-07 and 2026-11-09:
+
+- 28 merged PRs carried a Copilot review object. Every one of them had `state: COMMENTED`.
+- 12 of the 28 last bot verdicts were attached to a commit other than the merged head.
+- 3 of those 12 were off-head only because a merge from `main` landed after the review. No new authored code, so the coverage gap is nominal.
+- 9 had at least one non-merge commit pushed after the last bot review. The PR merged on that later state with no re-review.
+- Across those 9, the unreviewed delta totaled 161 files and 4,762 lines.
+- The largest single gap was PR 346816: 43 files and 1,753 lines pushed after the bot's last verdict. The bot's summary on that PR was `🟡 Changes recommended` with 1 open issue, and it stayed that way through the merge.
+
+That merge-commit split is worth keeping in your own instrumentation, because the naive version of this check overcounts. A merge from the base branch moves the head SHA, so `commit_id != head.sha` fires, but the PR's content relative to its base is unchanged. You have to count commits with a single parent to separate a real coverage gap from bookkeeping. I learned that the hard way building this counter; the same class of mistake shows up when you count [what a reviewer reads versus what actually runs](https://aicodereview.io/blog/ai-code-review-reads-the-patch-not-the-execution).
+
+The other trap is the verdict text itself. Six of the off-head summaries read `🟢 Approval recommended` with `**No open issues**`. Read at merge time, they look like a clean pass on the merged code. They were a clean pass on a commit that had since been rewritten, in one case by 1,753 lines.
+
+## The human approvals did not have this problem
+
+The control is right there in the same dataset. I filtered the reviews to non-bot accounts with `state: APPROVED` and compared their `commit_id` to the merged head.
+
+28 of 28 human approvals landed exactly on the merged SHA. Zero off-head.
+
+That is not a personality difference between humans and bots. It is branch protection doing its job. GitHub's docs on [protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches) describe the dismiss-stale-approvals option: the approving review is recorded against the diff state at approval time, and when the diff changes, the approval is dismissed and the pull request cannot merge until someone approves again. The human signal gets re-anchored by the platform, automatically, every time.
+
+The bot's verdict is not an approval, so that rule never touches it. That is the whole mechanism. Your merge gate is intact and the automated reviewer's opinion is a comment that can drift arbitrarily far behind the artifact it claims to describe.
+
+## Where the fix lives, and what it costs
+
+The switch is documented in [Configuring code review by GitHub Copilot](https://docs.github.com/en/copilot/how-tos/copilot-on-github/set-up-copilot/configure-code-review). Under Copilot settings, Code review, you can enable `Review new pushes` to review each new push to a PR Copilot is already reviewing. Rulesets can enable it too, and a user setting cannot disable push reviews a ruleset turned on. Multiple qualifying sources are evaluated separately but produce a single review.
+
+Two documented caveats matter before you flip it. The same doc notes that when re-reviewing, Copilot may repeat the same comments again, even ones you already resolved or downvoted. A reviewer that re-runs on every push and re-raises settled comments trains your team to ignore the thread.
+
+The second is price. The docs put average cost per review at roughly $0.25 on Lite, $1.50 on Balanced, and $10 on Max, varying with PR size. Re-reviewing on every push multiplies that by your push count, which is exactly why the [cost per PR is a distribution](https://aicodereview.io/blog/ai-code-review-cost-per-pr-is-a-distribution-not-a-price) rather than a line item. Turning on push reviews is a real budget decision, and for a busy repo it is not free.
+
+For self-hosted reviewers, the equivalent question is whether the tool keys its next run off the last commit it analyzed and whether it treats a merge-only push as a skip. Kodus documents both behaviors in its [code review flow](https://docs.kodus.io/en/how_to_use/code_review/flow): the reviewer remembers the last analyzed commit to keep follow-ups incremental, and its skip conditions include no new commits since the last run and merge commits with no effective changes. That is the right shape for this problem, since it re-reviews authored code and stays quiet on bookkeeping. It is worth asking any vendor in an evaluation the same question, because "does it re-review" and "does it re-review merge commits it does not need to" are different answers with different bills.
+
+## What to measure instead of trusting the verdict
+
+Treat the bot verdict as a comment on a commit, never as a gate on the merge. The measurement that tells you the truth takes three numbers per merged PR, and you can run it against any repo that installs a reviewer:
+
+1. The last bot review's `commit_id`.
+2. The PR's `head.sha` at merge time.
+3. The count of single-parent commits between them, plus files and lines from the compare endpoint.
+
+Report the share of merged PRs where that count is greater than zero, and the total unreviewed lines. That is your reviewer coverage number, and it is the one that survives a code freeze, a rebase, or a busy afternoon of follow-up commits. It also composes with the other boundary nobody benchmarks: the [documented list of files Copilot code review skips entirely](https://aicodereview.io/blog/github-copilot-code-review-skips-a-documented-list-of-files).
+
+If you want a full protocol for the surrounding numbers, the [reproducible PR review time protocol](https://aicodereview.io/blog/reduce-pull-request-review-time-with-ai-a-reproducible-protocol) covers the timestamps, and [where PR wait time actually sits](https://aicodereview.io/blog/where-pr-wait-time-actually-sits-after-you-add-an-ai-reviewer) covers the queue side.
+
+One more thing worth carrying into any review-tooling decision. The survey on [test-driven approaches for LLM software engineering](https://arxiv.org/abs/2609.12012) makes the point that a passing test does not establish behavioral equivalence, effective feedback, or process adherence. A green reviewer comment is the same kind of artifact. It is a signal generated at one point in time about one version of a file set. When someone asks how much of your merged code an AI reviewed, the honest answer is a number you measured, and it is usually smaller than the badge suggests.
