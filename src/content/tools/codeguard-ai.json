@@ -1,0 +1,69 @@
+
+{
+  "name": "CodeGuard AI",
+  "website": "https://javacoder716.gumroad.com/l/codeguard-ai?utm_source=aicodereview&utm_medium=referral&utm_campaign=codeguard_ai&utm_content=tool_listing",
+  "tagline": "Self-hosted, customizable AI code review for GitHub Pull Requests, with configurable model providers and a source-code workflow developers can extend.",
+  "category": "ai-pr-review",
+  "openSource": false,
+  "license": "Proprietary",
+  "pricing": "$15 one-time for the commercial source-code package; AI provider and hosting costs are separate.",
+  "pricingUrl": "https://javacoder716.gumroad.com/l/codeguard-ai?utm_source=aicodereview&utm_medium=referral&utm_campaign=codeguard_ai&utm_content=pricing",
+  "selfHosted": "full",
+  "selfHostedNote": "The commercial package is designed to run in the buyer's own environment; this is source code, not a hosted SaaS service.",
+  "platforms": [
+    "github"
+  ],
+  "modelControl": "Supports OpenAI, Google Gemini, Groq, and Ollama; provider configuration and available options should be verified against the supplied commercial package.",
+  "lastVerified": "2026-10-14",
+  "standards": {
+    "01-multi-dimensional-context": {
+      "status": "partial",
+      "note": "Repository-aware review and behavior-impact analysis are described for the product; cross-repository dependency analysis is not documented in the public showcase."
+    },
+    "02-rule-centric": {
+      "status": "partial",
+      "note": "Configurable team rules and review instructions are included; a default-quiet, version-controlled rules-as-code workflow is not publicly documented."
+    },
+    "03-dual-workflow": {
+      "status": "unknown",
+      "note": "The public materials document GitHub Pull Request reviews, webhooks, and manual reviews; local IDE or pre-commit review mode is not documented."
+    },
+    "04-business-logic": {
+      "status": "unknown",
+      "note": "Behavior-impact analysis is described, but ticket or issue-tracker acceptance-criteria validation is not documented."
+    },
+    "05-continuous-learning": {
+      "status": "partial",
+      "note": "Reviewer feedback learning is described for the product; learning from approval/rejection history and regression prevention are not independently documented in the public showcase."
+    },
+    "06-sandbox-validation": {
+      "status": "partial",
+      "note": "Suggested patches have a validation layer and Apply Fix safeguards are described; isolated sandbox execution of generated patches is not documented."
+    },
+    "07-economic-transparency": {
+      "status": "yes",
+      "note": "The source-code package is a one-time purchase and supports configurable model providers, including Ollama; separate provider and hosting costs may apply."
+    },
+    "08-actionability": {
+      "status": "partial",
+      "note": "AI-suggested patches and a guarded GitHub Apply Fix workflow are described; automatic test execution and a completed end-to-end validation loop are not claimed."
+    },
+    "09-measurable-roi": {
+      "status": "partial",
+      "note": "Review history, trend tracking, and quality/risk information are described; DORA metrics and quantified ROI reporting are not documented."
+    }
+  },
+  "relatedPosts": [
+    "best-ai-code-review-tools",
+    "self-hosted-ai-code-review",
+    "ai-code-review-vs-static-analysis"
+  ],
+  "startingPrice": "$15 one-time",
+  "freeTier": "no",
+  "languages": [
+    "Java",
+    "Spring Boot"
+  ],
+  "repoUrl": "https://github.com/Sweety717/CodeGuard-AI",
+  "docsUrl": "https://github.com/Sweety717/CodeGuard-AI"
+}
