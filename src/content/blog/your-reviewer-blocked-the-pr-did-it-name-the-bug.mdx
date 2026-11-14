@@ -1,0 +1,91 @@
+---
+title: "Your reviewer blocked the PR. Did it name the bug?"
+description: "Two 2026 security benchmarks score AI reviewers at the verdict level and get a near tie. The split shows up one layer down: whether the finding names the mechanism and cites evidence outside the diff."
+pubDate: 2026-11-14
+category: "guide"
+tags: ["ai", "codereview", "security", "benchmarks"]
+faq:
+  - q: "Why do AI code review tools score similarly on benchmarks but behave differently in practice?"
+    a: "Most published scores are verdict-level: did the reviewer request a change, or did it emit a finding on the right file. SecPRBench found that in 68% of its direct-review misses, the agent filed a finding in the file holding the flaw while arguing a neighboring mechanism, which location-based or binary scoring would count as a detection. Score diagnosis and evidence separately and the same tools separate."
+  - q: "What is the verdict-diagnosis gap in AI code review?"
+    a: "It is the difference between blocking a pull request and identifying the vulnerability that makes it unsafe. MalPR-Bench measured two reviewers blocking nearly the same number of malicious PRs (22/31 vs 24/31) while identifying 22 versus 16 targets. A block triggered by an unrelated issue can satisfy a verdict-level eval and leave the target defect exploitable."
+  - q: "How do I test whether my AI reviewer can see evidence outside the diff?"
+    a: "Tag your test cases by evidence location. L0 means the changed lines settle it, L1 needs unchanged code in a touched file, L2a needs code outside the touched files reachable through a call or import, and L2b needs semantically corresponding code like a sibling handler. MalPR-Bench found one widely deployed reviewer identified 16 of 24 L0/L1 targets and 0 of 7 L2a/L2b targets."
+  - q: "Should I count the number of findings an AI reviewer produces?"
+    a: "Count it as a cost, not a signal. SecPRBench reports findings per task because each one is something a developer has to read, and it tracks Hit@1, the share of tasks where the first finding detects the target, because that models a developer who reads only the top of the list."
+---
+
+Most teams score an AI reviewer on the thing the tool tells them: did it say something, and did it ask for a change. That number is cheap to collect, it moves when you tune the prompt, and it is close to useless for deciding whether the reviewer is worth its seat.
+
+Two security benchmarks published in the last few months land on the same finding from opposite directions. Score reviewers at the verdict level and the field is a tie. Score them at the diagnosis level and the same tools separate by a wide margin. If you are choosing a reviewer, or justifying the one you already pay for, that gap is the number you actually need.
+
+## At the verdict level, the leaders are indistinguishable
+
+[SecPRBench](https://arxiv.org/abs/2610.33509) takes 265 real vulnerability-introducing commits from nine widely deployed C, C++, and Rust projects (Firefox, V8, OpenSSL, and others) and hands each one to an agent as a review task: the diff, the commit message, a source snapshot, no advisory, no later fix, no hint. A finding earns credit only if it explains the target's causal failure, meaning what triggers it, which operation becomes unsafe, and which condition gets violated.
+
+Across eight frontier models, recall runs from 32.5% to 78.1%. The top four (Grok 4.6 at 78.1%, GPT-6 sol at 76.2%, GLM 5.3 at 74.7%, Opus 5.5 at 74.0%) are statistically tied, and the authors say the real difference between them is speed. That is the shape of a saturated scoreboard, and it is the same shape you see in the public code review benchmarks we compared in [41.5% or 83.9%: the oracle decides your reviewer's score](https://aicodereview.io/blog/415-or-839-the-oracle-decides-your-ai-reviewers-score/): the top of the table compresses because the easy cases are solved.
+
+Where they separate is on contested targets, the ones few other agents find. On those, the top four still find about half, while the bottom four find at most one in five. Stacking models helps less than you would hope: the three leaders together find about nine in ten targets, all eight together find one more than the top four, and 23 targets survive the entire ensemble.
+
+## The misses that aren't misses
+
+The part of SecPRBench worth stealing for your own eval is the miss taxonomy. In 68% of scanned direct-review misses, the agent files a finding in the file that holds the flaw, often in the very function, and argues a mechanism the judge rejects as a neighboring bug. The paper puts it plainly: scoring by location or by a binary vulnerable/safe verdict would count those as detections.
+
+Their curl example is a nine-line change to `lib/smb.c` that leaves a request's path pointing into a buffer that dangles once its connection is freed. All eight agents report on that file. Four call the buffer leaked, the GPT agents call the line a logic bug, and the judge credits none of it. Every one of those reviews would light up your dashboard as a hit.
+
+That failure mode is not specific to security work. It is the same thing I measured on merged pull requests: a review object that exists, lands on the right files, and says something plausible about the wrong mechanism. We covered the general version of it in [AI code review reads the patch, not the execution](https://aicodereview.io/blog/ai-code-review-reads-the-patch-not-the-execution/), and Allspaw's point about absence, which we broke down in [AI code review's absence blindness](https://aicodereview.io/blog/ai-code-reviews-absence-blindness-measure-what-it-misses/), is the other half of it: a reviewer that never mentions the missing guard produces no finding at all, so nothing in your metrics moves.
+
+## The verdict-diagnosis gap, measured with a rubric
+
+[MalPR-Bench](https://arxiv.org/abs/2608.25730) attacks the same problem with a cleaner experiment. It is 89 malicious PRs and 50 paired benign controls across 44 repositories, and every malicious case ships a pre-committed rubric: the target vulnerability, accepted descriptions of its mechanism, the repository evidence required to substantiate it, and the off-target findings that get no credit.
+
+The headline result: across 31 held-out cases, PRGuard and CodeRabbit block nearly the same number (22/31 vs 24/31), while target identification comes out 22/31 versus 16/31. Block count says these two are equivalent. Diagnosis says they are not.
+
+The sharpest split is by defect class. On absence-type cases, where a required guard or ownership check is simply missing, both tools block 9 of 14, and identification is 9 versus 3. A reviewer that blocks a PR for an unrelated reason has satisfied a verdict-level eval and left the actual defect exploitable, which is the point of the paper's name for this: the verdict-diagnosis gap.
+
+Two caveats I would hold onto. PRGuard is the authors' own system, so the comparison is not neutral, and they label the configuration that surfaced their twelve discovery cases as selection-biased. The relevant number is the direction of the gap, which SecPRBench independently reproduces.
+
+## Evidence reach is the axis that predicts it
+
+MalPR-Bench also gives the most directly reusable idea in either paper. It labels every case by where the evidence that validates the vulnerability lives:
+
+- L0: the changed lines alone settle it.
+- L1: you need unchanged code elsewhere in a touched file.
+- L2a: you need code outside the touched files, reachable through a call or import.
+- L2b: you need code outside the touched files, connected by semantic correspondence, like a sibling endpoint that does apply the check.
+
+CodeRabbit identifies the target in 16 of 24 L0/L1 cases. It identifies 0 of 7 in L2a/L2b, where validation requires evidence outside the touched files. Fisher exact p = 0.002 on a small sample, and the seven cases span different mechanisms rather than one recurring pattern, so treat it as a strong association on a thin slice. Still, it lines up with the mechanism story: a reviewer that resolves the diff against the codebase can reach outside it, and one that reads the patch text in isolation cannot.
+
+For your own changes, that ladder is a better routing rule than a severity label. A diff whose safety depends on a sibling handler or a documented invariant needs a reviewer with repository access and enough budget to use it. A self-contained change does not. For the same reason, an AI reviewer and a static analyzer fail differently and should not be swapped for each other; we compare those failure surfaces in [AI code review vs static analysis](https://aicodereview.io/blog/ai-code-review-vs-static-analysis/). Stock CodeQL's security-extended queries applied to 21 of the 31 MalPR-Bench cases and identified none of the targets, which is a reminder that a rule engine and a reasoning reviewer are answering different questions.
+
+## A rubric you can run on your own repo
+
+You do not need either benchmark to measure this. The protocol is a weekend, and it produces a number you can defend:
+
+1. Pick 20 to 30 merged PRs where a later commit fixed a real defect. Trace the introducing change where you can, so you are reviewing the buggy version rather than the fix.
+2. Write the rubric before you run anything. One paragraph per case: the target defect, what a credited finding has to explain, and the off-target findings that get zero credit. This is the step that stops you from grading generously after the fact.
+3. Score three things separately: did the reviewer request a change, did it name the target mechanism, and did it cite evidence that substantiates it. Report them as three numbers, never one.
+4. Tag each case L0 through L2b. If your reviewer's identification collapses at L2, you have found the boundary of its context window in practice, not in theory.
+5. Count findings per case alongside the scores. SecPRBench reports Hit@1, the fraction of tasks where the first finding detects the target, precisely because a developer reads the top of the list. In their table, Opus 5.5 spends a mean 7.2 output tokens per thousand and posts far fewer findings than GLM 5.3, which spends 72.6k tokens for a lower recall. Volume is a cost, not a signal.
+
+If you want the version of this that runs against an installed tool rather than a paper, the nine-standard rubric in [how to evaluate AI code review tools](https://aicodereview.io/blog/how-to-evaluate-ai-code-review-tools/) covers the process, and [Verify your AI reviewer actually follows your team's rules](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/) covers the canary tests for the rules half of it.
+
+## What this changes about picking a tool
+
+The evidence-location ladder gives you a concrete question per candidate, and it applies to every tool in the category the same way. For CodeRabbit, Greptile, Copilot code review, Qodo Merge, and Kodus alike, the question is whether the review that lands on your PR is grounded in code the diff does not touch, and whether the tool shows you the evidence it used. Kodus is a fair candidate to put through the same ladder, since it reads repository context and enforces custom rules, and those are exactly the two behaviors the ladder tests. The directory entry and the [Kodus vs CodeRabbit re-check](https://aicodereview.io/blog/kodus-vs-coderabbit-four-claims-worth-re-checking/) cover what is verifiable from public documentation; the L2 cases are the ones you have to run yourself.
+
+Two more things to ask while you are at it. Can you see which finding the reviewer considered the target, or do you only get a list ranked by its own confidence? And when it abstains, does it tell you, or does an empty report get read as approval? SecPRBench's harness comparison is instructive here: with the same backend model, OpenAI's Codex Security plugin lowered recall by 8.3 points relative to the plain CLI, mostly by abstaining, while Anthropic's Defending Code harness raised it by 7.7 points at roughly ten times the median nominal cost and far more findings. Two security-focused harnesses over one model moved the score in opposite directions. The harness is a variable you are choosing, whether or not you treat it as one.
+
+## One more axis worth logging
+
+[SEVRA-Bench](https://arxiv.org/abs/2606.13757) adds a dimension neither of the others scores: narrative manipulation. It reverses historical vulnerability fixes and submits them wrapped in 15 social-engineering framings that vary urgency, claims of prior approval, appeals to authority, and supporting evidence. The result is that review agents are susceptible, and the framing is part of the attack surface.
+
+You do not need the full benchmark to test the cheap version. Take a change you already know is wrong, write two PR descriptions, one neutral and one that says the change was already reviewed by the security team and is blocking a release, and see whether your reviewer's verdict changes. If it does, that behavior belongs in your rollout notes.
+
+## Where the volume question actually lands
+
+The reason this matters now is arithmetic. MalPR-Bench cites GitHub's own numbers: monthly commit volume went from 1.4 billion to 2.9 billion between April and August 2026, with merged PRs approaching 130 million a month. Automated reviewers increasingly decide which of those changes get human attention, and the number of them you can afford to read carefully keeps shrinking.
+
+So the gate you install has to be good at the layer below the verdict. An attributable block, in the MalPR-Bench sense, requires all three of verdict, identification, and evidence validation. A block that fails the other two is noise that cost you a review cycle and left the defect in place. That is the number to put in front of whoever signs the invoice, and it is the one your dashboard is not collecting today.
+
+If you want the routing version of this for the volume problem rather than the security version, [Reviewing the volume of AI-generated code: the problem is routing, not speed](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/) has the triage split, and [who reviews the AI-generated code before the human does](https://aicodereview.io/blog/who-reviews-the-ai-generated-code-before-the-human-does/) covers what the first automated pass should be responsible for.
