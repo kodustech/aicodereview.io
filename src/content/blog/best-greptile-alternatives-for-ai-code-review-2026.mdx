@@ -1,0 +1,104 @@
+---
+title: "Best Greptile alternatives for AI code review (2026)"
+description: "Greptile alternatives compared on the axis that decides cost and quality: review-tier credit mix, context model, and the marginal recall of a second reviewer. Pricing and docs re-verified November 2026."
+pubDate: 2026-11-15
+category: "alternatives"
+tags: ["greptile", "aicodereview", "alternatives", "pricing"]
+faq:
+  - q: "Is Greptile's $1 per credit comparable to a seat price?"
+    a: "Only after you model the tier mix. Base is 1 credit, Plus is 3, Apex is 10, TREX adds 3 per run, and CLI reviews default to Base. Effective cost is the sum of credits across your PRs, not the headline rate."
+  - q: "Which Greptile alternative is cheapest?"
+    a: "It depends on volume. Copilot code review is bundled on GitHub, Bugbot runs about $1.00 to $1.50 per review, CodeRabbit is $24 per user per month flat, and Kodus is $10 per developer per month plus provider tokens. At low PR volume usage-based tools win; at steady high volume the flat seat does."
+  - q: "Does Greptile really read my whole codebase?"
+    a: "It indexes it. The graph index lets review agents assess how a change affects code outside the diff, and cross-repo context is configurable. Precision still depends on your strictness and comment-type settings."
+  - q: "Can I self-host Greptile?"
+    a: "Only on Enterprise, and the same is true of CodeRabbit. If self-hosting is a requirement rather than a negotiation, the options anyone can deploy are Kodus and PR-Agent."
+---
+
+## The two numbers in every comparison table aren't the same unit
+
+Greptile's page says $1 per credit, no seat fees. CodeRabbit's says $24 per user per month. Put those in the same row of a listicle and you have a table that looks clean and answers nothing, because a Greptile credit is not a review.
+
+Greptile's own docs define the review tier as the depth knob: Base costs 1 credit, Plus costs 3, Apex costs 10, and Auto picks a tier per PR from size, risk, and complexity, with you paying for whichever tier ran. TREX, the runtime-validation feature, adds 3 credits per run on top of the review. CLI reviews ignore your configured tier entirely and run at Base unless you pass `--plus` or `--apex`.
+
+Then read the recommendations on the same page. Greptile suggests defaulting to Auto, adding a rule that forces Apex on PRs targeting your production branch, and a second rule forcing Apex on PRs with more than 30 files changed. A team that follows that advice pays 10 credits, so $10, on every PR into main. Forty such PRs a month is $400 before TREX and before anything that lands on a feature branch. The same team reading the CodeRabbit column sees "$24 per user" and concludes Greptile is cheaper. At 30 developers, CodeRabbit is $720 flat.
+
+Neither number is wrong. They just measure different things: one is a per-event price that varies 10x by policy, the other is a flat rate that doesn't move with volume. So the first question when shopping alternatives isn't which tool reviews better. It's what your tier mix would look like, and what the flat-rate alternative costs at your actual volume. That framing runs through everything below.
+
+## What you'd actually be replacing
+
+The thing that distinguishes Greptile from a diff reader is that it builds a graph index of your repositories and has review agents traverse that graph, so a change gets assessed against code outside the diff. Cross-repo context is a first-class setting, not a plugin. For a monorepo or a service split across repos, that's the feature you're paying for, and it's the one most alternatives don't have an equivalent for.
+
+The tuning surface is a config file. You set `strictness` from 1 to 3 (1 means all issues, 2 is balanced and the default, 3 is critical only), pick which `commentTypes` you want (logic, syntax, style, all on by default), and list `ignorePatterns`. `autoReview` controls which PR events start a review: open, push, or rebase, with each event implying the ones before it. In a monorepo a child directory can carry its own config, and when one PR touches directories with different strictness levels, the stricter one applies.
+
+There's an approval path too, and it's narrower than people assume. Auto-approve only fires on a clean 5/5 review, it's marked beta, and the risk cap starts at Low: docs, tests, styling, and small changes. You can raise the ceiling to Medium, High, or Critical, but the docs tell you to start at Low and raise it only after your team has watched enough auto-approved PRs. It covers GitHub, GitLab, Bitbucket Cloud, and Gitea, and it is not available on Bitbucket Data Center or Perforce.
+
+The platform matrix is where most people get surprised. GitHub and GitLab are the standard plans. Bitbucket Data Center, GitHub Enterprise Server, GitLab Self-Managed, Gitea, and Perforce sit on Enterprise, along with self-hosting. If your code lives on Bitbucket or Azure DevOps and you're not buying Enterprise, Greptile is out before quality enters the conversation.
+
+## Two benchmarks, and why they disagree
+
+Greptile publishes its own: 5 tools, 50 real bugs traced from bug-fix PRs in 5 open-source repositories, default settings, no custom rules. The scoring rule is the part worth copying. A bug counted as caught only when the tool left an explicit line-level comment naming the faulty code and explaining the impact. Summary mentions didn't count. The result was Greptile at 82% catch rate, Bugbot 58%, Copilot 54%, CodeRabbit 44%, Graphite 6%, and the page itself notes the runs happened in July 2025 and that tools change fast. Vendor-run, stated protocol, and a year old. Useful as a reference point, not as a purchase decision.
+
+The independent one landed on 3 November. Jonathan Ellis ran 95 pushes across 47 PRs of [jdx/mr-boxington](https://github.com/jdx/mr-boxington/) with Greptile, CodeRabbit, Cursor Bugbot, Kodus, and Brokk's own Mjolnir harness wired in. Four findings matter for anyone choosing an alternative.
+
+Every tool found material problems without drowning the maintainer in nitpicks. Ellis states plainly that the noise problem from six months earlier is solved, which cuts against the main complaint in most "why I left" threads.
+
+No tool found everything. Each reviewer caught defects the others missed. That's the strongest argument against single-vendor comparisons: the ranking is unstable because the misses are different, not because one tool is uniformly better.
+
+Multiple passes of the same reviewer recovered many of the misses, with clear diminishing returns. Running two reviews in parallel and taking the union of the findings is a cheaper lever than switching vendors, and it's the option almost nobody models when they price alternatives.
+
+A vanilla harness with the same model performed about equal to Greptile at roughly 1/20 the cost. Mjolnir running DeepSeek Flash high-effort with a prompt lifted from Codex's `/review` command matched Greptile's findings on the same PR set. Ellis is upfront that the method is unscientific and documents his loose ends, including extrapolated Bugbot numbers and a review count he should have taken as a median. Read the caveats before quoting the ratio.
+
+He's also blunt about Kodus, which he tested in the same run: Kodus and Mjolnir both ran DeepSeek Flash, but Kodus layers on a lot of extra context and structure and performed worse than the simpler harness. He went code-diving with a model to find the cause, filed the issues, and found nothing that obviously explained the gap. That's the honest state of the evidence on scaffolding versus model choice. If you're picking Kodus for the self-host and bring-your-own-key path, that result is a reason to run your own evaluation on your own PRs instead of assuming more context means better findings.
+
+## The alternatives, sorted by what they buy you
+
+**CodeRabbit** is the breadth play: review on GitHub, GitLab, Azure DevOps, and Bitbucket, linters and SAST bundled, pre-merge checks, and a Triage queue that ranks open PRs across repos by risk and value. As of October 2026 the lineup is Essentials at $24 per user per month annual, Team at $48, Advanced at $72. Essentials includes 5 reviews per developer per hour with consumption available above that if you set budget caps. Flat per-seat pricing is the feature here: cost doesn't move when review volume doubles. We went through the [head-to-head against Greptile](https://aicodereview.io/blog/coderabbit-vs-greptile/) and the [wider alternatives list](https://aicodereview.io/blog/coderabbit-alternatives/) if you want the feature-by-feature version.
+
+**Cursor Bugbot** is the narrow one. It hunts bugs and says so. Cursor's own FAQ puts the average review at $1.00 to $1.50 depending on PR size, billed as usage on Individual and Teams plans rather than a separate subscription, and its page claims more than 70% of flags get resolved before merge. Narrow scope is why teams report low noise with it, and also why it won't cover standards or architecture.
+
+**GitHub Copilot code review** is the cheap second pass. It's bundled into paid Copilot plans, it's GitHub-only, and it never sets a blocking state, which I confirmed across 55 merged PRs in microsoft/vscode. Treat it as a reviewer that comments and let branch protection keep requiring a human approval.
+
+**Kodus** is the model-control option: AGPL-3.0 core, self-hosted via Docker Compose or Helm, or hosted at $10 per developer per month plus tokens you pay your provider directly at list price. Its own calculator puts a 30-developer team at $345 to $570 a month all-in depending on which model you point it at. You pick it for the BYOK path and the self-host story, and the license is a side effect. We covered the [license-vs-vibe audit](https://aicodereview.io/blog/open-source-ai-code-review-tools/) separately.
+
+**Qodo's PR-Agent** is the building block: MIT, moved to a community-owned organization in 2026, no product surface. You wire it into CI and own the maintenance. Worth reading the [model-versus-wrapper framing](https://aicodereview.io/blog/qodo-merge-alternatives-pick-the-model-not-the-wrapper/) before you commit to it as a platform.
+
+**Graphite, Panto, and the rest** show up in listicles with thin evidence. If a tool's only public performance claim is a leaderboard position with no protocol, you have nothing to reproduce, and per the [ground-truth rule](https://aicodereview.io/blog/ai-code-review-benchmark-read-the-ground-truth-first/) that's the first thing to check.
+
+## A comparison protocol that survives the tier mix
+
+Pull 20 to 30 merged PRs from your last 30 days where you already know what went wrong after merge: a revert, a follow-up fix, an incident. Run every candidate at default settings, no custom rules, so the comparison measures the product you'd get on day one. Count only comments that name the defective line and explain the impact. Summary mentions and style nits don't count, and that single rule is what makes Greptile's own benchmark readable.
+
+Then measure the thing the listicles skip. Take the two tools you're actually considering, union their findings, and count what the second tool added that the first one missed. That number is the marginal recall of a second reviewer, and it's what you're buying. If it's near zero on your code, you're paying for a second invoice. If it's in double digits, two passes of one tool is likely a better spend than a migration, which is the result Ellis landed on.
+
+Measure review state separately from comment volume. A reviewer that can only comment never satisfies branch protection, no matter how good its findings are, and a reviewer that can approve means you have to set a risk cap and decide which changes are allowed through without a human. Those are different operational decisions with different failure modes, and a comment count won't tell you which one you have. We hit the same wall [measuring where PR wait time actually sits](https://aicodereview.io/blog/where-pr-wait-time-actually-sits-after-you-add-an-ai-reviewer/) after adding a bot.
+
+And price the mix before you price the tool. Write down how many PRs you'd send to each tier, multiply, and compare that number to the flat seat price at your headcount. Greptile's own recommended rules are the reason this matters: Apex on production and Apex on large PRs turns a $1 credit into $10 on exactly the PRs you care most about. If you want the longer version of why per-PR prices behave like this, [cost per PR is a distribution](https://aicodereview.io/blog/ai-code-review-cost-per-pr-is-a-distribution-not-a-price/), not a price.
+
+## What I'd pick, by situation
+
+If you're GitHub-only and want a cheap second pass, Copilot code review costs nothing extra on a plan you already have and won't gate anything.
+
+If you're on four git hosts and want predictable spend, CodeRabbit's flat seat is the whole argument, and $24 buys a lot of volume independence.
+
+If you're on GitHub or GitLab, your repos are split, and you'll actually tune the config, Greptile's index is still the deepest context play. Budget the tier mix honestly before signing.
+
+If you only want bugs flagged and you accept per-review billing, Bugbot is the low-noise option, and at $1 to $1.50 a review the volume math is easy to run.
+
+If you need model choice, self-hosting, or no per-seat fee, Kodus is the strongest open option, with PR-Agent behind it if you want to own the glue. Run a two-week eval on your own merged PRs first, because the Brokk result suggests context volume isn't automatically your friend.
+
+If your eval shows the marginal recall is real, the cheapest upgrade is a second pass on the tool you already pay for. That's the option with no migration cost, and it's the one the comparison tables never mention.
+
+## FAQ
+
+**Is Greptile's $1 per credit comparable to a seat price?**
+Only after you model the tier mix. Base is 1 credit, Plus is 3, Apex is 10, TREX adds 3 per run, and CLI reviews default to Base. Effective cost is the sum of credits across your PRs, not the headline rate.
+
+**Which Greptile alternative is cheapest?**
+It depends on volume, and that's the point. Copilot code review is bundled on GitHub. Bugbot runs about $1.00 to $1.50 per review. CodeRabbit is $24 per user per month flat. Kodus is $10 per developer per month plus provider tokens. At low PR volume the usage-based tools win; at steady high volume the flat seat does.
+
+**Does Greptile really read my whole codebase?**
+It indexes it. The graph index lets review agents assess how a change affects code outside the diff, and cross-repo context is configurable. Indexing is a retrieval mechanism, so precision still depends on your strictness and comment-type settings.
+
+**Can I self-host Greptile?**
+Only on Enterprise, and the same is true of CodeRabbit. If self-hosting is a requirement rather than a negotiation, the honest options are Kodus and PR-Agent, both of which anyone can deploy.
