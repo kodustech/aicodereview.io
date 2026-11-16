@@ -1,0 +1,65 @@
+---
+title: "Merged AI agent PRs, zero reviews: a 4-field audit"
+description: "Four GitHub API fields decide whether your merged AI-authored PRs were actually reviewed. A reproducible audit, with numbers from 26 agent PRs across three windows."
+pubDate: 2026-11-16
+category: "guide"
+tags: ["aicodereview", "github", "codereview", "aiagents"]
+---
+
+Teams keep asking how to review the growing volume of AI-generated code. Before you answer that with a process change, it's worth knowing whether anyone is reviewing the AI code you already merged. The numbers I pulled say mostly no, and the search queries you'd use to check are wrong in ways that hide it.
+
+Everything below comes from GitHub's public API, unauthenticated, on three merged-PR windows: 2026-11-08 to 11-14, 2026-11-01 to 11-07, and 2026-10-25 to 10-31. The agent arm is PRs authored by the `copilot-swe-agent` and `devin-ai-integration` GitHub Apps. Sample sizes are small, 10 and 6 per window, and I'll attach the sample size to every number, because that's the only honest way to report this. For where the volume goes once it's merged, that's the [routing problem I wrote about separately](https://aicodereview.io/blog/reviewing-the-volume-of-ai-generated-code-the-problem-is-routing-not-speed/).
+
+## The search qualifier doesn't measure what you think
+
+The obvious way to count unreviewed merges is `is:pr is:merged review:none`. In the 11-08 to 11-14 window that qualifier matches roughly 6.57 million of the 7.26 million merged PRs. That number is not usable. A query for `reviewed-by:coderabbitai[bot] review:none` in the same window returned 84,903 results, which is self-contradictory: those PRs carry a review from that bot and no review at all, simultaneously. I checked a sample of them by hand and they do have review objects. The qualifier disagrees with the review objects, and the review objects are the ground truth.
+
+`review:approved` has the same shape of problem. It doesn't scope to the bot you named in `reviewed-by:`. A PR where the bot only left COMMENTED objects still matches `reviewed-by:<bot> review:approved` if any human approved it. Compute a vendor approval rate from that query and you have an upper bound, nothing more.
+
+Read the objects instead: [list reviews for a pull request](https://docs.github.com/en/rest/pulls/reviews?apiVersion=2022-11-28) gives you each review object with a `state`, a `user.login`, a `user.type`, and a body, and `/repos/{owner}/{repo}/issues/{n}/comments` gives you the conversation. Both are cheap calls.
+
+## Who wrote the review object
+
+Coverage counts only mean something once you split review objects by author. In the 11-08 to 11-14 window, 10 of 10 merged `copilot-swe-agent` PRs had zero review objects of any kind. 9 of 10 had zero review objects and zero issue comments. None of the 10 had an approval. In the two earlier windows the same sample was 6 of 10 and 8 of 10 with zero review objects. One of those windows had 3 approval objects, so this isn't uniformly zero, it's usually zero.
+
+The `devin-ai-integration` arm shows the opposite shape and the same measurement problem. All 6 sampled merged PRs had exactly one review object, and all 6 objects came from `devin-ai-integration[bot]`, the agent reviewing its own work. A coverage dashboard that counts objects reports 100% reviewed on those PRs. That's the mechanism behind a lot of self-review numbers, and it's why I keep coming back to cross-model or non-model verification rather than counting vendor comments.
+
+## Whether a rule required anything
+
+An agent PR can merge with no review because nobody looked, or because nothing was required. Those are different problems and the API tells them apart. `/repos/{owner}/{repo}/rules/branches/{base}` returns the rules that apply to the base branch. In the 10-PR agent sample, 2 of 10 repos returned any rules at all. The rest merged with no requirement in place, which is a repo configuration fact rather than a reviewer failure. GitHub's documentation on [protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches) covers the settings that change it, and requiring a pull request review is one checkbox.
+
+## Whether a human ever answered
+
+A bot comment with no reply is a notification. Across the agent samples, bot issue comments totaled 1 (11-08 to 11-14) and 3 (11-01 to 11-07), with zero human replies in either window. In a wider sample of bot-reviewed PRs I measured human replies landing on about 13% of bot comment threads. If you want to know whether a review produced a decision, look for a human reply or a commit pushed after the bot posted, not the comment count.
+
+## The state field on its own
+
+An approval object is not a readable judgement. In earlier windows every APPROVED review object from one major vendor had an empty body while that vendor's COMMENTED objects ran into the thousands of characters. Report `state` next to body length, or you'll count a machine's silent approval as a human sign-off.
+
+## The audit, in order
+
+Pull two or three consecutive weeks of merged PRs and filter the agent arm by author app. For each PR, fetch the reviews and the issue comments, bucket every review object by `user.type` and `user.login`, and keep the body length. Fetch the branch rules for the base branch. Then report four numbers, each with its window and sample size:
+
+1. PRs with a review object from something other than the author's own bot.
+2. PRs with a human reply on a bot thread.
+3. PRs where a branch rule required an approval.
+4. PRs with an approval object, alongside body lengths.
+
+If number 3 is near zero on your repos, the missing reviews are a configuration fact and you can change them today by requiring an approval or conversation resolution on the base branch. If number 3 is high and number 1 is still low, something is bypassing the gate, and that's a permissions conversation rather than a tooling one. Either way you now have a baseline to re-run next quarter, which matters because the merge-method and rule mix in a repo changes over time.
+
+## How to reproduce it
+
+Unauthenticated requests work for public data, with a 60 requests per hour core limit and 10 per minute on search. Keep each run to a couple of dozen PRs, print as you go, and keep the window string in the output:
+
+```
+GET /search/issues?q=is:pr is:merged author:app/copilot-swe-agent merged:2026-11-08..2026-11-14
+GET /repos/{owner}/{repo}/pulls/{n}/reviews
+GET /repos/{owner}/{repo}/issues/{n}/comments
+GET /repos/{owner}/{repo}/rules/branches/{base}
+```
+
+One caution from running this: the `review:none` qualifier will tempt you because it's one call instead of thirty. It's wrong in both directions, and a wrong number that arrives fast is worse than a small sample that arrives slowly. If your platform isn't GitHub, the equivalent objects are GitLab MR approvals and Azure DevOps reviewer votes, and the same rule applies: read the vote objects, not the search filter.
+
+## What this means for the tools
+
+A reviewer that posts comments is not the same as a reviewer that produces a decision. When you pick or renew a tool, the check is whether its findings end in an approval, a request for changes, or a required check, and whether you can read the review record later. Full-stack self-hosted reviewers such as Kodus and PR-Agent keep that record inside your infrastructure, which helps when the audit trail has to survive a vendor change. Bring-your-own-key options like CodeRabbit, Greptile, and Qodo Merge keep the application in the vendor's cloud, so your export options are whatever their API gives you. Self-hosting decides who holds the data. It doesn't decide whether anyone acts on the comments, and that's the part the four numbers above will tell you. For the evaluation side of that choice, the [multi-repo protocol](https://aicodereview.io/blog/how-to-evaluate-ai-review-tools-for-multi-repo-teams-an-eval-based-protocol/) I use is a decent starting point, and the [sourced statistics page](https://aicodereview.io/blog/ai-code-review-statistics/) has the adoption and volume figures if you need to size the problem for a planning conversation.
