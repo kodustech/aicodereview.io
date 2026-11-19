@@ -1,0 +1,89 @@
+---
+title: "Your AI reviewer refused. It still counted as reviewed."
+description: "On 21 of 40 merged PRs, Copilot's entire review was a quota message. Those refusals cluster by the requesting seat, so aggregate coverage numbers hide them."
+pubDate: 2026-11-19
+category: "guide"
+tags: ["aicodereview", "github", "copilot", "reviewcoverage"]
+faq:
+  - q: "Why does an AI reviewer post a review that says it could not review?"
+    a: "GitHub's review object is a container for review comments plus a state and an optional body. When Copilot cannot run, it still creates that container and writes the reason into the body, with state COMMENTED. The object exists, so anything counting objects or approvals sees coverage."
+  - q: "How do I check whether my AI reviewer's reviews actually contain findings?"
+    a: "List the reviews for each merged PR, filter to the bot's login, and keep only objects with a body longer than a few hundred characters that do not contain refusal strings like 'unable to review' or 'insufficient remaining quota'. Report the count of substantive bodies, not the count of objects."
+  - q: "Is the quota refusal a per-repo or per-user problem?"
+    a: "In my sample it tracks the requesting seat. Across 31 authors with two or more merged PRs in the window, 29 showed one shape only, and 7 of those held that shape across multiple different repositories, which is what a per-seat quota looks like and a per-repo issue does not."
+---
+
+A merged pull request with an AI review object on it looks reviewed. GitHub's reviews endpoint returns groups of review comments with a state and an optional body, in chronological order ([REST API endpoints for pull request reviews](https://docs.github.com/en/rest/pulls/reviews)). The object is real, the state reads `COMMENTED`, and the body can be 171 characters, every one of which says the reviewer could not review the PR.
+
+I keep returning to this shape because it breaks the cheapest metric people use to answer "did the AI look at this?" Counting review objects is one HTTP call, it works without a token, and it produces a number you can put in a slide. That number is wrong in a specific, reproducible way.
+
+## 21 of 40 merged PRs had a review object with no review in it
+
+Unauthenticated GitHub REST, `search/issues` for merged PRs with a Copilot review object, window 2026-11-05 to 2026-11-18, `sort=created&order=desc`, then the reviews endpoint per PR. I classified each PR by whether any Copilot review object carried a substantive body (over 200 characters, no refusal string).
+
+Of 40 merged PRs, 21 had Copilot review objects and zero substantive bodies. 19 had at least one real review. That is 52.5% refusal-only, which reproduces the 54% I measured on a slightly different window a day earlier. The bodies are not empty strings, which is why an existence check passes them: the median max body length across those PRs was 442 characters, and the quota notice itself runs 171 to 442 characters depending on which wording it uses.
+
+The median merge latency was 22.4 minutes across the 40 PRs and 19.5 minutes for the refusal-only group. The PRs where the bot said nothing useful did not slow down. Nothing in the merge flow treats that object as a failure.
+
+The wording is exact and quotable:
+
+> Copilot was unable to review this pull request because the user who requested the review has insufficient remaining quota.
+
+State `COMMENTED`. No inline comments. On a merged PR.
+
+## The refusals track the requesting seat, not the repo
+
+This is the part I did not expect, and it is the reason an aggregate number can be so misleading.
+
+I pulled two pages of merged PRs (200 items, window 2026-10-15 to 2026-11-18) and kept the authors with two or more PRs in the frame, since a single PR tells you nothing about clustering. That gave 31 authors and 77 PRs. I classified each PR, then grouped by author.
+
+29 of the 31 authors showed one shape only. Seven of them held that shape across two or more different repositories. Concretely, from that sweep and a follow-up pass on the same logins:
+
+- one login was refusal-only on `FatturaFacile/web-frontend` #99 and again on `FatturaFacile/web-api` #117, four review objects and the same 442-character notice on the second one
+- one login posted substantive reviews on three separate `taskade` repos
+- one login posted substantive reviews on three separate `e-mission` repos
+- one login was refusal-only on two repos, then substantive on a third
+
+A per-repo problem would not look like that. Neither would a per-account-owner problem. What matches is a per-seat quota: the review request is made by a user, the quota is checked against that user, and the same user behaves the same way wherever they open a PR. The two authors who flipped shape mid-window look like a seat whose quota ran out between their first and second PR.
+
+I also checked whether this was a time-window artifact. On 2026-11-18 alone, in the same 200-item frame, both shapes appeared: 21 substantive and 31 refusal-only. Refusals and real reviews coexist on the same day, so this is not an outage window that I happened to sample.
+
+## Other teams hit this and had to build detection
+
+I am not the first person to notice, and the public trail is more useful than my numbers because it shows what breaks downstream.
+
+[gordonpn/merge-verdict #114](https://github.com/gordonpn/merge-verdict/issues/114) is a normalizer bug report. The pipeline classified a reviewer execution as `COMPLETED` and `fresh` because the quota notice arrived as a `COMMENTED` review. The reporter quotes the same body string and asks for `RATE_LIMITED` or `FAILED` instead. That is the whole failure in one line: the review harness reported success, because the API said the review happened.
+
+[maguerrieri/claude-toolbox #344](https://github.com/maguerrieri/claude-toolbox/issues/344) is worse, and it is the source I would send anyone who thinks this is a one-string problem. The author had already coded a match on `Copilot was unable to review`, then found two more refusal wordings on a live PR, both timestamped:
+
+- `Copilot wasn't able to review this pull request because it exceeds the maximum diff size. Try reducing the number of changed files and lines`, four times across Nov 12 to Nov 16
+- `Copilot encountered an error and was unable to review this pull request. You can try again by re-requesting a review.`
+
+Neither opens with the string the tool matched on. The report spells out the consequence for their round-counting gate: an oversize PR spends a round of the retry cap with no review behind it, and a body with no verdict heading reads as "a review with no entries", which passes their gate vacuously. Their own words: a PR Copilot never reviewed can look review-clean.
+
+Two more from the same search, for range. [dlrivada/Encina #2567](https://github.com/dlrivada/Encina/issues/2567) proposes a fallback reviewer because a repo running CodeRabbit plus Copilot had a fallback for CodeRabbit rate limits and none for Copilot quota exhaustion, so a PR could merge with one bot review or none. [KooshaPari/KCode #41](https://github.com/KooshaPari/KCode/issues/41) exists purely so the same quota notice is not re-diagnosed as a repo defect later. The exact body there reads `has reached their quota limit` rather than `insufficient remaining quota`, which is a third wording.
+
+## The audit protocol
+
+You can run this before you quote any coverage number, on a repo you own, in a few minutes.
+
+1. Pick a fixed window of merged PRs, at least 40, and hold the sort order constant. GitHub's `search/issues` author and reviewed-by cohorts change shape with `order=asc` versus `order=desc`, so an unmatched pair is not a comparison.
+2. For each PR, list reviews and filter to the bot's login.
+3. Keep an object only if its body is over a few hundred characters and contains no refusal string. Check at least these: `unable to review`, `insufficient remaining quota`, `quota limit`, `maximum diff size`, `encountered an error`. Matching only the first is how the tool in that bug report got fooled.
+4. Report the count of substantive bodies and the count of PRs, not the count of objects. The two numbers diverge by roughly half on this sample.
+5. Group the result by PR author and by repository. If one author is consistently refusal-only across repositories, you are looking at a seat, and a fallback reviewer plus an alert is the fix. If one repository is consistently refusal-only across authors, you are looking at config, and the [Copilot code review policy and repository settings endpoints](https://docs.github.com/en/rest/copilot/copilot-code-review) are where to look.
+6. State the API's limits in your method. Unauthenticated search allows 10 requests per minute and 1000 results per query ([REST API endpoints for search](https://docs.github.com/en/rest/search/search)), which is why the window has to be bounded rather than exhaustive.
+
+Two field-level traps worth writing into the script rather than your memory. In `search/issues` items, `merged_at` is nested under `pull_request`, and a top-level `.get('merged_at')` silently returns zero merged PRs. And review objects from the same reviewer can appear in sequence, so read them in `submitted_at` order if you care about what the final state was.
+
+This sits next to the coverage audit I published on [merged AI agent PRs and the four fields that decide whether they were reviewed](https://aicodereview.io/blog/merged-ai-agent-prs-zero-reviews-a-4-field-audit/), and it is a different failure from [code pushed after the review that the reviewer never saw](https://aicodereview.io/blog/9-of-28-merged-prs-had-code-the-ai-reviewer-never-saw/). There the review was real and stale. Here the review never happened and the record says it did. Same conclusion about dashboards, different mechanism, and this one is invisible to any query that filters on `reviewed-by:`.
+
+## What this changes when you are comparing reviewers
+
+Coverage numbers are the first column in every comparison table, and they are usually built from object counts. When you evaluate tools, ask each vendor one question: when the reviewer cannot run, does it post a review object or fail the check? A tool that fails the check run is easier to monitor than one that posts a polite refusal into the review stream, because the failure surfaces in CI instead of in a body you have to parse.
+
+That question is testable per tool. For Copilot it means watching for refusal bodies and classifying the requester. For CodeRabbit and Gemini code assist, the same review-object surface exists, and in a 14-PR sample I ran in the same window I found zero refusal objects from either, which is why the rate above is a Copilot figure and not a category-wide one. For self-hosted options, including [Kodus](https://aicodereview.io/blog/kodus-vs-coderabbit-four-claims-worth-re-checking/), the quota failure mode is your own rate limit or model budget, so the equivalent test is whether the harness distinguishes a budget failure from a clean review. The checks in [how to verify an AI reviewer follows your team's rules](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/) cover the same instinct on a different axis.
+
+If you want the number that actually predicts merge review load rather than review volume, the timestamps matter more than the object count, and [where PR wait time actually sits after you add an AI reviewer](https://aicodereview.io/blog/where-pr-wait-time-actually-sits-after-you-add-an-ai-reviewer/) is the measurement I would start from.
+
+The short version: a review object is a container, not evidence. Read the body, classify the requester, and group by seat before you tell anyone your coverage is 90%.
