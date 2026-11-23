@@ -1,0 +1,68 @@
+---
+title: "Only 30% of GitLab Duo's review notes can be resolved"
+description: "Across 645 Duo-authored notes in six GitLab projects, 30.5% carry a resolve box at all. The 95-100% resolve rate on a dashboard is computed on that slice."
+pubDate: 2026-11-23
+category: "explainer"
+tags: ["gitlab", "gitlabduo", "codereview", "metrics"]
+---
+
+## Duo Code Review starts behind a tier gate
+
+If you are picking an AI reviewer for a GitLab team, the built-in option is not available to everyone. [GitLab Duo Code Review](https://docs.gitlab.com/user/gitlab_duo/code_review/) requires the Premium or Ultimate tier plus the GitLab Duo Enterprise add-on. It went generally available in GitLab 18.1, and GitLab now ships two versions of it: Code Review Flow on the Duo Agent Platform, and the non-agentic GitLab Duo Code Review. Self-hosted models arrived for it in 18.4.
+
+That gate matters more than the feature list. A team on GitLab Free or Premium without the add-on has no Duo reviewer to evaluate at all, so its question is which third-party reviewer to run. A team that already pays for Duo Enterprise has a different question: whether the built-in reviewer's output is worth acting on. Both get answered by the same measurement, and that measurement is not the resolve rate your dashboard shows.
+
+## What I measured
+
+I queried the public [GitLab GraphQL API](https://docs.gitlab.com/api/graphql/) anonymously, walking `project(fullPath: "...")` into `mergeRequests(state: merged)` and then into `notes` with `author { username }`, `resolvable`, `resolved`, and `system` fields. Six projects: `gitlab-org/gitlab`, `gitlab-org/gitlab-runner`, `gitlab-org/cli`, `gitlab-org/gitaly`, `gitlab-org/gitlab-shell`, and `gitlab-org/container-registry`, up to 40 merged MRs each, most recently updated first.
+
+Two operational notes if you want to reproduce this. GraphQL is the only read path here, because the REST notes endpoint returns 401 to an anonymous caller on a public project. And `fullPath` has to be inlined as a string literal in the query body. Passing it as a GraphQL variable typed `String!` fails with a type mismatch against the `ID!` argument, and you get an empty result rather than an error you would notice.
+
+The cohort held 645 Duo-authored non-system notes, with human notes from the same merge requests as the control arm.
+
+## Most of what Duo posts is not a review finding
+
+Of those 645 notes, 197 carry a resolve box. That is 30.5%.
+
+The per-project spread is narrow. In `gitlab-org/gitlab`, 60 of 164 Duo notes were resolvable (36.6%). `gitlab-org/gitlab-runner` came in at 37 of 119 (31.1%), `gitlab-org/cli` at 40 of 140 (28.6%), and `gitlab-org/gitaly` at 35 of 112 (31.2%).
+
+The human control arm sits in a different band on the same merge requests: 61.5% of human notes were resolvable in `gitlab-org/gitlab`, 52.0% in `gitlab-org/gitlab-runner`, 69.2% in `gitlab-org/cli`, and 66.5% in `gitlab-org/gitaly`.
+
+I sampled the non-resolvable Duo notes to see what fills the gap. A slice of them are literal status messages, like `Duo Developer has started. You can view progress here` and `Duo Security Review has started. You can view progress here`, plus pipeline-failure summaries that read `could not be fixed in session`. These are session bookkeeping, not findings.
+
+## The resolve rate is a denominator artifact
+
+Resolve rate is `resolved / resolvable`, which is how every review dashboard I have seen computes it. Duo's reads 100% in `gitlab-org/gitlab`, 94.6% in `gitlab-org/gitlab-runner`, 100% in `gitlab-org/cli`, and 100% in `gitlab-org/gitaly`. The human control reads 100%, 80.4%, 96.0%, and 100%.
+
+Two things fall out of that. The denominator drops roughly two-thirds of the bot's output, so the rate is computed on the slice that was most likely to be actionable to begin with. And a status ping has no resolve box, which means it can never pull the rate down. Rank two reviewers on resolve rate and you are mostly ranking how much of their own output each one chose to make resolvable. That is a formatting decision, not a review quality signal. I made this mistake in the other direction on GitHub, where [an AI reviewer's refusal notice counted as a review](https://aicodereview.io/blog/your-ai-reviewer-refused-it-still-counted-as-reviewed/), and the fix is the same one: read the denominator before you read the ratio.
+
+The number that discriminates is resolvable notes per merge request. Better still, count the ones that name a concrete defect and compare that against the human arm on the same MRs.
+
+## "Duo" is a family of accounts
+
+Matching on the login `GitLabDuo` missed 46 of the 645 notes, 7.1%. The rest came from service accounts named `duo-developer-gitlab-org`, `duo-fix-ci-cd-pipeline-gitlab-org`, `duo-security-review-gitlab-org`, and `duo-recommend-reviewers-gitlab-org`.
+
+Which of those exist depends on the project. `gitlab-org/gitlab` showed two logins in this cohort. `gitlab-org/gitlab-runner` and `gitlab-org/cli` each showed four. A hardcoded login list will undercount, and the undercount is not uniform across projects, so it also skews any per-project comparison you build on top of it. GitHub's own reviewer has the same shape: [one app posting under two logins](https://aicodereview.io/blog/github-copilot-code-review-skips-a-documented-list-of-files/), `copilot-pull-request-reviewer[bot]` for reviews and `Copilot` for inline comments.
+
+## What to run on your own instance
+
+Four numbers per reviewer, all available from the notes fields above:
+
+1. Non-system notes per merge request.
+2. Resolvable share, meaning resolvable divided by non-system notes.
+3. Resolvable count per merge request, which is the discriminating number.
+4. A per-author login histogram, so service accounts cannot hide from the count.
+
+Then run the same four against the human notes on the same merge requests. A bot that looks strong on resolve rate and weak on resolvable count per MR is posting a lot of bookkeeping.
+
+Path coverage is worth adding while you are in there. Each GitLab note carries a `position` object with `newPath` and `oldPath`, so you can compare the set of files a reviewer commented on against the merge request's changed files. I ran the GitHub equivalent across 17 merged PRs: 21 of 152 changed files received a comment from the bot, median 9.1% per PR, and 8 of the 17 PRs got no comment on any changed file. That is a breadth measurement, and it says nothing about whether the one comment was right. It does tell you whether "the reviewer looked at my change" is a claim you can support.
+
+## Applying the same test to the alternatives
+
+Duo is one option among several for a GitLab team. Kodus, CodeRabbit, Greptile, and Qodo all post findings as notes on GitLab merge requests, so the same four numbers apply without modification, and so does the path-coverage check. I would run the count on whichever two you are actually choosing between, on your own merge requests, before reading any vendor benchmark.
+
+One normalization matters more than the rest. Raw finding counts scale with diff size. On a CodeRabbit cohort I measured r = 0.947 between churn and root finding count, with findings per 100 churn lines running about 5.3x higher on small PRs than large ones. A ranking built on raw counts from a size-unmatched cohort is largely a diff-size ranking. Divide by churn, or use paired merge requests of similar size.
+
+If you want the wider picture of how reviewers behave on GitLab specifically, our [GitLab review tool comparison](https://aicodereview.io/blog/best-ai-code-review-tools-for-a-team-on-gitlab-2026/) covers the feature and permission boundaries, and [absence blindness in AI code review](https://aicodereview.io/blog/ai-code-reviews-absence-blindness-measure-what-it-misses/) covers the failure mode no note count will show you. The GitHub measurement of [unreviewed commits sitting behind a green verdict](https://aicodereview.io/blog/9-of-28-merged-prs-had-code-the-ai-reviewer-never-saw/) is the same class of check on a different host.
+
+The one-line version: pull the notes, split system from non-system, count how many carry a resolve box, and only then look at the resolve rate. If a third of the output is eligible to be resolved, a 100% resolve rate describes the third you can resolve, not the reviewer.
