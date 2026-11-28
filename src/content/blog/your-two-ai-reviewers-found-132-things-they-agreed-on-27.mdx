@@ -1,0 +1,93 @@
+---
+title: "Your two AI reviewers found 132 things. They agreed on 27."
+description: "Across 28 merged PRs reviewed by both CodeRabbit and Greptile, 79.5% of inline findings sat on a file and line only one tool flagged. Here is the overlap protocol, and the empty review body that breaks the naive count."
+pubDate: 2026-11-28
+category: "explainer"
+tags: ["codereview", "coderabbit", "greptile", "metrics"]
+---
+
+Two AI reviewers on the same pull request. 132 inline findings between them. 27 landed on the same file and line.
+
+Teams add a second reviewer as a cross-check. The reasoning is that when both bots flag something, that finding is probably real. That reasoning is testable, so I tested it: 28 merged PRs where both CodeRabbit and Greptile left inline comments, every finding matched by file and line.
+
+The overlap came out at 20.5%. If you're treating a second reviewer as a confidence signal, in this cohort you mostly aren't getting one.
+
+## What I counted
+
+Anonymous GitHub REST, no token, `User-Agent: curl/8.0`. Search for merged PRs where both bots are listed as reviewers, sorted by `updated`, using the search endpoint's `reviewed-by:` qualifier twice in the same query. Then one call per PR to the [pull request review comments endpoint](https://docs.github.com/en/rest/pulls/comments), which returns the inline comments with their `path`, `line`, `original_line`, and `in_reply_to_id`.
+
+Three filters matter more than they look:
+
+A root finding is a comment with `in_reply_to_id == null`. Replies share the parent's position, so counting them as findings double-counts the same line.
+
+Vendor attribution is by login family, not exact match. `coderabbitai[bot]` and `greptile-apps[bot]` are the two here, but treat vendor logins as a prefix set. I've been bitten by that before: [GitLab Duo authorship is a family of logins, and an exact match missed 7.1% of its notes](https://aicodereview.io/blog/only-30-of-gitlab-duos-review-notes-can-be-resolved/).
+
+The anchor key is `(path, line)`, falling back to `original_line` when `line` is null. GitHub nulls `line` once the comment is no longer on the current diff revision, and `original_line` keeps the position it was posted at. Skipping that fallback silently drops stale findings and inflates your overlap number.
+
+Cohort: 28 dual-reviewer merged PRs, 26 in `manaflow-ai/cmux` and 2 in `magrathean-uk/auditex`, mostly from November 2026. I scanned 52 candidate PRs to keep those 28, so this is not a hand-picked sample.
+
+## 132 findings, 27 shared anchors
+
+| | CodeRabbit | Greptile |
+| --- | --- | --- |
+| root inline findings | 112 | 47 |
+| shared anchors with the other tool | 27 | 27 |
+| share of own findings also flagged by the other | 24.1% | 57.4% |
+| findings no other tool flagged | 85 | 20 |
+
+Union of distinct anchors: 132. Overlap share of that union: 20.5%. In other words, 105 of the 132 things flagged on these PRs were flagged by exactly one of the two tools.
+
+Seven of the 28 PRs had zero shared anchors. Median CodeRabbit findings per PR was 2.5, so a zero-overlap PR is not automatically a weird outlier. The extreme case was `manaflow-ai/cmux#49486`: 36 CodeRabbit findings, 4 Greptile findings, no shared anchors at all. At the file level the two tools did better, agreeing on 38 of 108 files touched by findings, which is 35.2%.
+
+## The asymmetry is the actual finding
+
+Look at those two corroboration rates again. 57.4% of Greptile's findings were also flagged by CodeRabbit. Only 24.1% of CodeRabbit's findings were flagged by Greptile.
+
+That is not symmetric agreement. It's a containment pattern. Greptile's output is largely a subset of CodeRabbit's, at roughly a fifth the volume. If you installed Greptile second and CodeRabbit first, "the second reviewer catches what the first missed" is close to backwards in this cohort. If you installed them in the other order, you'd conclude the second reviewer is noisy.
+
+A single "overlap percentage" hides this. The corroboration rate is per tool and it is not the same number, which is why I report it twice.
+
+One place they did agree: severity. Of the 26 shared anchors, 24 graded to the same level (CodeRabbit Major against Greptile P1 twelve times, Minor against P2 twelve times). Two were off by a full grade, both CodeRabbit Minor against Greptile P1. Greptile publishes its scale in [the anatomy of a Greptile review](https://www.greptile.com/docs/code-review/first-pr-review.md): P0 for critical, P1 for high, P2 for medium, plus a 0 to 5 confidence score on the PR summary. CodeRabbit publishes its own bands in the [code review overview](https://docs.coderabbit.ai/guides/code-review-overview). Mapping across vendor scales is a whole separate problem, and [severity labels collapse toward the mild end often enough that they're a weak ranking signal](https://aicodereview.io/blog/ai-review-severity-labels-44-of-46-said-quick-win/).
+
+## The empty review body that breaks the naive count
+
+Here is the part that would have wrecked this study if I hadn't printed it.
+
+On all 28 PRs, Greptile's *review object* has an empty body. `body_len` is 0. Every time. CodeRabbit's review object carries a 4,500 to 9,000 character walkthrough, first line `<!-- coderabbit-ai-generated:v1 -->`. Both tools leave real inline comments. Only one leaves a body on the review object.
+
+So if your coverage metric is "does this PR have an AI review object with content in it," CodeRabbit scores and Greptile scores zero, on identical PRs. And if your metric is "does this PR have an AI review object at all," you get 100% for both and learn nothing. This is the same shape as [the Copilot quota refusals that still counted as reviews](https://aicodereview.io/blog/your-ai-reviewer-refused-it-still-counted-as-reviewed/): the container exists, so a cheap existence check reports coverage that isn't there. Greptile's rollup lives in the PR summary comment, not the review object.
+
+Print the body lengths before you aggregate anything. It costs one extra line of code and it's the difference between a number and a guess.
+
+## What config does to this number
+
+None of the above is tool-versus-tool in the abstract. It's two tools as configured in two repos.
+
+Greptile's review is shaped by `commentTypes` in `.greptile/config.json`, where `logic`, `syntax`, and `style` are all enabled by default, plus review tiers and the ignore rules in [its customization docs](https://www.greptile.com/docs/code-review/customization-overview.md). CodeRabbit has its own noise knobs. A repo with style comments switched off will produce a smaller, narrower finding set, and a narrower set raises overlap mechanically, because there is less to disagree about.
+
+There is a second silent-signal problem worth knowing about if you're evaluating a second reviewer: Greptile's [auto-approve feature](https://www.greptile.com/docs/code-review/auto-approve-prs.md) withholds approval silently when a PR falls outside its risk ceiling, and the docs say it does not comment to explain why. A withheld approval and a review that never ran look identical in the API. Before you credit or blame a tool for missing something, confirm it was asked to look.
+
+## Run this on your own repo
+
+Four numbers, and skip the summary one:
+
+1. Pull the dual-reviewer PRs with the search query above. `sort=updated` is stable across consecutive pulls, so a zero-result cohort is real rather than a race.
+2. Per PR, fetch the review comments endpoint paginated at `per_page=100`. A single page truncates busy PRs and turns "this tool never commented here" into a false positive.
+3. Filter to roots, bucket by vendor login family, key by `(path, line or original_line)`.
+4. Report findings per tool, shared anchors, union size, and the corroboration rate *for each tool separately*.
+
+Budget it: that's one search per repo plus one call per PR, against 60 core requests per hour unauthenticated and 10 searches per minute. Fifty PRs will not fit in a single unauthenticated window. Check the rate limit endpoint at the end, because a uniform result across every subgroup is usually the window running dry mid-loop rather than a finding.
+
+Pin the config, and record the review object body lengths as a sanity check on whatever else you compute.
+
+## Where this leaves tool choice
+
+The things that decide your overlap number are the config surface, the review trigger, and whether the tool posts findings inline at all. Greptile's `commentTypes` and tiers are one knob set. CodeRabbit's noise settings are another. [Kodus](https://kodus.io/) exposes custom review rules and a self-hosted deployment path, which changes a different variable in the same experiment: what the reviewer is allowed to say, and where your code goes while it says it. The same reasoning applies to any harness you point at your diff, and the [checks worth running before you deploy a self-hosted reviewer](https://aicodereview.io/blog/self-hosted-ai-code-review-tools-what-to-verify-before-you-deploy/) cover the deployment half of that question. If rules-following is the thing you care about, [test it with a canary rather than reading the rules file](https://aicodereview.io/blog/verify-your-ai-reviewer-actually-follows-your-teams-rules/).
+
+If you're choosing between a first-party reviewer and a harness, [the model you plug in decides most of the review quality](https://aicodereview.io/blog/pullfrog-vs-coderabbit-dont-compare-the-wrong-thing/), which puts a floor under how much of this comparison is attributable to the tool.
+
+## Two reviewers agreeing is not consensus
+
+An LLM judge scoring its own or a sibling's output is one opinion measured repeatedly, and the [MT-Bench and Chatbot Arena work on LLM-as-a-judge](https://arxiv.org/abs/2306.05685) documented the failure modes years ago: position bias, verbosity bias, and self-enhancement bias, with agreement between strong models topping out around the level of agreement between humans. Two vendors running different models over the same diff produce two draws from different distributions. The intersection of those draws is a small set, and the size of that set is a property of the pair, not a measure of truth.
+
+So treat the shared anchors as your high-precision queue, and treat the 105 solo findings as a queue you have to triage by hand. Don't average the two tools into one score. Measure how much they overlap, on your repos, with your config, and decide whether the second reviewer is buying you coverage or just a longer list.
